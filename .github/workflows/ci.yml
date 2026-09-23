@@ -1,0 +1,70 @@
+# CI quality gate (spec §43, ADR-0005). Mirrors `uv run poe check` + integration tests.
+name: ci
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: ${{ matrix.python }}
+      - run: uv sync --frozen
+      - name: Gate (format, lint, types, import rules, unit tests)
+        run: uv run poe check
+        env:
+          ENV: test
+          DATABASE_URL: postgresql://og:og@127.0.0.1:5432/og
+          REDIS_URL: redis://127.0.0.1:6379/0
+
+  integration:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: og
+          POSTGRES_PASSWORD: og
+          POSTGRES_DB: og
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U og -d og" --health-interval 5s --health-retries 20
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: --health-cmd "redis-cli ping" --health-interval 5s --health-retries 20
+    env:
+      ENV: test
+      DATABASE_URL: postgresql://og:og@127.0.0.1:5432/og
+      REDIS_URL: redis://127.0.0.1:6379/0
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.13"
+      - run: uv sync --frozen
+      - run: uv run alembic upgrade head
+      - name: Exactly one Alembic head
+        run: test "$(uv run alembic heads | grep -c '(head)')" = "1"
+      - run: uv run poe test-int
+
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.13"
+      - run: uv sync --frozen
+      - run: uv run poe security

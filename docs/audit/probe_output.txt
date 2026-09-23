@@ -1,0 +1,213 @@
+OmniGrowth Phase 0 probe
+timestamp_utc: 2026-09-23T00:10:01.5157118Z
+repo_root: C:\dev\omnigrowth
+
+### OS
+[os_caption] Microsoft Windows 11 Home
+[os_version] 10.0.26200
+[os_build] 26200
+[arch] AMD64
+[cpu] AMD Ryzen 7 9800X3D 8-Core Processor
+[ram_gb] 31.1
+
+### SHELL
+[ps_edition] Core
+[ps_version] 7.6.6
+[comspec] C:\WINDOWS\system32\cmd.exe
+
+### TOOL_VERSIONS
+[python] path: C:\Users\burpi\AppData\Local\Programs\Python\Python313\python.exe
+[py] path: C:\Windows\py.exe
+[uv] path: C:\Users\burpi\AppData\Local\Programs\Python\Python313\Scripts\uv.exe
+[node] path: C:\Program Files\nodejs\node.exe
+[npm] path: C:\Program Files\nodejs\npm.ps1
+[git] path: C:\Program Files\Git\cmd\git.exe
+[docker] path: C:\Program Files\Docker\Docker\resources\bin\docker.exe
+[wsl] path: C:\Windows\system32\wsl.exe
+[python --version] Python 3.13.6
+[py -0p]  -V:3.13 *        C:\Users\burpi\AppData\Local\Programs\Python\Python313\python.exe
+ -V:3.12          C:\Users\burpi\AppData\Local\Programs\Python\Python312\python.exe
+[uv --version] uv 0.8.17 (10960bc13 2025-09-10)
+[uv python list] cpython-3.13.6-windows-x86_64-none     C:\Users\burpi\AppData\Local\Programs\Python\Python313\python.exe
+cpython-3.12.0-windows-x86_64-none     C:\Users\burpi\AppData\Local\Programs\Python\Python312\python.exe
+cpython-3.11.13-windows-x86_64-none    C:\Users\burpi\AppData\Roaming\uv\python\cpython-3.11.13-windows-x86_64-none\python.exe
+[node --version] v22.18.0
+[npm --version] 11.5.2
+[git --version] git version 2.55.0.windows.5
+[docker --version] Docker version 29.7.2, build a7dcaa6
+[docker compose version] Docker Compose version v5.4.0
+[wsl --version] WSL version: 2.7.12.0
+
+Kernel version: 6.18.33.2-2
+
+WSLg version: 1.0.73.2
+
+MSRDC version: 1.2.7214
+
+Direct3D version: 1.611.1-81528511
+
+DXCore version: 10.0.26100.1-240331-1435.ge-release
+
+Windows version: 10.0.26200.9457
+[wsl -l -v]   NAME                STATE           VERSION
+
+* Ubuntu-24.04        Running         2
+
+  NVIDIA-Workbench    Running         2
+
+  docker-desktop      Running         2
+
+  Ubuntu-22.04        Stopped         2
+
+  kali-linux          Running         2
+
+### DOCKER_STATE
+[docker_desktop_process] 
+Name              Id
+----              --
+Docker Desktop  2400
+Docker Desktop 11628
+Docker Desktop 40384
+Docker Desktop 40584
+Docker Desktop 40928
+[docker info (server)] 29.7.2 | OS=Docker Desktop | CPUs=16 | Mem=16298704896 | Containers=6 running=6
+[docker ps] hermes-48023074	nikolaik/python-nodejs:python3.11-nodejs20	Up 2 days	
+hermes-ee61e285	nikolaik/python-nodejs:python3.11-nodejs20	Up 2 days	
+hermes-27613e99	python:3.11-slim	Up 3 days	
+decentrlai-neo4j	neo4j:5-community	Up 3 days (healthy)	0.0.0.0:7474->7474/tcp, [::]:7474->7474/tcp, 0.0.0.0:7687->7687/tcp, [::]:7687->7687/tcp
+decentrlai-redis	redis:7-alpine	Up 3 days	0.0.0.0:6379->6379/tcp, [::]:6379->6379/tcp
+decentrlai-postgres	postgres:16-alpine	Up 3 days (healthy)	0.0.0.0:5432->5432/tcp, [::]:5432->5432/tcp
+
+### DISK
+[drives] C: free_gb=790.6 used_gb=1071.4
+E: free_gb=12998.3 used_gb=1903.7
+G: free_gb=0 used_gb=15
+Temp: free_gb=790.6 used_gb=1071.4
+
+### GPU
+[nvidia-smi] Tue Sep 22 20:10:06 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 591.86                 Driver Version: 591.86         CUDA Version: 13.1     |
++-----------------------------------------+------------------------+----------------------+
+| GPU  Name                  Driver-Model | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA GeForce RTX 5070      WDDM  |   00000000:01:00.0  On |                  N/A |
+|  0%   39C    P8              7W /  250W |    9864MiB /  12227MiB |      3%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|    0   N/A  N/A            2812    C+G   ..._pzs8sxrjxfjjc\app\claude.exe      N/A      |
+|    0   N/A  N/A            8004    C+G   ...IA app\CEF\NVIDIA Overlay.exe      N/A      |
+|    0   N/A  N/A           10252    C+G   ...2txyewy\CrossDeviceResume.exe      N/A      |
+|    0   N/A  N/A           10972    C+G   ...les\TeamViewer\TeamViewer.exe      N/A      |
+|    0   N/A  N/A           11412    C+G   C:\Windows\explorer.exe               N/A      |
+|    0   N/A  N/A           11888    C+G   ...indows\System32\ShellHost.exe      N/A      |
+|    0   N/A  N/A           15756    C+G   ...s\Python\Python313\python.exe      N/A      |
+|    0   N/A  N/A           16104    C+G   ...0c76g0\app\ChatGPT (Beta).exe      N/A      |
+|    0   N/A  N/A           16388    C+G   ..._cw5n1h2txyewy\SearchHost.exe      N/A      |
+|    0   N/A  N/A           16412    C+G   ...y\StartMenuExperienceHost.exe      N/A      |
+|    0   N/A  N/A           17124    C+G   ...IA app\CEF\NVIDIA Overlay.exe      N/A      |
+|    0   N/A  N/A           17524    C+G   ...em32\ApplicationFrameHost.exe      N/A      |
+|    0   N/A  N/A           19168    C+G   ....0.4234.32\msedgewebview2.exe      N/A      |
+|    0   N/A  N/A           22032    C+G   ....0.4234.32\msedgewebview2.exe      N/A      |
+|    0   N/A  N/A           23616    C+G   ...0c76g0\app\ChatGPT (Beta).exe      N/A      |
+|    0   N/A  N/A           23928    C+G   ...yb3d8bbwe\Notepad\Notepad.exe      N/A      |
+|    0   N/A  N/A           24024    C+G   ...5n1h2txyewy\TextInputHost.exe      N/A      |
+|    0   N/A  N/A           25840    C+G   ...Next\CNext\RadeonSoftware.exe      N/A      |
+|    0   N/A  N/A           26280    C+G   ...D\CNext\CNext\AMDRSSrcExt.exe      N/A      |
+|    0   N/A  N/A           33980    C+G   ...Files\Notepad++\notepad++.exe      N/A      |
+|    0   N/A  N/A           34256    C+G   ...lease\win-unpacked\Hermes.exe      N/A      |
+|    0   N/A  N/A           35416    C+G   ...xyewy\ShellExperienceHost.exe      N/A      |
+|    0   N/A  N/A           35868    C+G   ...yb3d8bbwe\WindowsTerminal.exe      N/A      |
+|    0   N/A  N/A           40384    C+G   ...r\frontend\Docker Desktop.exe      N/A      |
+|    0   N/A  N/A           40760    C+G   ...rograms\Obsidian\Obsidian.exe      N/A      |
+|    0   N/A  N/A           41084    C+G   ...8bbwe\PhoneExperienceHost.exe      N/A      |
+|    0   N/A  N/A           42940    C+G   ...App_cw5n1h2txyewy\LockApp.exe      N/A      |
+|    0   N/A  N/A           43012    C+G   ...Bambu Studio\bambu-studio.exe      N/A      |
+|    0   N/A  N/A           43520    C+G   ...grams\LM Studio\LM Studio.exe      N/A      |
+|    0   N/A  N/A           45828    C+G   ....0.4234.32\msedgewebview2.exe      N/A      |
+|    0   N/A  N/A           47744    C+G   ..._pzs8sxrjxfjjc\app\claude.exe      N/A      |
+|    0   N/A  N/A           50916    C+G   ....0.4234.48\msedgewebview2.exe      N/A      |
+|    0   N/A  N/A           52724    C+G   ...Browser\Application\brave.exe      N/A      |
+|    0   N/A  N/A           56204    C+G   ...SnippingTool\SnippingTool.exe      N/A      |
+|    0   N/A  N/A           57868    C+G   ...2p2nqsd0c76g0\app\ChatGPT.exe      N/A      |
+|    0   N/A  N/A           58464    C+G   ...\codex-computer-use-swift.exe      N/A      |
+|    0   N/A  N/A           59364      C   ...-avx2-2.43.0\llama-server.exe      N/A      |
+|    0   N/A  N/A           60488    C+G   ...2p2nqsd0c76g0\app\ChatGPT.exe      N/A      |
+|    0   N/A  N/A           64448    C+G   ...s\Python\Python313\python.exe      N/A      |
++-----------------------------------------------------------------------------------------+
+[nvidia-smi query] name, memory.total [MiB], memory.used [MiB], driver_version
+NVIDIA GeForce RTX 5070, 12227 MiB, 9864 MiB, 591.86
+
+### LOCAL_LLM
+[lmstudio] HTTP 200
+[lmstudio] model_count=11
+[lmstudio] model: qwen/qwen3.5-9b
+[lmstudio] model: google/gemma-4-12b-qat
+[lmstudio] model: qwen3.5-4b-uncensored-hauhaucs-aggressive
+[lmstudio] model: prism-ml/bonsai-27b
+[lmstudio] model: google/gemma-4-e4b
+[lmstudio] model: qwen3.5-9b-uncensored-hauhaucs-aggressive
+[lmstudio] model: zai-org/glm-4.6v-flash
+[lmstudio] model: text-embedding-nomic-embed-text-v1.5
+[lmstudio] model: qwen/qwen3-4b-thinking-2507
+[lmstudio] model: liquid/lfm2-1.2b
+[lmstudio] model: deepseek/deepseek-r1-0528-qwen3-8b
+[ollama] HTTP 200
+[ollama] model_count=11
+[ollama] model: deepseek-v3.1:671b-cloud
+[ollama] model: llama3:latest
+[ollama] model: mistral-nemo:12b
+[ollama] model: qwen2.5:14b
+[ollama] model: qwen2.5:3b
+[ollama] model: qwen3:14b
+[ollama] model: qwen3-embedding:latest
+[ollama] model: llama3.2:3b
+[ollama] model: nomic-embed-text:latest
+[ollama] model: qwen3:8b
+[ollama] model: qwen3.5:latest
+
+### PORTS
+[port 1234] LISTEN pid=42984 proc=LM Studio
+[port 11434] LISTEN pid=7368 proc=wslrelay
+[port 5432] LISTEN pid=7368 proc=wslrelay
+[port 6379] LISTEN pid=7368 proc=wslrelay
+[port 8000] free
+[port 5678] free
+[port 5173] free
+
+### ENV_VARS
+[relevant_env_names] ANTHROPIC_BASE_URL
+LMSTUDIO_USE_CUDA
+OLLAMA_HOST
+OLLAMA_NUM_THREADS
+OLLAMA_USE_GPU
+OPENAI_API_KEY
+
+### GIT_STATE
+[git rev-parse] fatal: not a git repository (or any of the parent directories): .git
+[git status] fatal: not a git repository (or any of the parent directories): .git
+[git log] fatal: not a git repository (or any of the parent directories): .git
+[git config user.name] RoBoT_DinG_dONg
+
+### FILE_INVENTORY
+    4217  AGENTS.md
+    6972  docs\PHASES.md
+    6327  docs\SPEC_AMENDMENTS.md
+       0  docs\audit\probe_output.txt
+    5247  docs\audit\probe.ps1
+   30781  docs\spec\OMNIGROWTH_SPEC.md
+    2862  prompts\01_KICKOFF.md
+    1039  prompts\02_PHASE_TEMPLATE.md
+    1775  skills\omnigrowth-debug-loop\SKILL.md
+    1930  skills\omnigrowth-phase-gate\SKILL.md
+
+### END
+probe complete

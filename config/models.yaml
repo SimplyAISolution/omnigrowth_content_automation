@@ -1,0 +1,19 @@
+# Model routing configuration (ADR-0002, A1). No model names live in Python.
+# Base URL resolution: env OMNIGROWTH_LOCAL_LLM_URL > preset > error.
+# Roles are filled in Phase 3; Phase 2 only needs the provider presets for the health check.
+
+presets:
+  lmstudio:
+    base_url_host: "http://127.0.0.1:1234/v1"
+    base_url_docker: "http://host.docker.internal:1234/v1"
+  ollama:
+    base_url_host: "http://127.0.0.1:11434/v1"
+    base_url_docker: "http://host.docker.internal:11434/v1"
+
+# Models whose name matches any of these globs are forced REMOTE even behind a local preset
+# (PHASE0_AUDIT R3: Ollama exposes `deepseek-v3.1:671b-cloud`).
+remote_patterns:
+  - "*-cloud"
+  - "*:cloud"
+
+roles: {}

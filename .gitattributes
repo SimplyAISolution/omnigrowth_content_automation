@@ -1,0 +1,6 @@
+# Normalize line endings: LF in the repo and in Docker build contexts (Windows host, A10).
+* text=auto eol=lf
+*.ps1 text eol=crlf
+*.png binary
+*.jpg binary
+*.pdf binary

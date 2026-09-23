@@ -1,0 +1,143 @@
+[project]
+name = "omnigrowth"
+version = "0.1.0"
+description = "OmniGrowth: local-first multi-platform content operating system"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "pydantic>=2.8",
+    "pydantic-settings>=2.4",
+    "sqlalchemy[asyncio]>=2.0.32",
+    "psycopg[binary]>=3.2",
+    "alembic>=1.13",
+    "pgvector>=0.3",
+    "redis>=5.0",
+    "rq>=1.16",
+    "httpx>=0.27",
+    "argon2-cffi>=23.1",
+    "pyyaml>=6.0",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.6",
+    "mypy>=1.11",
+    "pytest>=8.3",
+    "pytest-asyncio>=0.24",
+    "poethepoet>=0.28",
+    "bandit>=1.7",
+    "pip-audit>=2.7",
+    "import-linter>=2.0",
+    "types-PyYAML>=6.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["omnigrowth"]
+
+# ---------------------------------------------------------------- poe tasks
+# Single command surface (ADR-0005): `uv run poe <task>` in any shell.
+[tool.poe.tasks]
+fmt = "ruff format omnigrowth tests alembic"
+lint = "ruff check omnigrowth tests alembic"
+type = "mypy omnigrowth"
+imports = "lint-imports"
+test = "pytest -m \"not live_llm and not integration\""
+test-int = "pytest -m integration"
+test-live = "pytest -m live_llm"
+security = [
+    { cmd = "bandit -q -r omnigrowth -c pyproject.toml" },
+    { cmd = "pip-audit" },
+]
+migrate = "alembic upgrade head"
+heads = "alembic heads"
+api = "uvicorn omnigrowth.api.app:create_app --factory --loop omnigrowth.core.aio:loop_factory --host 127.0.0.1 --port 8000"
+# Worker reads REDIS_URL from Settings (.env); uses a fork-free worker on native Windows.
+worker = "python -m omnigrowth.workflows.worker"
+scheduler = "python -m omnigrowth.scheduling"
+
+[tool.poe.tasks.check]
+help = "Canonical gate (AGENTS.md §4 + ADR-0005)"
+sequence = [
+    { cmd = "ruff format --check omnigrowth tests alembic" },
+    { cmd = "ruff check omnigrowth tests alembic" },
+    { cmd = "mypy omnigrowth" },
+    { cmd = "lint-imports" },
+    { cmd = "pytest -m \"not live_llm and not integration\"" },
+]
+
+# ---------------------------------------------------------------- ruff
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "S", "BLE", "SIM", "RUF", "N", "ASYNC"]
+ignore = ["RUF012"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "S105", "S106", "ASYNC240"]
+"alembic/**" = ["N999"]
+"alembic/versions/**" = ["E501"]  # generated DDL strings
+
+# ---------------------------------------------------------------- mypy
+[tool.mypy]
+python_version = "3.12"
+strict = true
+plugins = ["pydantic.mypy"]
+warn_unused_ignores = true
+
+[[tool.mypy.overrides]]
+module = ["rq.*", "pgvector.*"]
+ignore_missing_imports = true
+
+# ---------------------------------------------------------------- pytest
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# basetemp inside the repo: the sandboxed Windows user temp dir is not writable for pytest.
+addopts = "--basetemp=.pytest-tmp -p no:cacheprovider"
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+markers = [
+    "integration: needs running Postgres/Redis (docker compose)",
+    "live_llm: calls a real local LLM endpoint",
+]
+filterwarnings = ["error::DeprecationWarning:omnigrowth.*"]
+
+# ---------------------------------------------------------------- bandit
+[tool.bandit]
+exclude_dirs = ["tests"]
+
+# ---------------------------------------------------------------- import-linter
+# ARCHITECTURE.md §3 layering rules.
+[tool.importlinter]
+root_package = "omnigrowth"
+
+[[tool.importlinter.contracts]]
+name = "api does not import providers, publishing or models directly"
+type = "forbidden"
+source_modules = ["omnigrowth.api"]
+forbidden_modules = ["omnigrowth.providers", "omnigrowth.publishing", "omnigrowth.models"]
+
+[[tool.importlinter.contracts]]
+name = "core depends on nothing inside omnigrowth"
+type = "forbidden"
+source_modules = ["omnigrowth.core"]
+forbidden_modules = [
+    "omnigrowth.api", "omnigrowth.models", "omnigrowth.storage", "omnigrowth.services",
+    "omnigrowth.providers", "omnigrowth.publishing", "omnigrowth.workflows",
+]
+
+[[tool.importlinter.contracts]]
+name = "models depend only on core"
+type = "forbidden"
+source_modules = ["omnigrowth.models"]
+forbidden_modules = [
+    "omnigrowth.api", "omnigrowth.storage", "omnigrowth.services",
+    "omnigrowth.providers", "omnigrowth.publishing", "omnigrowth.workflows",
+]
