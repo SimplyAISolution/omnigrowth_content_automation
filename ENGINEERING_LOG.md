@@ -261,3 +261,67 @@ KNOWN ISSUES:
 DECISIONS NEEDED: none blocking. Optional: accept the DOCX 100:1 ratio as a SPEC_AMENDMENT.
 NEXT PHASE: 5 — Campaign intelligence (Strategy, Research, Opportunity, Planner agents)
 ```
+
+## 2026-09-24 — Phase 5 debug-loop entries
+1. Symptom: live planning run FAILED, strategy agent LLM_OUTPUT_INVALID on all 3 attempts (research needed 1 repair).
+   Reproduce: `uv run pytest tests/integration/test_live_planning.py -m live_llm`. Evidence: every failed call had
+   output_tokens == max_tokens (2048) while the visible content was only `{"positioning": "Trusted advisor on secure,`;
+   LM Studio loaded context 70144, so the model limit was not the cause. Cause: qwen3.5-9b spends most of the output
+   budget on hidden reasoning; the per-prompt max_tokens truncated the JSON. Fix: raise max_tokens (research/planner
+   8192, strategy 6144, opportunity 12288; v1 files were never released, input hashes unaffected). Also added
+   raw_head of failed calls to the live report. Verify: live run 1 passed in 261.31s, all agents first attempt.
+2. Reviewer MAJOR #1: agent_runs left RUNNING when a job crashed or timed out (run_agent only handles domain errors).
+   Fix: record_planning_failure(job_id=...) fails RUNNING agent_runs with the job's correlation id (AR3) on job failure
+   and in the reaper; crash codes per job kind (planning: MODEL_TIMEOUT on RQ timeout, else INTERNAL_ERROR).
+   Verify: test_crash_mid_pipeline_fails_the_running_agent_and_retry_supersedes_mix.
+3. Reviewer MAJOR #2: a trivial quote ("local") kept SOURCE_STATED. Fix: excerpt must be >= 20 chars, a verbatim
+   quote, and contain every number in the claim; otherwise NEEDS_VERIFICATION. Verify: unit test added.
+
+```
+PHASE 5 — Campaign intelligence — GATE_PASSED (commit pending)
+COMPLETED:
+  - agents/base.py run_agent: AGENT_RUN machine (AR1-AR3, new), pinned prompt_version_id (ensure_prompt_version),
+    PII-free input_ref, generate_structured + DbRunRecorder, commit before/after the model call
+  - Agents (prompt file + Pydantic schema + deterministic post-processing), all PRIVATE / REASONING_LOCAL:
+    research (A5: no web, labels, verbatim-quote + number check, no citations), strategy (platforms clamped to the
+    campaign), opportunity (>=20 ideas, every AngleType enforced in the schema -> repair loop; platforms/evidence
+    cleaned), planner (7-day, relative days/hours; windows computed in the campaign timezone after the call)
+  - campaigns/orchestrator.py: research -> strategy -> ideas -> deterministic mix selection (CONTENT_IDEA machine,
+    new; CI2/CI4) -> plan; commit per step; C3 on success, C4 via the job runner (also crashes + reaper)
+  - Campaign API: POST /campaigns, /campaigns/wizard (inline source, optional generate), GET list/detail,
+    POST /{id}/generate (C2/C5, has_source guard, CAMPAIGN_PLANNING job), /{id}/activate (C7),
+    GET /{id}/strategy, /research-packet, /ideas, /plan
+  - FakeProvider record mode + CannedProvider; canonical answers (scripts/author_canonical_llm.py) recorded into
+    tests/fixtures/llm/<prompt_id>/v1/<input_hash>.json; prompts treat user-message content as untrusted data
+TESTS (run this session, 2026-09-24):
+  uv run poe check -> 151 files already formatted / All checks passed! / Success: no issues found in 112 source
+                      files / Contracts: 4 kept, 0 broken. / 505 passed, 61 deselected in 5.86s
+  uv run poe test-int -> 59 passed, 507 deselected in 17.52s (incl. 5 planning tests: gate orchestration,
+    has_source guard, model-down -> FAILED -> retry, crash mid-pipeline -> AR3 + retry supersedes mix, VIEWER 403)
+  Orchestration gate (FakeProvider fixtures): source -> research packet (7 claims, 1 fabricated quote downgraded)
+    -> strategy (REDDIT clamped out) -> 24 ideas across all 8 angles (first answer missing CASE_STUDY -> 1 repair)
+    -> 7 selected -> 8 plan items covering days 1-7 -> READY_FOR_REVIEW -> activate -> ACTIVE
+  LIVE (LM Studio qwen/qwen3.5-9b, final prompts): tests/integration/test_live_planning.py -> 1 passed in 216.94s;
+    docs/audit/phase5_live_planning.json: SUCCEEDED, 25 ideas / 8 angles, 7 plan items / 7 days, 5 claims,
+    every agent first attempt (research 60 s, strategy 33 s, opportunity 65 s, planner 55 s)
+  alembic heads -> 83579cc9b1d2 (head) (no schema change this phase)
+REVIEWER: CRITICAL 0 · MAJOR 2 · MINOR 7
+  Fixed: MAJOR #1 orphaned RUNNING agent runs, MAJOR #2 trivial-quote provenance; MINOR #3 ideas list uses the
+  latest SUCCEEDED run + older mix deselected (CI4 now also SYSTEM), #4 crash error codes per job kind, #5 wizard
+  validates references before ingesting, #6 untrusted-data instruction + SOURCE markers, #8 plan item angle taken
+  from the referenced idea.
+KNOWN ISSUES:
+  - Timing: a live pipeline takes ~3.5-4.5 min; RQ job_timeout is 600 s and the reaper cutoff 900 s. Repairs on a slow
+    model can exceed 600 s (job -> FAILED MODEL_TIMEOUT, retryable). Recommend a per-queue timeout for `agents`.
+  - #5 wizard is not fully atomic (dispatch failure leaves a FAILED campaign); no Idempotency-Key on /generate and
+    /wizard yet (same gap as sources).
+  - #7 C3 guard plan_complete is enforced by the orchestrator path, not the machine; C4 reason records the error
+    code but not the failing agent_run id (the agent run itself is FAILED with the same correlation id).
+  - Planner idea_ref beyond the selected mix becomes content_idea_id NULL rather than a repair.
+  - plan_items unique (campaign, horizon, ordinal) includes archived rows, so a replan replaces the plan; the prior
+    plan survives only in the planner agent_run output. /replan, strategy PATCH/regenerate, 14/30-day plans,
+    BUDGET_EXCEEDED pre-flight and ResearchProvider interface are not built yet.
+  - Gate fixtures are hand-authored canonical answers (schema-valid by construction); the live run is the real check.
+DECISIONS NEEDED: none blocking. Optional: per-queue job timeout for agents (see above).
+NEXT PHASE: 6 — Generation + QA + versioning
+```

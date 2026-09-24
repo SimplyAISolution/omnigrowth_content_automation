@@ -18,11 +18,16 @@ from rq.timeouts import JobTimeoutException
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from omnigrowth.agents.base import AgentDeps
+from omnigrowth.campaigns.orchestrator import plan_campaign
 from omnigrowth.core import aio
 from omnigrowth.core.enums import JobKind, JobStatus
 from omnigrowth.core.errors import ErrorCode, OmniGrowthError
 from omnigrowth.core.logging import bind_context
 from omnigrowth.core.settings import get_settings
+from omnigrowth.prompts import PromptRegistry
+from omnigrowth.providers.factory import build_router
+from omnigrowth.services import campaigns as campaign_service
 from omnigrowth.services import jobs as job_service
 from omnigrowth.services import sources as source_service
 from omnigrowth.storage.db import get_engine, get_sessionmaker
@@ -41,11 +46,25 @@ _UNEXPECTED: tuple[type[BaseException], ...] = (
     JobTimeoutException,
 )
 
+
+def _crash_code(kind: JobKind, exc: BaseException) -> ErrorCode:
+    if isinstance(exc, SQLAlchemyError):
+        return ErrorCode.DATABASE_FAILURE
+    if kind is JobKind.SOURCE_INGEST:
+        return ErrorCode.INGESTION_FAILURE
+    if isinstance(exc, JobTimeoutException):
+        # A planning job only runs this long when the model is slow.
+        return ErrorCode.MODEL_TIMEOUT
+    return ErrorCode.INTERNAL_ERROR
+
+
 Handler = Callable[[AsyncSession, job_service.JobView], Awaitable[dict[str, Any]]]
 
 
 def _handlers(
-    store: UploadStore | None, fetcher: source_service.Fetcher | None
+    store: UploadStore | None,
+    fetcher: source_service.Fetcher | None,
+    agent_deps: AgentDeps | None,
 ) -> dict[JobKind, Handler]:
     upload_store = store or UploadStore(get_settings().upload_dir)
 
@@ -58,7 +77,26 @@ def _handlers(
             session, job.subject_id, store=upload_store, fetcher=fetcher
         )
 
-    return {JobKind.SOURCE_INGEST: source_ingest}
+    async def campaign_planning(session: AsyncSession, job: job_service.JobView) -> dict[str, Any]:
+        if job.subject_id is None:
+            raise OmniGrowthError(ErrorCode.VALIDATION_FAILURE, "job has no subject")
+        if agent_deps is not None:
+            return await plan_campaign(
+                session, job.subject_id, deps=agent_deps, correlation_id=str(job.id)
+            )
+        router = build_router(get_settings())
+        try:
+            deps = AgentDeps(router=router, registry=PromptRegistry.load())
+            return await plan_campaign(
+                session, job.subject_id, deps=deps, correlation_id=str(job.id)
+            )
+        finally:
+            await router.aclose()
+
+    return {
+        JobKind.SOURCE_INGEST: source_ingest,
+        JobKind.CAMPAIGN_PLANNING: campaign_planning,
+    }
 
 
 async def _on_failure(
@@ -67,6 +105,8 @@ async def _on_failure(
     await session.rollback()
     if job.kind is JobKind.SOURCE_INGEST and job.subject_id is not None:
         await source_service.record_failure(session, job.subject_id, exc)
+    if job.kind is JobKind.CAMPAIGN_PLANNING and job.subject_id is not None:
+        await campaign_service.record_planning_failure(session, job.subject_id, exc, job_id=job.id)
     await job_service.mark_failed(session, job, exc)
     await session.commit()
 
@@ -76,6 +116,7 @@ async def execute_job(
     *,
     store: UploadStore | None = None,
     fetcher: source_service.Fetcher | None = None,
+    agent_deps: AgentDeps | None = None,
 ) -> JobStatus:
     """Run one job to a terminal state. Returns the final status."""
     async with get_sessionmaker()() as session:
@@ -84,7 +125,7 @@ async def execute_job(
             if job.status is not JobStatus.QUEUED:
                 log.info("job already processed", extra={"job_id": str(job_id)})
                 return job.status
-            handler = _handlers(store, fetcher).get(job.kind)
+            handler = _handlers(store, fetcher, agent_deps).get(job.kind)
             await job_service.mark_running(session, job)
             await session.commit()
             job = await job_service.get_job(session, job_id)
@@ -105,11 +146,7 @@ async def execute_job(
             except _UNEXPECTED as exc:
                 # Known infrastructure/library failures must not leave the job RUNNING.
                 log.exception("job crashed", extra={"job_id": str(job_id)})
-                code = (
-                    ErrorCode.DATABASE_FAILURE
-                    if isinstance(exc, SQLAlchemyError)
-                    else ErrorCode.INGESTION_FAILURE
-                )
+                code = _crash_code(job.kind, exc)
                 wrapped = OmniGrowthError(
                     code, "job crashed", details={"reason": type(exc).__name__}
                 )
@@ -149,6 +186,13 @@ async def reap_stuck_jobs(now: datetime | None = None) -> int:
                     session,
                     job.subject_id,
                     OmniGrowthError(ErrorCode.QUEUE_FAILURE, "ingest job never finished"),
+                )
+            if job.kind is JobKind.CAMPAIGN_PLANNING and job.subject_id is not None:
+                await campaign_service.record_planning_failure(
+                    session,
+                    job.subject_id,
+                    OmniGrowthError(ErrorCode.QUEUE_FAILURE, "planning job never finished"),
+                    job_id=job.id,
                 )
             await session.commit()
             reaped += 1

@@ -1,11 +1,11 @@
 ```
-phase: 4
-task: phase-4-gate
+phase: 5
+task: phase-5-gate
 gate: GATE_PASSED
-last_green_commit: 857288f
-next_phase: 5 — Campaign intelligence
+last_green_commit: 8dd911a
+next_phase: 6 — Generation + QA + versioning
 shell: PowerShell Core 7.6.6 (Git Bash also available)
-blockers: Phase 3 + 4 commits pending (signing)
+blockers: Phase 5 commit pending (signing)
 ```
 
 ## Notes
@@ -15,3 +15,4 @@ blockers: Phase 3 + 4 commits pending (signing)
 - Windows: psycopg async needs a selector event loop → `omnigrowth.core.aio` (tests, scheduler, `poe api --loop`). RQ on Windows uses `WindowsWorker` (SimpleWorker + TimerDeathPenalty) via `poe worker`.
 - Phase 3: model layer (providers, router, structured generation, prompt registry, model probe). Live smoke on LM Studio qwen/qwen3.5-9b passed; see docs/audit/phase3_*.json.
 - Phase 4: auth, brand system, ingestion parsers, SSRF-guarded URL ingestion, sources API + durable jobs, body/rate limits. First OWNER: `uv run poe create-owner --email you@example.com`.
+- Phase 5: planning agents (research/strategy/opportunity/planner), orchestrator, campaign API. Live planning on LM Studio qwen/qwen3.5-9b passed (~3.5 min); see docs/audit/phase5_live_planning.json.

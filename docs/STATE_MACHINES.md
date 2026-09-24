@@ -553,3 +553,27 @@ as a new row, so retry is the only recovery path for transient failures.
 | JB4 | RUNNING | FAILED | `fail` (domain error, or known infrastructure error wrapped) | SYSTEM |
 | JB5 | QUEUED | CANCELLED | `cancel` (also when the queue is unreachable at dispatch) | H:OWNER,EDITOR; SYSTEM |
 | JB6 | RUNNING | FAILED | `reap` (RUNNING longer than 15 min: worker died / RQ timeout) | SCHEDULER |
+
+### 7.3 AgentRun (`agent_run_status`, added Phase 5)
+One row per specialised agent call (`agents/base.py::run_agent`). The row is inserted and
+committed `RUNNING` before the model is called, so an attempt is visible even if the worker
+dies; its `model_runs` rows link to it. Terminal states are final: a rerun is a new row.
+
+| ID | From | To | Trigger | Actors |
+|---|---|---|---|---|
+| AR1 | — | RUNNING | `start` (pins `prompt_version_id`, records `input_ref`) | SYSTEM; AGENT; H:OWNER,EDITOR |
+| AR2 | RUNNING | SUCCEEDED | `succeed` (stores validated `output`, `finished_at`) | SYSTEM |
+| AR3 | RUNNING | FAILED | `fail` (stores `error_code`, `finished_at`) | SYSTEM |
+
+### 7.4 ContentIdea (`content_idea_status`, added Phase 5)
+Ideas are created by the Opportunity Agent (CI1). The planning pipeline's deterministic mix
+selection moves the chosen ideas to `SELECTED` (CI2, SYSTEM). A newer planning run moves
+the previous mix back to `PROPOSED` (CI4, SYSTEM); only humans restore a discarded idea. An agent can create ideas but never select them.
+
+| ID | From | To | Trigger | Actors |
+|---|---|---|---|---|
+| CI1 | — | PROPOSED | `create` | AGENT; SYSTEM |
+| CI2 | PROPOSED | SELECTED | `select` | SYSTEM; H:OWNER,EDITOR |
+| CI3 | PROPOSED | DISCARDED | `discard` | SYSTEM; H:OWNER,EDITOR |
+| CI4 | SELECTED | PROPOSED | `deselect` (SYSTEM: a newer planning run supersedes the mix) | SYSTEM; H:OWNER,EDITOR |
+| CI5 | DISCARDED | PROPOSED | `restore` | H:OWNER,EDITOR |

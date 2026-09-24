@@ -2,9 +2,11 @@
 
 from omnigrowth.core.state_machines.apply import apply_transition, create_with_state
 from omnigrowth.core.state_machines.definitions import (
+    AGENT_RUN,
     ALL_MACHINES,
     CAMPAIGN,
     CONTENT_ASSET,
+    CONTENT_IDEA,
     EXPERIMENT,
     JOB,
     PUBLICATION,
@@ -14,9 +16,11 @@ from omnigrowth.core.state_machines.definitions import (
 from omnigrowth.core.state_machines.machine import Actor, StateMachine, Transition
 
 __all__ = [
+    "AGENT_RUN",
     "ALL_MACHINES",
     "CAMPAIGN",
     "CONTENT_ASSET",
+    "CONTENT_IDEA",
     "EXPERIMENT",
     "JOB",
     "PUBLICATION",

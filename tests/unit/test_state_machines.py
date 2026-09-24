@@ -81,7 +81,14 @@ def test_agent_only_records_its_own_output() -> None:
     agent_triggers = {
         (m.name, t.trigger) for m in ALL_MACHINES for t in m.transitions if t.allows(AGENT)
     }
-    assert agent_triggers <= {("content_asset", "generated"), ("job", "enqueue")}
+    # Agents may only record their own work: generated content, their own run, ideas they
+    # produced, and follow-up jobs. They can never approve, schedule, publish or select.
+    assert agent_triggers <= {
+        ("content_asset", "generated"),
+        ("job", "enqueue"),
+        ("agent_run", "start"),
+        ("content_idea", "create"),
+    }
 
 
 def test_unknown_transition_is_invalid_state_transition() -> None:

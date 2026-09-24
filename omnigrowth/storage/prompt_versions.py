@@ -54,37 +54,38 @@ async def get_prompt_version_id(session: AsyncSession, prompt: Prompt) -> uuid.U
     return found
 
 
+async def ensure_prompt_version(session: AsyncSession, prompt: Prompt) -> uuid.UUID:
+    """Id of ``prompt``'s stored row, inserting it first if absent (CONFLICT if changed)."""
+    existing = await get_prompt_version_id(session, prompt)
+    if existing is not None:
+        return existing
+    row = PromptVersion(
+        id=uuid7(),
+        domain=prompt.domain,
+        name=prompt.name,
+        version=prompt.version,
+        content_hash=prompt.content_hash,
+        front_matter=prompt.front_matter.model_dump(mode="json"),
+        body=prompt.text,
+    )
+    session.add(row)
+    try:
+        await session.flush([row])
+    except IntegrityError as exc:
+        # Lost a race with a concurrent loader inserting the same (domain, name, version).
+        raise OmniGrowthError(
+            ErrorCode.CONFLICT,
+            f"prompt {prompt.ref} was inserted concurrently; retry the sync",
+            details={"ref": prompt.ref},
+            retryable=True,
+        ) from exc
+    except SQLAlchemyError as exc:
+        raise _db_failure("insert", exc) from exc
+    return row.id
+
+
 async def sync_prompt_versions(
     session: AsyncSession, registry: PromptRegistry
 ) -> dict[str, uuid.UUID]:
     """Insert missing prompt versions, verify existing ones; return ``ref -> id``."""
-    result: dict[str, uuid.UUID] = {}
-    for prompt in registry:
-        existing = await get_prompt_version_id(session, prompt)
-        if existing is not None:
-            result[prompt.ref] = existing
-            continue
-        row = PromptVersion(
-            id=uuid7(),
-            domain=prompt.domain,
-            name=prompt.name,
-            version=prompt.version,
-            content_hash=prompt.content_hash,
-            front_matter=prompt.front_matter.model_dump(mode="json"),
-            body=prompt.text,
-        )
-        session.add(row)
-        try:
-            await session.flush([row])
-        except IntegrityError as exc:
-            # Lost a race with a concurrent loader inserting the same (domain, name, version).
-            raise OmniGrowthError(
-                ErrorCode.CONFLICT,
-                f"prompt {prompt.ref} was inserted concurrently; retry the sync",
-                details={"ref": prompt.ref},
-                retryable=True,
-            ) from exc
-        except SQLAlchemyError as exc:
-            raise _db_failure("insert", exc) from exc
-        result[prompt.ref] = row.id
-    return result
+    return {prompt.ref: await ensure_prompt_version(session, prompt) for prompt in registry}

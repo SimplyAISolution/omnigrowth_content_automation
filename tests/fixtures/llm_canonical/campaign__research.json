@@ -1,0 +1,53 @@
+{
+  "responses": [
+    {
+      "summary": "The source argues that local AI agents let small businesses keep proprietary data on their own hardware and run routine drafting and classification on a 12 GB consumer GPU without per-token fees, while conceding that frontier models still lead at long multi-step reasoning.",
+      "claims": [
+        {
+          "claim": "Local AI agents keep proprietary data on the machine instead of a cloud.",
+          "label": "SOURCE_STATED",
+          "source_excerpt": "Local AI agents keep proprietary data on the machine"
+        },
+        {
+          "claim": "A 9B-parameter model is practical on a consumer GPU with 12 GB of VRAM.",
+          "label": "SOURCE_STATED",
+          "source_excerpt": "Running a 9B-parameter model on a consumer GPU with 12 GB of VRAM is now practical"
+        },
+        {
+          "claim": "Running routine work such as ticket summaries locally avoids per-token fees.",
+          "label": "SOURCE_STATED",
+          "source_excerpt": "avoids per-token cloud fees"
+        },
+        {
+          "claim": "Local models are weaker than frontier models at long, multi-step reasoning.",
+          "label": "SOURCE_STATED",
+          "source_excerpt": "Local models are still weaker than frontier models at long, multi-step reasoning"
+        },
+        {
+          "claim": "Switching to local AI cuts a small business's AI costs by 80%.",
+          "label": "SOURCE_STATED",
+          "source_excerpt": "cuts AI costs by 80%"
+        },
+        {
+          "claim": "Most small teams will run a hybrid local/cloud setup within two years.",
+          "label": "OPINION",
+          "source_excerpt": null
+        },
+        {
+          "claim": "Cloud LLM API prices keep falling every year.",
+          "label": "NEEDS_VERIFICATION",
+          "source_excerpt": null
+        }
+      ],
+      "opposing_perspectives": [
+        "Cloud providers offer contractual data protection that may be enough for most teams.",
+        "Hardware, power and maintenance can outweigh per-token fees at low volumes."
+      ],
+      "open_questions": [
+        "What does a local setup cost per month for a five-person team?",
+        "Which everyday tasks are good enough on a 9B model?",
+        "How do you decide what stays local and what goes to the cloud?"
+      ]
+    }
+  ]
+}

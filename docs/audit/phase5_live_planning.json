@@ -1,0 +1,116 @@
+{
+  "ran_at": "2026-09-24T18:30:06.466789+00:00",
+  "elapsed_s": 214.7,
+  "job_status": "SUCCEEDED",
+  "job_error_code": null,
+  "job_result": {
+    "ideas": 25,
+    "agent_runs": {
+      "planner": "01a0d4ad-bcfd-7a70-91d2-82429f57e779",
+      "research": "01a0d4ab-519e-756a-b51f-6c50f3ae8e24",
+      "strategy": "01a0d4ac-3c93-7b73-90a7-bd43929ab19f",
+      "opportunity": "01a0d4ac-be55-71c9-82aa-000790dc743c"
+    },
+    "plan_items": 7,
+    "campaign_id": "01a0d4ab-4eaf-7da4-b0be-649635745ad4",
+    "selected_ideas": 7,
+    "research_claims": 5,
+    "claims_downgraded": 0
+  },
+  "campaign_status": "READY_FOR_REVIEW",
+  "ideas": 25,
+  "angles": [
+    "CASE_STUDY",
+    "COMPARISON",
+    "CONTRARIAN",
+    "DATA_DRIVEN",
+    "EDUCATIONAL",
+    "OPINION",
+    "STORY",
+    "TACTICAL"
+  ],
+  "plan_items": 7,
+  "plan_days": [
+    "2026-10-05",
+    "2026-10-06",
+    "2026-10-07",
+    "2026-10-08",
+    "2026-10-09",
+    "2026-10-10",
+    "2026-10-11"
+  ],
+  "agent_runs": [
+    {
+      "agent": "research",
+      "status": "SUCCEEDED",
+      "error_code": null,
+      "calls": [
+        {
+          "provider": "lmstudio",
+          "model": "qwen/qwen3.5-9b",
+          "attempt_no": 0,
+          "mode": "json_schema",
+          "status": "SUCCEEDED",
+          "error_code": null,
+          "latency_ms": 60113,
+          "output_tokens": 5471,
+          "raw_head": null
+        }
+      ]
+    },
+    {
+      "agent": "strategy",
+      "status": "SUCCEEDED",
+      "error_code": null,
+      "calls": [
+        {
+          "provider": "lmstudio",
+          "model": "qwen/qwen3.5-9b",
+          "attempt_no": 0,
+          "mode": "json_schema",
+          "status": "SUCCEEDED",
+          "error_code": null,
+          "latency_ms": 33194,
+          "output_tokens": 3044,
+          "raw_head": null
+        }
+      ]
+    },
+    {
+      "agent": "opportunity",
+      "status": "SUCCEEDED",
+      "error_code": null,
+      "calls": [
+        {
+          "provider": "lmstudio",
+          "model": "qwen/qwen3.5-9b",
+          "attempt_no": 0,
+          "mode": "json_schema",
+          "status": "SUCCEEDED",
+          "error_code": null,
+          "latency_ms": 65108,
+          "output_tokens": 5941,
+          "raw_head": null
+        }
+      ]
+    },
+    {
+      "agent": "planner",
+      "status": "SUCCEEDED",
+      "error_code": null,
+      "calls": [
+        {
+          "provider": "lmstudio",
+          "model": "qwen/qwen3.5-9b",
+          "attempt_no": 0,
+          "mode": "json_schema",
+          "status": "SUCCEEDED",
+          "error_code": null,
+          "latency_ms": 55341,
+          "output_tokens": 5040,
+          "raw_head": null
+        }
+      ]
+    }
+  ]
+}

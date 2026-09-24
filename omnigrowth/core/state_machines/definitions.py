@@ -9,6 +9,12 @@ after evaluating the guard.
 from __future__ import annotations
 
 from omnigrowth.core.enums import (
+    AgentRunStatus,
+    ContentIdeaStatus,
+    JobStatus,
+    SourceAssetStatus,
+)
+from omnigrowth.core.enums import (
     CampaignStatus as C,
 )
 from omnigrowth.core.enums import (
@@ -17,7 +23,6 @@ from omnigrowth.core.enums import (
 from omnigrowth.core.enums import (
     ExperimentStatus as E,
 )
-from omnigrowth.core.enums import JobStatus, SourceAssetStatus
 from omnigrowth.core.enums import (
     PublicationJobStatus as J,
 )
@@ -238,6 +243,58 @@ SOURCE_ASSET = StateMachine(
     ),
 )
 
+
+# `agent_runs.status` (DATA_MODEL section 6.2): one row per agent invocation, RUNNING while
+# the model is called, then exactly one outcome. model_runs rows reference it (FK), so the
+# row must exist before the first provider call.
+AGENT_RUN = StateMachine(
+    name="agent_run",
+    states=AgentRunStatus,
+    terminal=frozenset({AgentRunStatus.SUCCEEDED.value, AgentRunStatus.FAILED.value}),
+    transitions=(
+        tr("AR1", None, AgentRunStatus.RUNNING, "start", SYSTEM, AGENT, OWNER_EDITOR),
+        tr("AR2", AgentRunStatus.RUNNING, AgentRunStatus.SUCCEEDED, "succeed", SYSTEM),
+        tr("AR3", AgentRunStatus.RUNNING, AgentRunStatus.FAILED, "fail", SYSTEM),
+    ),
+)
+
+# `content_ideas.status` (spec section 6 ContentIdea.status): the campaign-mix selection step
+# (and later humans) pick which ideas go into the plan.
+CONTENT_IDEA = StateMachine(
+    name="content_idea",
+    states=ContentIdeaStatus,
+    terminal=frozenset(),
+    transitions=(
+        tr("CI1", None, ContentIdeaStatus.PROPOSED, "create", AGENT, SYSTEM),
+        tr(
+            "CI2",
+            ContentIdeaStatus.PROPOSED,
+            ContentIdeaStatus.SELECTED,
+            "select",
+            SYSTEM,
+            OWNER_EDITOR,
+        ),
+        tr(
+            "CI3",
+            ContentIdeaStatus.PROPOSED,
+            ContentIdeaStatus.DISCARDED,
+            "discard",
+            SYSTEM,
+            OWNER_EDITOR,
+        ),
+        tr(
+            "CI4",
+            ContentIdeaStatus.SELECTED,
+            ContentIdeaStatus.PROPOSED,
+            "deselect",
+            SYSTEM,
+            OWNER_EDITOR,
+        ),
+        tr("CI5", ContentIdeaStatus.DISCARDED, ContentIdeaStatus.PROPOSED, "restore", OWNER_EDITOR),
+    ),
+)
+
+
 ALL_MACHINES = (
     CAMPAIGN,
     CONTENT_ASSET,
@@ -246,4 +303,6 @@ ALL_MACHINES = (
     EXPERIMENT,
     JOB,
     SOURCE_ASSET,
+    AGENT_RUN,
+    CONTENT_IDEA,
 )

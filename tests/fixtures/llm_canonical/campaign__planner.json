@@ -1,0 +1,112 @@
+{
+  "responses": [
+    {
+      "items": [
+        {
+          "day": 1,
+          "idea_ref": "I1",
+          "platform": "LINKEDIN",
+          "format": "TEXT_POST",
+          "angle": "TACTICAL",
+          "objective": "AUTHORITY",
+          "funnel_stage": "AWARENESS",
+          "cta": "Follow for the full local-AI checklist series",
+          "window_start_hour": 8,
+          "window_hours": 3,
+          "depends_on": null
+        },
+        {
+          "day": 2,
+          "idea_ref": "I2",
+          "platform": "X",
+          "format": "THREAD",
+          "angle": "CONTRARIAN",
+          "objective": "REACH",
+          "funnel_stage": "AWARENESS",
+          "cta": "Repost if your team pays per token",
+          "window_start_hour": 12,
+          "window_hours": 2,
+          "depends_on": null
+        },
+        {
+          "day": 3,
+          "idea_ref": "I3",
+          "platform": "LINKEDIN",
+          "format": "CAROUSEL",
+          "angle": "CASE_STUDY",
+          "objective": "AUTHORITY",
+          "funnel_stage": "CONSIDERATION",
+          "cta": "Book a free 20-minute local-AI readiness call",
+          "window_start_hour": 9,
+          "window_hours": 3,
+          "depends_on": 1
+        },
+        {
+          "day": 3,
+          "idea_ref": "I2",
+          "platform": "X",
+          "format": "TEXT_POST",
+          "angle": "CONTRARIAN",
+          "objective": "REACH",
+          "funnel_stage": "AWARENESS",
+          "cta": null,
+          "window_start_hour": 17,
+          "window_hours": 2,
+          "depends_on": 2
+        },
+        {
+          "day": 4,
+          "idea_ref": "I4",
+          "platform": "LINKEDIN",
+          "format": "DOCUMENT_CAROUSEL",
+          "angle": "COMPARISON",
+          "objective": "AUTHORITY",
+          "funnel_stage": "CONSIDERATION",
+          "cta": "Comment HYBRID for the comparison sheet",
+          "window_start_hour": 8,
+          "window_hours": 4,
+          "depends_on": null
+        },
+        {
+          "day": 5,
+          "idea_ref": "I5",
+          "platform": "LINKEDIN",
+          "format": "TEXT_POST",
+          "angle": "EDUCATIONAL",
+          "objective": "FOLLOWERS",
+          "funnel_stage": "AWARENESS",
+          "cta": "Follow for plain-English AI explainers",
+          "window_start_hour": 10,
+          "window_hours": 3,
+          "depends_on": null
+        },
+        {
+          "day": 6,
+          "idea_ref": "I6",
+          "platform": "X",
+          "format": "THREAD",
+          "angle": "DATA_DRIVEN",
+          "objective": "REACH",
+          "funnel_stage": "AWARENESS",
+          "cta": null,
+          "window_start_hour": 11,
+          "window_hours": 3,
+          "depends_on": null
+        },
+        {
+          "day": 7,
+          "idea_ref": "I7",
+          "platform": "LINKEDIN",
+          "format": "TEXT_POST",
+          "angle": "STORY",
+          "objective": "LEADS",
+          "funnel_stage": "CONVERSION",
+          "cta": "Book a free 20-minute local-AI readiness call",
+          "window_start_hour": 9,
+          "window_hours": 3,
+          "depends_on": 3
+        }
+      ]
+    }
+  ]
+}
