@@ -147,3 +147,117 @@ KNOWN ISSUES (MINOR, carried forward):
 DECISIONS NEEDED: none blocking Phase 3. The user should make the first signed commit (see chat).
 NEXT PHASE: 3 — Model layer
 ```
+
+## 2026-09-23 — Phase 3 debug-loop entries
+1. Symptom: lint-imports failed "api is not allowed to import omnigrowth.providers" via api.routes.health -> services.health.
+   Cause: the forbidden contract checked indirect imports, but ARCHITECTURE section 3 rule 1 forbids only direct ones. Fix: allow_indirect_imports=true on that contract. Verify: 4 kept, 0 broken.
+2. Symptom: models-probe timed out on lmstudio qwen/qwen3.5-9b (180 s) and got HTTP 400 for google/gemma-4-12b-qat, although the same qwen model answered in 8-15 s minutes earlier.
+   Cause (ENV): LM Studio and Ollama share one 12 GB GPU (9.6 GB in use); the preceding probe had loaded Ollama qwen3:14b. No app code patched around it.
+   Mitigation within scope: providers.concurrency_group (lmstudio + ollama = local_gpu) so the app never runs two local calls at once. Test: test_providers_in_one_concurrency_group_share_a_slot.
+
+```
+PHASE 3 — Model layer — GATE_PASSED (commit pending)
+COMPLETED:
+  - providers/: ChatProvider protocol; OpenAICompatibleProvider (LM Studio / Ollama / optional cloud; all transport failures
+    categorized; trust_env=False for local); FakeProvider (fixtures keyed prompt_id/v<version>/<input_hash>.json, missing = loud
+    failure; script mode); typed models.yaml config (presets, remote_patterns, providers, roles, costs, concurrency groups);
+    ModelRouter (LOCAL_ONLY/BALANCED/QUALITY_FIRST, PRIVATE never REMOTE incl. *-cloud behind Ollama, per-loop semaphores);
+    factory (env > preset > not built; cloud only with OMNIGROWTH_CLOUD_API_KEY); generate_structured (json_schema ->
+    json_object -> prompt-only, Pydantic validation, <=2 repairs, fallback on unavailable/timeout/rate-limit/budget,
+    prompt privacy/role enforced, raw output masked + persisted); probe_structured_mode (A1 capability probe)
+  - prompts/ (subagent): versioned registry, strict front-matter, safe {{ var }} rendering, deterministic input_hash;
+    system/structured_probe.v1.md
+  - storage/: DbRunRecorder (model_runs), sync_prompt_versions (immutable versions)
+  - services/model_probe.py + `poe models-probe` (per-model reachability, locality, structured mode); health LLM check now
+    goes through the provider (ARCHITECTURE section 3 rule 4); new import-linter contract "providers depend only on core"
+TESTS (run this session, 2026-09-23/24):
+  uv run poe check -> 91 files already formatted / All checks passed! / Success: no issues found in 68 source files /
+                      Contracts: 4 kept, 0 broken. / 310 passed, 17 deselected in 4.44s
+  uv run pytest -m integration -q -> 16 passed, 311 deselected in 6.38s
+  Gate failure tests: provider offline, timeout, rate limit (HTTP level: test_providers.py; fallback + all-fail:
+    test_structured_generation.py), malformed JSON x3 (attempts 0,1,2, raw persisted, no fallback; DB rows: test_model_runs.py)
+  uv run pytest -m live_llm -> 1 passed (docs/audit/phase3_live_llm.json: lmstudio qwen/qwen3.5-9b, json_schema, 1 attempt,
+    89 in / 702 out tokens, output {"topic": "Local AI agents versus cloud-hosted chatbots",
+    "keywords": ["privacy","latency","deployment"]} -- schema-valid)
+  uv run poe models-probe -> docs/audit/phase3_models_probe.json: ollama qwen3:8b OK json_schema; ollama qwen3:14b OK json_schema;
+    both embedding models listed; lmstudio qwen/qwen3.5-9b MODEL_TIMEOUT and gemma-4-12b-qat MODEL_UNAVAILABLE under GPU
+    contention (debug entry 2)
+  uv run alembic heads -> 83579cc9b1d2 (head)  (no schema change this phase)
+  docker compose up -d --build --wait -> all healthy; /api/v1/health {"status":"OK",...,"local_llm":"OK"}
+REVIEWER: BLOCKER 0 · MAJOR 2 · MINOR 13
+  Fixed MAJOR: #1 prompt privacy_class/role ignored -> enforced (stricter privacy wins, role mismatch rejected);
+               #2 no capability/locality probe -> probe_structured_mode + models-probe CLI.
+  Fixed MINOR: #3 detector blind spot (**splat flagged; model_runs.py allowlisted explicitly), #4 raw output masked,
+               #5 unpriced remote cost = unknown (None), #7 no system proxy for local, #9 format rejections recorded,
+               #10 budget checked before every remote call + falls back, #11 prompt temperature/max_tokens used (probe
+               max_tokens removed), #13 per-event-loop semaphores, #15 PRIVACY_VIOLATION under LOCAL_ONLY.
+KNOWN ISSUES (carried):
+  - #6 a LOCAL provider pointed at a non-loopback host is still treated as LOCAL (no host-based locality check).
+  - #8 capability cache is process-global and permanent (no TTL / per-schema key).
+  - #12 services/health keeps its own models.yaml URL resolver (duplicates factory.resolve_base_url).
+  - #14 Retry-After is captured but no same-candidate retry is attempted.
+  - GPU contention: running LM Studio and Ollama models side by side on the 12 GB GPU causes timeouts; recommend pointing all
+    roles at one server (the default models.yaml mixes both as fallbacks).
+  - Phase 2 carry-overs: superuser DB role, CI docker/windows jobs, dev hot-reload profile, env_file breadth.
+DECISIONS NEEDED: none blocking. Optional: choose ONE local LLM server for all roles (LM Studio or Ollama) to avoid GPU contention.
+NEXT PHASE: 4 — Brand system + ingestion (SSRF-guarded URL ingestion)
+```
+
+## 2026-09-24 — Phase 4 debug-loop entries
+1. Symptom: test_docx_upload_runs_through_ingest_job KeyError 'filename'. Cause: normalisation replaced
+   source metadata recorded at accept time. Fix: merge existing metadata in process_source. Verify: 14/14.
+2. Symptom (reviewer MAJOR 1): non-domain exceptions / RQ timeouts left jobs RUNNING forever. Fix: catch
+   SQLAlchemyError, httpx.HTTPError, OSError, UnicodeError, ValueError, JobTimeoutException in execute_job ->
+   FAILED; JOB transition JB6 `reap` + scheduler reaper (RUNNING > 15 min). Tests in test_phase4_hardening.py.
+
+```
+PHASE 4 — Brand system + ingestion — GATE_PASSED (commit pending; Phase 3 also uncommitted)
+COMPLETED:
+  - Auth (ADR-0006): argon2id passwords, opaque og_ bearer tokens stored as sha256 only, 12 h sessions,
+    login/logout/me, role dependencies (VIEWER/EDITOR/OWNER), `poe create-owner` bootstrap CLI,
+    login rate limit per IP + per email (Redis fixed window, fail closed), argon2 off the event loop
+  - Brand system (subagent): brands, append-only brand_profiles versions (one active), audiences, offers;
+    CRUD/archive/restore, audit rows for every change (observability/audit.py record_audit)
+  - Ingestion parsers (subagent): TXT/MD/PDF/DOCX/SRT/VTT/HTML -> NormalizedDocument; magic-byte sniffing
+    vs extension/declared type; limits incl. DOCX zip-bomb guard; AUDIO/VIDEO accepted -> NOT_IMPLEMENTED
+  - SSRF guard (security/http.py): scheme/port/userinfo policy, obfuscated-literal rejection, resolve-once +
+    all-answers-public check, connect to pinned IP (Host + SNI preserved), per-hop re-validation (max 5),
+    fresh client per hop, streamed size cap, content-type allowlist, 10 s connect / 30 s total deadline
+  - Sources API: /sources/text (sync, dedupe), /sources/upload + /sources/url (202 + SOURCE_INGEST job),
+    list/get/content/archive/retry; durable jobs table + GET /jobs/{id}; RQ entrypoint workflows.tasks.run_job;
+    content-addressed upload store; SOURCE_ASSET + JOB machines (STATE_MACHINES section 7)
+  - Request-body guard middleware (1 MiB JSON / 25 MiB upload, rejects before FastAPI parses multipart)
+  - Docker: shared uploads volume (api writes, worker reads), non-root-owned upload dir
+TESTS (run this session, 2026-09-24):
+  uv run poe check -> 133 files already formatted / All checks passed! / Success: no issues found in 101
+                      source files / Contracts: 4 kept, 0 broken. / 487 passed, 55 deselected in 5.56s
+  uv run pytest -m integration -q -> 54 passed, 488 deselected in 15.42s
+  uv run poe security -> bandit clean; pip-audit: No known vulnerabilities found
+  SSRF matrix: tests/unit/test_ssrf_guard.py 47 cases incl. redirect-to-private (IP and hostname), [::ffff:127.0.0.1],
+    decimal 2130706433 (+hex/octal/short), DNS returning private IP, mixed answers, metadata IPs, NAT64/6to4,
+    zone ids, pinned-IP + SNI, stalled body, total deadline
+  Corrupted files: tests/unit/test_ingestion_parsers.py (83 tests incl. truncated/garbage/encrypted PDF, corrupt DOCX,
+    zip bombs, NUL text, bad subtitles, type mismatches) + integration corrupted-PDF job failure
+  Docker end-to-end (real API -> Redis/RQ -> worker container -> Postgres): DOCX upload 202 -> job SUCCEEDED ->
+    content "Local AI agents / They keep data on your own hardware."; metadata-IP URL -> 422 SSRF_BLOCKED.
+    (throwaway smoke EDITOR user + brand "phase4-smoke-*" left in the dev DB; user deactivated, tokens revoked)
+  Live limits: 5x401 then 429 on login (Redis); 2 MB JSON body -> 413; /api/v1/health OK; alembic heads: 83579cc9b1d2 (head)
+REVIEWER: BLOCKER 0 · MAJOR 5 · MINOR 8
+  Fixed MAJOR: #1 stuck RUNNING jobs (catch + reaper), #2 raw exceptions from fetcher (wrapped; zone ids/empty labels
+  rejected; UnicodeError in resolver), #3 total deadline, #4 body buffered before limits (ASGI middleware),
+  #5 no rate limiting (login + ingest limits, Retry-After).
+  Fixed MINOR: #6 retry for FAILED sources (SA5 + endpoint), #7 queue-down leaves orphans (job CANCELLED, source FAILED),
+  #8 connection reuse across hops, #9 internal addresses hidden from job errors, #11 argon2 in thread,
+  #12 LoginRequest extra=forbid, #13 STATE_MACHINES section 7 rewritten.
+KNOWN ISSUES:
+  - #10 API_PLAN 6.2 deltas: DOCX guard uses 100:1 per-member ratio (API_PLAN says 10x overall; 10x would reject normal
+    text-heavy DOCX — keep, amendment recommended); type mismatch returns 422 not 415; upload limits are constants,
+    not Settings.
+  - Rate limits cover login and ingest routes only; unauthenticated health and other mutating routes have none yet.
+  - Brand API deviations recorded by the subagent (POST /brands is EDITOR not OWNER; PUT /profile + version_no instead
+    of PATCH + profile_revision; Page lives in schemas/common.py now).
+  - The live login smoke test used the host's per-IP login budget: logins from 127.0.0.1 may return 429 for up to a minute.
+  - Carried: superuser DB role, CI docker/windows jobs, dev hot-reload profile, env_file breadth, GPU contention note.
+DECISIONS NEEDED: none blocking. Optional: accept the DOCX 100:1 ratio as a SPEC_AMENDMENT.
+NEXT PHASE: 5 — Campaign intelligence (Strategy, Research, Opportunity, Planner agents)
+```

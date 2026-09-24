@@ -13,9 +13,12 @@ x-app: &app
     # A1: containers use the preset's base_url_docker (host.docker.internal). Set
     # OMNIGROWTH_DOCKER_LLM_URL in .env only to override the preset for containers.
     OMNIGROWTH_RUNTIME: docker
+    OMNIGROWTH_UPLOAD_DIR: /app/data/uploads
     OMNIGROWTH_LOCAL_LLM_URL: ${OMNIGROWTH_DOCKER_LLM_URL:-}
   extra_hosts:
     - "host.docker.internal:host-gateway"
+  volumes:
+    - uploads:/app/data/uploads   # shared by api (writes) and worker (reads)
   depends_on:
     postgres:
       condition: service_healthy
@@ -131,3 +134,4 @@ services:
 volumes:
   pgdata:
   redisdata:
+  uploads:

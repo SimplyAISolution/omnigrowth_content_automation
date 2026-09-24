@@ -21,6 +21,7 @@ from omnigrowth.core.enums import HealthStatus
 from omnigrowth.core.errors import ConfigurationError, ErrorCode, OmniGrowthError
 from omnigrowth.core.masking import mask_text
 from omnigrowth.core.settings import Settings
+from omnigrowth.providers.openai_compatible import OpenAICompatibleProvider
 from omnigrowth.schemas.health import CheckResult, HealthChecks, HealthReport
 from omnigrowth.storage.db import ping_database
 
@@ -136,24 +137,22 @@ async def check_local_llm(
         return _down(start, exc.message)
     if base is None:
         return CheckResult(status=HealthStatus.DOWN, latency_ms=None, detail=NOT_CONFIGURED)
+    # LLM HTTP lives only in omnigrowth.providers (ARCHITECTURE §3 rule 4).
+    provider = OpenAICompatibleProvider(
+        "local_llm", base, timeout_s=settings.llm_health_timeout_s, transport=transport
+    )
     try:
-        async with httpx.AsyncClient(
-            timeout=settings.llm_health_timeout_s, transport=transport
-        ) as client:
-            response = await client.get(f"{base}/models")
-    except (httpx.HTTPError, OSError) as exc:
-        logger.warning("health: local LLM unreachable", extra={"error": type(exc).__name__})
-        return _down(start, type(exc).__name__)
-    if response.status_code != httpx.codes.OK:
-        return _down(start, f"HTTP {response.status_code}")
-    try:
-        payload = response.json()
-    except ValueError:
-        return _down(start, "invalid JSON from /models")
-    models = payload.get("data") if isinstance(payload, dict) else None
-    count = len(models) if isinstance(models, list) else 0
+        models = await provider.list_models()
+    except OmniGrowthError as exc:
+        if exc.code not in (ErrorCode.MODEL_UNAVAILABLE, ErrorCode.MODEL_TIMEOUT):
+            raise
+        logger.warning("health: local LLM unreachable", extra={"error_code": str(exc.code)})
+        detail = str(exc.details.get("error") or exc.message.split(": ", 1)[-1])
+        return _down(start, detail)
+    finally:
+        await provider.aclose()
     return CheckResult(
-        status=HealthStatus.OK, latency_ms=_elapsed_ms(start), detail=f"{count} models"
+        status=HealthStatus.OK, latency_ms=_elapsed_ms(start), detail=f"{len(models)} models"
     )
 
 

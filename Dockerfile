@@ -22,7 +22,9 @@ COPY alembic.ini ./
 COPY config ./config
 RUN uv sync --frozen --no-dev
 
-RUN useradd --create-home --uid 10001 omnigrowth
+RUN useradd --create-home --uid 10001 omnigrowth \
+    && mkdir -p /app/data/uploads \
+    && chown -R omnigrowth:omnigrowth /app/data
 USER omnigrowth
 
 EXPOSE 8000

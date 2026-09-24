@@ -57,6 +57,17 @@ class Settings(BaseSettings):
         default=Path("config"),
         validation_alias=AliasChoices("OMNIGROWTH_CONFIG_DIR", "CONFIG_DIR"),
     )
+    upload_dir: Path = Field(default=Path("data/uploads"), validation_alias="OMNIGROWTH_UPLOAD_DIR")
+    # Rate limits (API_PLAN section 6.4). Format: "N/unit;N/unit" (unit: second|minute|hour|day).
+    rate_limit_backend: Literal["redis", "memory"] = Field(
+        default="redis", validation_alias="OMNIGROWTH_RATE_LIMIT_BACKEND"
+    )
+    rate_limit_login: str = Field(
+        default="5/minute;20/hour", validation_alias="OMNIGROWTH_RATE_LIMIT_LOGIN"
+    )
+    rate_limit_ingest: str = Field(
+        default="30/minute;300/hour", validation_alias="OMNIGROWTH_RATE_LIMIT_INGEST"
+    )
     llm_health_timeout_s: float = Field(default=2.0, gt=0, validation_alias="LLM_HEALTH_TIMEOUT_S")
 
     @field_validator("publish_mode", mode="before")

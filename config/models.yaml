@@ -1,6 +1,7 @@
-# Model routing configuration (ADR-0002, A1). No model names live in Python.
-# Base URL resolution: env OMNIGROWTH_LOCAL_LLM_URL > preset > error.
-# Roles are filled in Phase 3; Phase 2 only needs the provider presets for the health check.
+# Model routing configuration (ADR-0002, A1, A2). Model names live ONLY here, never in Python.
+# Base URL resolution: env OMNIGROWTH_LOCAL_LLM_URL (for the configured preset) > preset > not built.
+# Model names below come from the Phase 0 inventory (docs/audit/probe_output.txt L152-L175);
+# edit freely — `GET /api/v1/models` (Phase 4) and the health check report what is reachable.
 
 presets:
   lmstudio:
@@ -16,4 +17,48 @@ remote_patterns:
   - "*-cloud"
   - "*:cloud"
 
-roles: {}
+providers:
+  lmstudio:
+    locality: LOCAL
+    preset: lmstudio
+    max_concurrency: 1          # A2: single 12 GB GPU; a second request waits
+    concurrency_group: local_gpu # shares the GPU with ollama: one local call at a time overall
+    timeout_s: 180
+  ollama:
+    locality: LOCAL
+    preset: ollama
+    max_concurrency: 1
+    concurrency_group: local_gpu
+    timeout_s: 180
+  cloud:
+    # Enabled only when OMNIGROWTH_CLOUD_API_KEY is set AND base_url is filled in.
+    locality: REMOTE
+    base_url: ""
+    uses_cloud_key: true
+    max_concurrency: 4
+    timeout_s: 120
+
+# Ordered candidates per role. The router filters by routing profile and privacy class.
+# One main local model keeps LM Studio from swapping models on a 12 GB GPU.
+roles:
+  CHEAP_LOCAL:
+    - {provider: lmstudio, model: "qwen/qwen3.5-9b"}
+    - {provider: ollama, model: "qwen3:8b"}
+  REASONING_LOCAL:
+    - {provider: lmstudio, model: "qwen/qwen3.5-9b"}
+    - {provider: ollama, model: "qwen3:14b"}
+  CODING_LOCAL:
+    - {provider: lmstudio, model: "qwen/qwen3.5-9b"}
+  EMBEDDING_LOCAL:
+    - {provider: lmstudio, model: "text-embedding-nomic-embed-text-v1.5"}
+    - {provider: ollama, model: "nomic-embed-text:latest"}
+  # Frontier roles: local fallbacks first so LOCAL_ONLY still works; add cloud candidates
+  # (provider: cloud, with per-million-token costs) when a cloud key is configured.
+  FRONTIER_FAST:
+    - {provider: lmstudio, model: "qwen/qwen3.5-9b"}
+  FRONTIER_REASONING:
+    - {provider: lmstudio, model: "qwen/qwen3.5-9b"}
+    - {provider: ollama, model: "qwen3:14b"}
+  FRONTIER_CREATIVE:
+    - {provider: lmstudio, model: "google/gemma-4-12b-qat"}
+    - {provider: lmstudio, model: "qwen/qwen3.5-9b"}

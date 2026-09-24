@@ -74,12 +74,14 @@ async def omnigrowth_error_handler(request: Request, exc: Exception) -> JSONResp
         raise exc
     level = logging.ERROR if exc.http_status >= 500 else logging.INFO
     logger.log(level, "request failed: %s", exc.code, extra={"error_code": str(exc.code)})
+    retry_after = exc.details.get("retry_after_s")
     return error_response(
         request,
         status_code=exc.http_status,
         code=exc.code,
         message=exc.message,
         details=exc.details or None,
+        headers={"Retry-After": str(int(retry_after))} if retry_after is not None else None,
     )
 
 

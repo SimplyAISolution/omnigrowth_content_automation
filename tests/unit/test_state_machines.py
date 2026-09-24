@@ -222,12 +222,16 @@ def _status_writes(path: Path, orm_classes: set[str]) -> list[int]:
             isinstance(arg, ast.Dict) and any(_is_status_key(k) for k in arg.keys)
             for arg in [*node.args, *(kw.value for kw in node.keywords if kw.arg is None)]
         )
+        # `**row` with a variable cannot be verified statically: treat as a possible write.
+        opaque_splat = any(
+            kw.arg is None and not isinstance(kw.value, ast.Dict) for kw in node.keywords
+        )
         is_write_call = isinstance(func, ast.Attribute) and func.attr in {
             "values",
             "update",
             "insert",
         }
-        if is_write_call and (kw_status or dict_status):
+        if is_write_call and (kw_status or dict_status or opaque_splat):
             hits.add(node.lineno)
         if isinstance(func, ast.Name) and func.id in orm_classes and (kw_status or dict_status):
             hits.add(node.lineno)
@@ -236,10 +240,12 @@ def _status_writes(path: Path, orm_classes: set[str]) -> list[int]:
 
 def test_no_status_writes_outside_state_machines() -> None:
     allowed = REPO / "omnigrowth" / "core" / "state_machines"
+    # Documented exceptions (GLOSSARY section 4a): append-only outcome logs written once.
+    allowlist = {REPO / "omnigrowth" / "storage" / "model_runs.py"}
     orm_classes = _orm_class_names()
     offenders: dict[str, list[int]] = {}
     for path in (REPO / "omnigrowth").rglob("*.py"):
-        if allowed in path.parents:
+        if allowed in path.parents or path in allowlist:
             continue
         lines = _status_writes(path, orm_classes)
         if lines:
@@ -256,9 +262,10 @@ def test_status_write_detector_catches_violations(tmp_path: Path) -> None:
         "setattr(asset, 'status', 'X')\n"
         "stmt = update(t).values({'status': 'X'})\n"
         "stmt = update(t).values(**{'status': 'X'})\n"
+        "stmt = insert(t).values(**row)\n"
         "sql = 'UPDATE campaigns SET name = 1, status = 2'\n"
         "ok = CheckResult(status='OK')\n"
         "fine = 'SELECT status FROM t'\n",
         encoding="utf-8",
     )
-    assert _status_writes(sample, {"Campaign"}) == [1, 2, 3, 4, 5, 6, 7]
+    assert _status_writes(sample, {"Campaign"}) == [1, 2, 3, 4, 5, 6, 7, 8]

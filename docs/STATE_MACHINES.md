@@ -522,3 +522,34 @@ Q11. **Reconciliation capability.** Automated J12 needs per-platform lookup (by 
 Q12. **Sample-size unit and statistical test** for E4 (per-metric denominator; test choice, e.g. two-proportion z-test for rate metrics) belong in the Phase 9 design; this doc only fixes the guard.
 
 Q13. **5xx classified as UNCERTAIN.** Conservative per §14; some platforms may document that a given 5xx is pre-commit. Per-platform overrides only when VERIFIED.
+
+## 7. Supporting machines (added Phase 4)
+
+Not part of the four core machines; recorded here so every status writer is documented.
+All transitions write audit events (AE).
+
+### 7.1 SourceAsset (`source_asset_status`)
+Pasted text is created `PENDING` and normalised in the same transaction (SA1 -> SA2).
+Uploads and URLs are created `PENDING` at request time and moved to a terminal state by the
+`SOURCE_INGEST` job (SA2/SA3/SA4). A `FAILED` source can be retried (SA5) — the
+`(brand_id, checksum)` unique constraint means identical content can never be re-inserted
+as a new row, so retry is the only recovery path for transient failures.
+
+| ID | From | To | Trigger | Actors |
+|---|---|---|---|---|
+| SA1 | — | PENDING | `create` | H:OWNER,EDITOR; SYSTEM |
+| SA2 | PENDING | NORMALIZED | `normalized` | SYSTEM |
+| SA3 | PENDING | FAILED | `failed` (error_code set; also on queue-down and reaped jobs) | SYSTEM |
+| SA4 | PENDING | UNSUPPORTED | `unsupported` (AUDIO/VIDEO until transcription exists) | SYSTEM |
+| SA5 | FAILED | PENDING | `retry` (`POST /sources/{id}/retry`, new job) | H:OWNER,EDITOR |
+
+### 7.2 Job (`job_status`, DATA_MODEL section 6a.1)
+
+| ID | From | To | Trigger | Actors |
+|---|---|---|---|---|
+| JB1 | — | QUEUED | `enqueue` | H:OWNER,EDITOR; SYSTEM; SCHEDULER; AGENT |
+| JB2 | QUEUED | RUNNING | `start` | SYSTEM (worker) |
+| JB3 | RUNNING | SUCCEEDED | `succeed` | SYSTEM |
+| JB4 | RUNNING | FAILED | `fail` (domain error, or known infrastructure error wrapped) | SYSTEM |
+| JB5 | QUEUED | CANCELLED | `cancel` (also when the queue is unreachable at dispatch) | H:OWNER,EDITOR; SYSTEM |
+| JB6 | RUNNING | FAILED | `reap` (RUNNING longer than 15 min: worker died / RQ timeout) | SCHEDULER |

@@ -24,3 +24,4 @@ node_modules/
 *.sqlite3
 uploads/
 .pytest-tmp/
+data/

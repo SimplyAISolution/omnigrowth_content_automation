@@ -20,6 +20,7 @@ TEST_ENV = {
     "ENV": "test",
     "PUBLISH_MODE": "MOCK",
     "LOG_JSON": "true",
+    "OMNIGROWTH_RATE_LIMIT_BACKEND": "memory",
 }
 
 

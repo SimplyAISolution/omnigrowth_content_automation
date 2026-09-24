@@ -17,7 +17,7 @@ from omnigrowth.core.enums import (
 from omnigrowth.core.enums import (
     ExperimentStatus as E,
 )
-from omnigrowth.core.enums import JobStatus
+from omnigrowth.core.enums import JobStatus, SourceAssetStatus
 from omnigrowth.core.enums import (
     PublicationJobStatus as J,
 )
@@ -208,7 +208,42 @@ JOB = StateMachine(
         tr("JB3", JobStatus.RUNNING, JobStatus.SUCCEEDED, "succeed", SYSTEM),
         tr("JB4", JobStatus.RUNNING, JobStatus.FAILED, "fail", SYSTEM),
         tr("JB5", JobStatus.QUEUED, JobStatus.CANCELLED, "cancel", OWNER_EDITOR, SYSTEM),
+        # A worker that died or was killed (RQ job_timeout) leaves RUNNING behind; the
+        # scheduler's reaper fails it so nothing stays RUNNING forever.
+        tr("JB6", JobStatus.RUNNING, JobStatus.FAILED, "reap", SCHEDULER),
     ),
 )
 
-ALL_MACHINES = (CAMPAIGN, CONTENT_ASSET, PUBLICATION_JOB, PUBLICATION, EXPERIMENT, JOB)
+
+# `source_assets.status` (DATA_MODEL §4.1; GLOSSARY §4a SourceAssetStatus). Ingestion writes it
+# only through this machine: created PENDING, then exactly one terminal outcome.
+SOURCE_ASSET = StateMachine(
+    name="source_asset",
+    states=SourceAssetStatus,
+    terminal=frozenset(
+        {
+            SourceAssetStatus.NORMALIZED.value,
+            SourceAssetStatus.FAILED.value,
+            SourceAssetStatus.UNSUPPORTED.value,
+        }
+    ),
+    transitions=(
+        tr("SA1", None, SourceAssetStatus.PENDING, "create", OWNER_EDITOR, SYSTEM),
+        tr("SA2", SourceAssetStatus.PENDING, SourceAssetStatus.NORMALIZED, "normalized", SYSTEM),
+        tr("SA3", SourceAssetStatus.PENDING, SourceAssetStatus.FAILED, "failed", SYSTEM),
+        tr("SA4", SourceAssetStatus.PENDING, SourceAssetStatus.UNSUPPORTED, "unsupported", SYSTEM),
+        # Transient failures (network, queue down) must be retryable: (brand, checksum) is
+        # unique, so the same content can never be re-inserted as a new row.
+        tr("SA5", SourceAssetStatus.FAILED, SourceAssetStatus.PENDING, "retry", OWNER_EDITOR),
+    ),
+)
+
+ALL_MACHINES = (
+    CAMPAIGN,
+    CONTENT_ASSET,
+    PUBLICATION_JOB,
+    PUBLICATION,
+    EXPERIMENT,
+    JOB,
+    SOURCE_ASSET,
+)

@@ -1,0 +1,27 @@
+{
+  "ran_at": "2026-09-24T13:34:19.866703+00:00",
+  "prompt": "system/structured_probe@v1",
+  "provider": "lmstudio",
+  "model": "qwen/qwen3.5-9b",
+  "structured_mode": "json_schema",
+  "attempts": 1,
+  "input_tokens": 89,
+  "output_tokens": 702,
+  "runs": [
+    {
+      "attempt_no": 0,
+      "status": "SUCCEEDED",
+      "error_code": null,
+      "latency_ms": 17607,
+      "mode": "json_schema"
+    }
+  ],
+  "output": {
+    "topic": "Local AI agents versus cloud-hosted chatbots",
+    "keywords": [
+      "privacy",
+      "latency",
+      "deployment"
+    ]
+  }
+}

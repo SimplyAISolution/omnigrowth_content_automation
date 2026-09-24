@@ -13,12 +13,15 @@ import signal
 import tempfile
 from pathlib import Path
 
+from sqlalchemy.exc import SQLAlchemyError
+
 from omnigrowth.core import aio
 from omnigrowth.core.errors import OmniGrowthError
 from omnigrowth.core.ids import new_correlation_id
 from omnigrowth.core.logging import bind_context, configure_logging
 from omnigrowth.core.settings import get_settings
 from omnigrowth.storage.db import get_engine, ping_database
+from omnigrowth.workflows.tasks import reap_stuck_jobs
 
 log = logging.getLogger("omnigrowth.scheduler")
 
@@ -38,6 +41,13 @@ async def tick() -> bool:
     except TimeoutError:
         log.error("scheduler tick: database ping timed out", extra={"timeout_s": DB_PING_TIMEOUT_S})
         return False
+    try:
+        reaped = await reap_stuck_jobs()
+    except (OmniGrowthError, SQLAlchemyError) as exc:
+        log.error("scheduler tick: reaper failed", extra={"error": type(exc).__name__})
+    else:
+        if reaped:
+            log.warning("scheduler tick: reaped stuck jobs", extra={"count": reaped})
     HEARTBEAT_FILE.touch()
     return True
 

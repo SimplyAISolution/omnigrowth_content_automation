@@ -1,0 +1,80 @@
+[
+  {
+    "roles": [
+      "CHEAP_LOCAL",
+      "REASONING_LOCAL",
+      "CODING_LOCAL",
+      "FRONTIER_FAST",
+      "FRONTIER_REASONING",
+      "FRONTIER_CREATIVE"
+    ],
+    "provider": "lmstudio",
+    "model": "qwen/qwen3.5-9b",
+    "locality": "LOCAL",
+    "provider_built": true,
+    "listed": true,
+    "structured_mode": null,
+    "status": "MODEL_TIMEOUT"
+  },
+  {
+    "roles": [
+      "CHEAP_LOCAL"
+    ],
+    "provider": "ollama",
+    "model": "qwen3:8b",
+    "locality": "LOCAL",
+    "provider_built": true,
+    "listed": true,
+    "structured_mode": "json_schema",
+    "status": "OK"
+  },
+  {
+    "roles": [
+      "REASONING_LOCAL",
+      "FRONTIER_REASONING"
+    ],
+    "provider": "ollama",
+    "model": "qwen3:14b",
+    "locality": "LOCAL",
+    "provider_built": true,
+    "listed": true,
+    "structured_mode": "json_schema",
+    "status": "OK"
+  },
+  {
+    "roles": [
+      "EMBEDDING_LOCAL"
+    ],
+    "provider": "lmstudio",
+    "model": "text-embedding-nomic-embed-text-v1.5",
+    "locality": "LOCAL",
+    "provider_built": true,
+    "listed": true,
+    "structured_mode": null,
+    "status": "OK"
+  },
+  {
+    "roles": [
+      "EMBEDDING_LOCAL"
+    ],
+    "provider": "ollama",
+    "model": "nomic-embed-text:latest",
+    "locality": "LOCAL",
+    "provider_built": true,
+    "listed": true,
+    "structured_mode": null,
+    "status": "OK"
+  },
+  {
+    "roles": [
+      "FRONTIER_CREATIVE"
+    ],
+    "provider": "lmstudio",
+    "model": "google/gemma-4-12b-qat",
+    "locality": "LOCAL",
+    "provider_built": true,
+    "listed": true,
+    "structured_mode": null,
+    "status": "MODEL_UNAVAILABLE"
+  }
+]

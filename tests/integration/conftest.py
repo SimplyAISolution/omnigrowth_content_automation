@@ -13,8 +13,10 @@ import secrets
 import subprocess
 import sys
 from collections.abc import AsyncIterator, Iterator
+from contextlib import contextmanager
 from pathlib import Path
 
+import httpx
 import psycopg
 import pytest
 from sqlalchemy.engine import make_url
@@ -73,9 +75,9 @@ def server_url() -> str:
     return _SERVER_URL
 
 
-@pytest.fixture(scope="session")
-def fresh_database(server_url: str) -> Iterator[str]:
-    """Create an empty database, run `alembic upgrade head`, drop it at session end."""
+@contextmanager
+def migrated_database(server_url: str) -> Iterator[str]:
+    """Create an empty database, run `alembic upgrade head`, drop it afterwards."""
     name = f"og_it_{secrets.token_hex(4)}"
     admin = _with_database(server_url, "postgres")
     with psycopg.connect(admin, autocommit=True) as conn:
@@ -90,6 +92,35 @@ def fresh_database(server_url: str) -> Iterator[str]:
             conn.execute(f'DROP DATABASE IF EXISTS "{name}" WITH (FORCE)')
 
 
+@pytest.fixture(scope="session")
+def fresh_database(server_url: str) -> Iterator[str]:
+    """One migrated database shared by the whole test session."""
+    with migrated_database(server_url) as url:
+        yield url
+
+
+@pytest.fixture
+def isolated_database(server_url: str, monkeypatch: pytest.MonkeyPatch) -> Iterator[str]:
+    """A brand-new migrated database for one test (e.g. first-owner bootstrap)."""
+    with migrated_database(server_url) as url:
+        monkeypatch.setenv("DATABASE_URL", url)
+        yield url
+
+
+@pytest.fixture
+async def api_client(fresh_database: str) -> AsyncIterator[httpx.AsyncClient]:
+    """ASGI client for the real app against the session database (commits persist)."""
+    from omnigrowth.api.app import create_app
+
+    transport = httpx.ASGITransport(app=create_app())
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        yield client
+    from omnigrowth.storage import db
+
+    if db.get_engine.cache_info().currsize:
+        await db.get_engine().dispose()
+
+
 @pytest.fixture(autouse=True)
 def _integration_env(
     _test_env: None, monkeypatch: pytest.MonkeyPatch, request: pytest.FixtureRequest
@@ -99,6 +130,10 @@ def _integration_env(
         monkeypatch.setenv("DATABASE_URL", request.getfixturevalue("fresh_database"))
     if _REDIS_URL:
         monkeypatch.setenv("REDIS_URL", _REDIS_URL)
+    # Integration suites log in many times from one test IP; limits get their own tests.
+    monkeypatch.setenv("OMNIGROWTH_RATE_LIMIT_BACKEND", "memory")
+    monkeypatch.setenv("OMNIGROWTH_RATE_LIMIT_LOGIN", "10000/minute")
+    monkeypatch.setenv("OMNIGROWTH_RATE_LIMIT_INGEST", "10000/minute")
 
 
 @pytest.fixture

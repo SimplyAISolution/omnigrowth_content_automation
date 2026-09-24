@@ -15,6 +15,11 @@ from omnigrowth.core.errors import ErrorCode, OmniGrowthError
 def _heartbeat(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     path = tmp_path / "hb"
     monkeypatch.setattr(sched, "HEARTBEAT_FILE", path)
+
+    async def no_reap() -> int:
+        return 0
+
+    monkeypatch.setattr(sched, "reap_stuck_jobs", no_reap)
     return path
 
 

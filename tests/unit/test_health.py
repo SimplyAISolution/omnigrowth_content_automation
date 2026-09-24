@@ -237,7 +237,7 @@ async def test_llm_non_200_is_down() -> None:
     transport = llm_transport(lambda _r: httpx.Response(500))
     result = await health_service.check_local_llm(settings, transport=transport)
     assert result.status is HealthStatus.DOWN
-    assert result.detail == "HTTP 500"
+    assert result.detail is not None and "HTTP 500" in result.detail
 
 
 async def test_llm_connect_error_is_down_and_masked() -> None:
