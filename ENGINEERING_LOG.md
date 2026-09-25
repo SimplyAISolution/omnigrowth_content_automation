@@ -325,3 +325,159 @@ KNOWN ISSUES:
 DECISIONS NEEDED: none blocking. Optional: per-queue job timeout for agents (see above).
 NEXT PHASE: 6 — Generation + QA + versioning
 ```
+
+## 2026-09-24 — Phase 6 debug-loop entries
+1. Symptom (self-review before running): QA DUPLICATE_HASHTAG would fire on every post. Cause: `_hashtags`
+   counted Draft.hashtags and again the tags already composed into the segments. Fix: count only published
+   segments. Verify: tests/unit/test_content_qa.py clean-post case PASS on all stages.
+2. Symptom: unit test for BROKEN_URL failed. Cause: test used `www.broken`, which has a valid-looking host
+   (test bug, not code). Fix: test uses `https://brokenlink/page`. Verify: 15 passed.
+3. Reviewer MAJOR #1: DRAFT assets could be stranded (failed writer / dead dispatch; plan item counted as done
+   forever). Fix: generate-assets re-claims DRAFT assets of the selected plan items for the new request
+   (generation_request_id update, not a status write); old job's CA2 fence then drops stale results.
+   Verify: test_failed_drafts_are_claimed_by_the_next_request (5 generated + 3 failed, then 3 generated, 8 total).
+4. Reviewer MAJOR #2: accuracy regexes — invented figures matched as substrings ("5%" inside "35%"), bare domains
+   unchecked, allowed citations failing on www/http/utm variants. Fix: whole-figure comparison, bare-domain
+   pattern (email-safe), URL key = host without www + path (query/fragment/trailing slash ignored).
+   Verify: 5 regression unit tests.
+5. Live evidence: generation of 7 assets took 498 s (RQ job_timeout 600 s, reaper 900 s) and a 13-item plan took
+   941 s. Cause: one timeout for all queues. Fix: per-queue RQ budgets (agents 1800 s, generate 3600 s, qa 900 s,
+   default 600 s); reaper cutoff per job kind = budget + 300 s; reaper also closes orphaned agent runs of
+   ASSET_GENERATION / QA_RUN. Verify: unit test (reaper cutoff > budget for every JobKind); final live run 941 s OK.
+
+```
+PHASE 6 — Generation + QA + versioning — GATE_PASSED (commit pending)
+COMPLETED:
+  - Writers (LinkedIn, X): prompts content/{linkedin,x}_writer@v1 (PRIVATE, untrusted-source markers), schemas
+    LinkedInPost / XPost (no length limits in the schema so over-length reaches QA), deterministic composition
+    (VersionFields -> build_draft) shared by generated and human-edited versions; X threads stored with "---"
+  - content_versions (§36): immutable versions with prompt_version_id + model_run_id + agent_run_id (AgentOutcome
+    now carries them); HUMAN_EDIT via POST /content/{id}/versions (CA16, lost-update 409, approval_actions EDIT,
+    QA_RUN job); GET versions / version / diff (field-level + unified)
+  - QA stages 1-4 (§11), deterministic, config/qa.yaml (limits UNVERIFIED): STRUCTURAL (hook, body, CTA when the
+    plan item requires one — field or inline, thread shape), BRAND (banned FAIL, avoid WARN, duplicate/fatigue
+    WARN), ACCURACY (links must be packet citations or the offer URL, claim refs exist, figures in evidence,
+    unsourced quotes WARN), PLATFORM (format, per-post/text length, hashtags, malformed URLs, markdown)
+  - Duplicate/fatigue (§10): EmbeddingProvider (LM Studio /v1/embeddings; FakeProvider hashing embedder),
+    routed embed_texts (PRIVATE, LOCAL_ONLY), FULL + HOOK vectors per version in pgvector, cosine neighbours among
+    the brand's live current versions, configurable thresholds, warn-only, GET /content/{id}/similar; QA degrades
+    to DUPLICATE_CHECK_SKIPPED (WARN) when no embedding model is reachable
+  - POST /campaigns/{id}/generate-assets (ACTIVE only; CA1; ASSET_GENERATION job; per-asset writer failures leave
+    DRAFT and are reported; skipped = platforms without an MVP writer), GET /content, /content/{id}, qa-results
+  - Job handlers ASSET_GENERATION and QA_RUN; per-queue timeouts; reaper per kind
+TESTS (run this session, 2026-09-24):
+  uv run poe check -> 165 files already formatted / All checks passed! / Success: no issues found in 120 source
+                      files / Contracts: 4 kept, 0 broken. / 526 passed, 66 deselected in 5.82s
+  uv run poe test-int -> 63 passed, 529 deselected in 21.64s
+  Gate (unit, tests/unit/test_content_qa.py 20 tests): MISSING_CTA, BANNED_PHRASE, CITATION_NOT_IN_PACKET, OVER_LENGTH
+    (X post > 280, incl. CTA appended to the last post) all FAIL; near-duplicate fixture pair >= 0.90 -> WARN
+  Gate (integration, tests/integration/test_content_generation.py 4 tests): 8 assets from the fixture plan ->
+    4 AWAITING_APPROVAL, 4 QA_FAILED with OVER_LENGTH / BANNED_PHRASE / CITATION_NOT_IN_PACKET / MISSING_CTA;
+    NEAR_DUPLICATE WARN on the duplicate pair pointing at the original (still AWAITING_APPROVAL); /similar lists it;
+    every version has prompt + model provenance and 4 QA rows; human edit -> v2 HUMAN_EDIT -> QA_RUN -> AWAITING_APPROVAL,
+    diff = [cta], v1 QA kept, stale edit 409, VIEWER 403; generate-assets on a non-ACTIVE campaign 409
+  LIVE (LM Studio qwen/qwen3.5-9b + text-embedding-nomic-embed-text-v1.5, final code):
+    tests/integration/test_live_content.py -> 1 passed in 1204.25s (0:20:04); docs/audit/phase6_live_content.json:
+    planning 261.6 s, generation 940.9 s for 13 plan items, 13 generated / 0 failed, all AWAITING_APPROVAL
+    (WARNs only), embeddings 768-dim nomic
+  alembic heads -> 83579cc9b1d2 (head) (no schema change this phase)
+REVIEWER: CRITICAL 0 · MAJOR 2 · MINOR 9
+  Fixed: MAJOR #1 stranded DRAFT assets, MAJOR #2 accuracy regexes; MINOR #3 LinkedIn hook/hashtag duplication,
+  #4 X whole-tag matching, #5 X edit hook from first post, #6 inline CTA accepted, #10 neighbours = live current
+  versions only.
+KNOWN ISSUES:
+  - Near-duplicate threshold 0.90 was calibrated on the fake embedder; with real nomic vectors same-campaign posts
+    often score >= 0.90 (live run: 7 of 13 assets got NEAR_DUPLICATE warnings). Warn-only, but thresholds should be
+    calibrated per embedding model (config/qa.yaml) before relying on them.
+  - #7 a QA error after CA2 leaves the asset GENERATED without an automatic QA_RUN (re-run via edit for now);
+    #8 editing an APPROVED asset does not record invalidated_approval_of (Phase 7 approvals); #9 asset row lock is
+    held during the embedding call; #11 X counts raw URL length, not the 23-char t.co length (limits UNVERIFIED).
+  - Not built yet: POST /content (manual create) + /submit (CA3), /regenerate (CA18/19), /qa re-run endpoint,
+    auto-approve (CA7 by SYSTEM), LLM-based tone/brand QA (Stage 2 is rule-based), per-model HNSW index.
+  - Writers use REASONING_LOCAL (same model as planning) to avoid GPU model swapping; FRONTIER_CREATIVE later.
+DECISIONS NEEDED: none blocking. Optional: near-duplicate thresholds for nomic (e.g. 0.95 FULL / 0.97 HOOK).
+NEXT PHASE: 7 — Approval, scheduler, mock publish, mock analytics -> MVP GATE
+```
+
+## 2026-09-25 — Phase 7 debug-loop entries
+1. Symptom: tests/unit/test_scheduler_process.py hung after the outbox was added to the tick. Cause: the tick now
+   called run_once, which reached for the (unroutable) test database; the fixture only stubbed ping/reaper.
+   Fix: stub run_once in the autouse fixture (unit tests never touch a DB). Verify: 5 passed in 0.69s.
+2. Symptom: test_publication_uncertain... passed alone, failed in the module run (publisher.calls == 2).
+   Cause: the scheduler is global; later ticks also published other tests' leftover due jobs in the shared DB,
+   and an injected fault could be consumed by a foreign job. Fix (tests + mock): MockPublisher records requests and
+   can scope faults to content versions; assertions count only the test's own versions. Verify: 10 passed.
+3. Symptom: release tick in the uncertain test claimed nothing. Cause: test bug - the "never auto-retry" ticks
+   correctly re-held the second job each time (guard 4), moving its due_at. Fix: release at the job's due_at.
+4. Symptom: new late-result tests saw PENDING in the module run. Cause: the simulated mid-call lease recovery
+   fired while publishing another test's job, so our not-yet-dispatched job correctly got J10. Fix: scope the
+   simulation to the test's version. Verify: 14 passed.
+5. Audit ordering: state transitions in one transaction shared now() (txn start), so timeline order was undefined.
+   Fix: audit rows use clock_timestamp(). Verify: the E2E asserts the exact DRAFT..PUBLISHED sequence.
+
+```
+PHASE 7 — Approval, scheduler, mock publish, mock analytics — MVP GATE PASSED (commit pending; Phase 6 also)
+COMPLETED:
+  - Approvals (§37): GET /approvals, POST /approvals/{id}/actions (APPROVE needs 4 QA rows with no FAIL on the
+    current version; REJECT/REQUEST_REVISION need a comment; SCHEDULE/PUBLISH_NOW queue a job, never publish),
+    GET /approvals/{id}/history; every action writes approval_actions with the actor
+  - Outbox scheduler (A3, STATE_MACHINES §3.4): claim = SELECT ... FOR UPDATE SKIP LOCKED + J2/J3 through the state
+    machine (no raw status SQL); dispatch start J4 committed before I/O with the lease checked by the database
+    clock; P1 publication; outcome fenced on claim_token (J5/P2/CA15, J7 backoff+jitter, J6/P3/CA14, J8/P6);
+    lease recovery J10/J11 decided by the job's own publish_mode; late success after J11 -> J12; late results
+    after the job moved on -> audit event publication.late_result; guard 4 hold (J7b) in MOCK and LIVE; live
+    guard §3.3 incl. the independent ENV=test block; a lost race never aborts the tick
+  - MockPublisher (§34): synthetic ids idempotent per key, deterministic fault injection (rate limit, pre-send
+    timeout, after-send, auth), deterministic platform-shaped metrics (seeded by content hash)
+  - Publications API: jobs list/get/cancel (J9+CA13), publications list/get, reconcile (MANUAL_CONFIRM_PUBLISHED by
+    EDITOR -> J12b/P5b/CA15; MANUAL_CONFIRM_NOT_PUBLISHED OWNER-only -> J13/P7b/CA14); platform accounts (OWNER
+    create, never live); the scheduler process runs the outbox every tick (config/publishing.yaml)
+  - Analytics (D1 slice): POST /analytics/pull (ANALYTICS_PULL job, mock), POST /analytics/snapshots (fixture
+    ingest, NULL kept), snapshots list/get, GET /analytics/campaigns/{id}/report with §16 attributes and §17 rates
+    (per-row NULL-safe; aggregates only over inputs every row captured, missing inputs listed)
+  - Optimization Agent: prompt analytics/optimizer@v1 over a labelled report (S1..Sn); a recommendation is stored
+    only when every cited label resolves to a stored snapshot (others dropped + counted); POST
+    /recommendations/generate, GET /recommendations; GET /audit/timeline/{entity_type}/{id}
+TESTS (run this session, 2026-09-25):
+  uv run poe check -> 187 files already formatted / All checks passed! / Success: no issues found in 137 source
+                      files / Contracts: 4 kept, 0 broken. / 541 passed, 82 deselected in 6.77s
+  uv run poe test-int -> 78 passed, 545 deselected in 41.92s
+  §55 E2E (tests/integration/test_e2e_success_scenario.py, FakeProvider fixtures): all 16 steps + audit trail;
+    YOUTUBE/INSTAGRAM plan items reported skipped NOT_IMPLEMENTED (D2); duplicate SCHEDULE 409; X profile_visits NULL
+    not 0; follow_conversion null_reason "profile_visits not captured"; 2 recommendations stored, 1 (cites S9)
+    dropped, every evidence id resolves via GET /analytics/snapshots/{id}; timeline DRAFT..PUBLISHED with actors
+  Gate: three schedulers racing (asyncio.gather) -> one platform call and one publication per job, disjoint claims;
+    forced SKIP LOCKED test (a row locked elsewhere is skipped, not waited on)
+  Gate: PUBLICATION_UNCERTAIN path -> job UNCERTAIN, publication PUBLICATION_UNCERTAIN, asset stays SCHEDULED, account
+    has_open_uncertain, the other job on the account held (attempt not counted), no auto-retry over 3 more ticks,
+    EDITOR "not published" 403, OWNER -> FAILED/APPROVED, account released; confirm-published path; late success J12
+  Also: rate-limit retry with backoff (attempt 2 succeeds), auth failure final, lease recovery J10/J11, DB-clock
+    lease refusal (nothing sent), A6 dispatcher ENV=test block (LIVE forced in-process -> LIVE_PUBLISH_BLOCKED,
+    zero platform calls)
+  LIVE §55 (LM Studio qwen/qwen3.5-9b + nomic embeddings; publishing MOCK), final code:
+    tests/integration/test_live_e2e.py -> 1 passed in 554.81s (0:09:14); docs/audit/phase7_live_e2e.json: planning
+    204 s, 5 posts generated in 295 s (INSTAGRAM skipped), 5 approved/scheduled/published, 5 snapshots, 4
+    recommendations stored with valid evidence, 0 dropped. An earlier live run on pre-review code also passed
+    (1 passed in 935.74s: 8 generated, 2 correctly QA_FAILED, 6 published, 4 recommendations).
+REVIEWER (R full review): CRITICAL 0 · MAJOR 3 · MINOR 10 — no double-publish or UNCERTAIN auto-retry path found
+  Fixed: M1 dispatch-start lease check now in SQL against the DB clock; M2 aggregate rates no longer mix rows that
+  did and did not capture an input; M3 a lost race on one job no longer aborts the tick; minors #1 J10/J11 by the
+  job's publish_mode, #2 late-success/J12 test + deterministic SKIP LOCKED test, #3 late results audited,
+  #4 effective_publisher honest (None unless MOCK), #5 unsupported mode -> CONFIGURATION_ERROR, #6 a
+  recommendation citing any unknown row is dropped entirely, #7 fresh MockPublisher per tick, #9 tick interval
+  from config, #10 reconcile accepts published_at.
+KNOWN ISSUES:
+  - No automatic reconciliation (J8 "enqueue reconciliation"): every UNCERTAIN needs a human until adapters can
+    look posts up (Phase 13). Idempotency-Key header replay ([IK]) not implemented; the A3 unique index still
+    prevents duplicate jobs. EDIT/REGENERATE via /approvals return VALIDATION_FAILURE reason NOT_IMPLEMENTED
+    (API_PLAN wants 501). Rescheduling a SCHEDULED asset (CA12) = cancel + schedule. Calendar, attribute
+    comparisons, derived-metric definitions API and the content-efficiency metric: Phase 8. Manual export
+    publisher and mark-published / not-published / deleted: later phase.
+  - Claim/lease timestamps use the scheduler's clock (the dispatch-start lease check uses the DB clock).
+  - The live planner sometimes picks a format a platform does not support (LinkedIn THREAD); QA rejects it
+    (UNSUPPORTED_FORMAT). The planner schema could constrain formats per platform.
+  - Recommendation.status is written only by its server default (PROPOSED); no recommendation state machine yet.
+  - Phase 6 near-duplicate threshold calibration still open.
+DECISIONS NEEDED: none blocking. MVP milestone reached.
+NEXT PHASE: 8 — Analytics (per docs/PHASES.md)
+```

@@ -26,7 +26,11 @@ deterministically without a model.
 from __future__ import annotations
 
 import asyncio
+import hashlib
+import itertools
 import json
+import math
+import re
 from collections import defaultdict
 from collections.abc import Iterable
 from pathlib import Path
@@ -43,6 +47,27 @@ class FixtureMissingError(OmniGrowthError):
             f"FakeProvider fixture missing: {detail}",
             details={"path": str(path)},
         )
+
+
+FAKE_EMBEDDING_DIM = 256
+_TOKEN = re.compile(r"[a-z0-9]+")
+
+
+def hashing_embedding(text: str, dim: int = FAKE_EMBEDDING_DIM) -> list[float]:
+    """Deterministic bag-of-words (+bigrams) hashing vector, L2-normalised.
+
+    Not a language model: texts that share most words get a high cosine similarity, which
+    is exactly what the duplicate/fatigue tests (§10) need, with no network or fixtures.
+    """
+    words = _TOKEN.findall(text.lower())
+    features = words + [f"{a} {b}" for a, b in itertools.pairwise(words)]
+    vector = [0.0] * dim
+    for feature in features:
+        digest = hashlib.sha256(feature.encode("utf-8")).digest()
+        index = int.from_bytes(digest[:4], "big") % dim
+        vector[index] += 1.0 if digest[4] & 1 else -1.0
+    norm = math.sqrt(sum(v * v for v in vector)) or 1.0
+    return [v / norm for v in vector]
 
 
 def _write_fixture(path: Path, body: str) -> None:
@@ -69,12 +94,17 @@ class FakeProvider:
         self._models = models or ["fake-model"]
         self._record_from = record_from
         self.requests: list[ChatRequest] = []
+        self.embedded: list[str] = []
 
     async def aclose(self) -> None:
         return None
 
     async def list_models(self) -> list[str]:
         return list(self._models)
+
+    async def embed(self, model: str, texts: list[str]) -> list[list[float]]:
+        self.embedded.extend(texts)
+        return [hashing_embedding(t) for t in texts]
 
     async def chat(self, request: ChatRequest) -> ChatResult:
         self.requests.append(request)
@@ -163,8 +193,21 @@ class CannedProvider:
         if not path.exists():
             raise FixtureMissingError(path, f"no canonical response for {prompt_id}")
         responses: list[Any] = json.loads(path.read_text(encoding="utf-8"))["responses"]
-        index = min(self._calls[prompt_id], len(responses) - 1)
-        self._calls[prompt_id] += 1
-        entry = responses[index]
+        # Entries shaped {"match": "<text>", "response": ...} answer any request whose user
+        # message contains <text>; all other entries are served in order (last one repeats).
+        text = "\n".join(m.get("content", "") for m in request.messages if m.get("role") == "user")
+        matched = [
+            e["response"]
+            for e in responses
+            if isinstance(e, dict) and "match" in e and str(e["match"]) in text
+        ]
+        if matched:
+            entry = matched[0]
+        else:
+            plain = [e for e in responses if not (isinstance(e, dict) and "match" in e)]
+            if not plain:
+                raise FixtureMissingError(path, f"no canonical response matches {prompt_id}")
+            entry = plain[min(self._calls[prompt_id], len(plain) - 1)]
+            self._calls[prompt_id] += 1
         content = entry if isinstance(entry, str) else json.dumps(entry, ensure_ascii=False)
         return ChatResult(text=content, input_tokens=None, output_tokens=None, latency_ms=1)

@@ -132,6 +132,26 @@ class OpenAICompatibleProvider:
             latency_ms=latency_ms,
         )
 
+    async def embed(self, model: str, texts: list[str]) -> list[list[float]]:
+        response = await self._post("/embeddings", {"model": model, "input": texts})
+        self._raise_for_status(response, ChatRequest(model=model, messages=[]))
+        try:
+            data = sorted(response.json()["data"], key=lambda item: item["index"])
+            vectors = [[float(x) for x in item["embedding"]] for item in data]
+        except (ValueError, KeyError, TypeError) as exc:
+            raise OmniGrowthError(
+                ErrorCode.MODEL_UNAVAILABLE,
+                f"{self.name}: malformed embeddings envelope",
+                details={"provider": self.name},
+            ) from exc
+        if len(vectors) != len(texts) or len({len(v) for v in vectors}) > 1:
+            raise OmniGrowthError(
+                ErrorCode.MODEL_UNAVAILABLE,
+                f"{self.name}: embeddings count/dimension mismatch",
+                details={"provider": self.name, "expected": len(texts), "got": len(vectors)},
+            )
+        return vectors
+
     async def list_models(self) -> list[str]:
         try:
             response = await self._client.get("/models")

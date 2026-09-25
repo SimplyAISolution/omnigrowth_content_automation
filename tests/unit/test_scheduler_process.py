@@ -7,6 +7,7 @@ from pathlib import Path
 
 import pytest
 
+import omnigrowth.publishing.scheduler as sched_outbox
 import omnigrowth.scheduling.__main__ as sched
 from omnigrowth.core.errors import ErrorCode, OmniGrowthError
 
@@ -20,6 +21,11 @@ def _heartbeat(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
         return 0
 
     monkeypatch.setattr(sched, "reap_stuck_jobs", no_reap)
+
+    async def no_outbox(**_: object) -> sched_outbox.TickResult:
+        return sched_outbox.TickResult()
+
+    monkeypatch.setattr(sched, "run_once", no_outbox)  # unit tests never reach a database
     return path
 
 
@@ -71,3 +77,18 @@ async def test_run_honours_stop(monkeypatch: pytest.MonkeyPatch) -> None:
     stop.set()
     await asyncio.wait_for(task, timeout=1)
     assert calls >= 1
+
+
+def test_model_bound_jobs_get_longer_time_budgets_than_the_reaper_default() -> None:
+    from datetime import timedelta
+
+    from omnigrowth.core.enums import JobKind
+    from omnigrowth.services.jobs import job_timeout_s, queue_for
+    from omnigrowth.workflows.tasks import stuck_after
+
+    assert job_timeout_s(queue_for(JobKind.SOURCE_INGEST)) == 600
+    assert job_timeout_s(queue_for(JobKind.CAMPAIGN_PLANNING)) == 1800
+    assert job_timeout_s(queue_for(JobKind.ASSET_GENERATION)) == 3600
+    for kind in JobKind:
+        # The reaper never fails a job that RQ could still legitimately be running.
+        assert stuck_after(kind) > timedelta(seconds=job_timeout_s(queue_for(kind)))

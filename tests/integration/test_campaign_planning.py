@@ -9,141 +9,41 @@ Re-record fixtures after changing a prompt or the canonical answers:
 
 from __future__ import annotations
 
-import os
-import secrets
 import uuid
-from collections.abc import AsyncIterator
-from datetime import date, datetime, timedelta
-from pathlib import Path
+from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
-import httpx
 import pytest
 from sqlalchemy import func, select
 
 from omnigrowth.agents.base import AgentDeps
-from omnigrowth.api.app import create_app
-from omnigrowth.api.deps import get_job_queue
 from omnigrowth.core.enums import AngleType, JobStatus, UserRole
 from omnigrowth.core.errors import ErrorCode, OmniGrowthError
 from omnigrowth.models import AgentRun, ContentIdea, ModelRun
 from omnigrowth.prompts import PromptRegistry
-from omnigrowth.providers.base import ChatProvider, ChatRequest, ChatResult
-from omnigrowth.providers.config import load_models_config
-from omnigrowth.providers.fake import CannedProvider, FakeProvider
-from omnigrowth.providers.router import ModelRouter
-from omnigrowth.services.jobs import RecordingJobQueue
-from omnigrowth.storage.db import get_engine, get_sessionmaker
+from omnigrowth.providers.base import ChatRequest, ChatResult
+from omnigrowth.providers.fake import FakeProvider
+from omnigrowth.storage.db import get_sessionmaker
 from omnigrowth.workflows.tasks import execute_job
+from tests.integration.campaign_support import (
+    ARTICLE,
+    FIXTURES,
+    START,
+    TZ,
+    Env,
+    _get,
+    _router,
+    _wizard_body,
+    fixture_deps,
+)
 from tests.integration.helpers import auth_headers
 
 pytestmark = pytest.mark.integration
 
-REPO = Path(__file__).resolve().parents[2]
-FIXTURES = REPO / "tests" / "fixtures" / "llm"
-CANONICAL = REPO / "tests" / "fixtures" / "llm_canonical"
-START = date(2026, 10, 5)
-TZ = "America/New_York"
-
-ARTICLE = (
-    "# Why Local AI Agents Will Matter for Small Businesses\n\n"
-    "Local AI agents keep proprietary data on the machine instead of sending it to a cloud "
-    "provider.\n\n"
-    "Running a 9B-parameter model on a consumer GPU with 12 GB of VRAM is now practical for "
-    "drafting and classification work.\n\n"
-    "Routine work such as summarising support tickets avoids per-token cloud fees when it "
-    "runs locally.\n\n"
-    "Local models are still weaker than frontier models at long, multi-step reasoning.\n\n"
-    "We believe most small teams will run a hybrid setup within two years.\n"
-)
-
-
-def _router(provider: ChatProvider) -> ModelRouter:
-    return ModelRouter(load_models_config(REPO / "config"), {"lmstudio": provider})
-
-
-def fixture_deps() -> AgentDeps:
-    record = os.environ.get("OMNIGROWTH_RECORD_FIXTURES") == "1"
-    provider = FakeProvider(
-        "lmstudio",
-        fixtures_dir=FIXTURES,
-        record_from=CannedProvider(CANONICAL) if record else None,
-    )
-    return AgentDeps(router=_router(provider), registry=PromptRegistry.load())
-
-
-class Env:
-    client: httpx.AsyncClient
-    queue: RecordingJobQueue
-    headers: dict[str, str]
-    brand_id: str
-    source_id: str
-
 
 @pytest.fixture
-async def env(fresh_database: str) -> AsyncIterator[Env]:
-    e = Env()
-    e.queue = RecordingJobQueue()
-    app = create_app()
-    app.dependency_overrides[get_job_queue] = lambda: e.queue
-    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://t") as c:
-        e.client = c
-        e.headers = await auth_headers(c, UserRole.EDITOR)
-        brand = await c.post(
-            "/api/v1/brands",
-            headers=e.headers,
-            json={
-                "slug": f"simply-ai-{secrets.token_hex(3)}",
-                "name": "Simply AI Solutions",
-                "display_name": "Simply AI Solutions",
-                "timezone": TZ,
-                "profile": {
-                    "niche": "Private, local-first AI for small businesses",
-                    "differentiators": ["Runs on hardware you own"],
-                    "content_pillars": ["Data privacy", "AI costs"],
-                    "banned_phrases": ["game-changer"],
-                },
-            },
-        )
-        assert brand.status_code == 201, brand.text
-        e.brand_id = brand.json()["id"]
-        audience = await c.post(
-            f"/api/v1/brands/{e.brand_id}/audiences",
-            headers=e.headers,
-            json={
-                "name": "Small-business owners",
-                "is_primary": True,
-                "pains": ["Rising SaaS and AI fees", "Client data privacy"],
-                "common_questions": ["Is local AI good enough?"],
-            },
-        )
-        assert audience.status_code == 201, audience.text
-        yield e
-    await get_engine().dispose()
-
-
-def _wizard_body(env: Env, **overrides: object) -> dict[str, object]:
-    body: dict[str, object] = {
-        "brand_id": env.brand_id,
-        "name": "Local AI for small business",
-        "objective": "AUTHORITY",
-        "topic": "Why local AI agents matter for small businesses",
-        "primary_platform": "LINKEDIN",
-        "secondary_platforms": ["X"],
-        "start_date": START.isoformat(),
-        "timezone": TZ,
-        "source_text": ARTICLE,
-        "source_title": "Why Local AI Agents Will Matter for Small Businesses",
-        "generate": True,
-    }
-    body.update(overrides)
-    return body
-
-
-async def _get(env: Env, path: str) -> dict[str, object]:
-    resp = await env.client.get(f"/api/v1/campaigns/{path}", headers=env.headers)
-    assert resp.status_code == 200, resp.text
-    return resp.json()  # type: ignore[no-any-return]
+def env(campaign_env: Env) -> Env:
+    return campaign_env
 
 
 async def test_planning_pipeline_produces_schema_valid_plan(env: Env) -> None:

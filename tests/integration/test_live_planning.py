@@ -28,8 +28,8 @@ from omnigrowth.models import AgentRun, ModelRun
 from omnigrowth.services.jobs import RecordingJobQueue
 from omnigrowth.storage.db import get_engine, get_sessionmaker
 from omnigrowth.workflows.tasks import execute_job
+from tests.integration.campaign_support import ARTICLE, START, TZ
 from tests.integration.helpers import auth_headers
-from tests.integration.test_campaign_planning import ARTICLE, START, TZ
 
 pytestmark = pytest.mark.live_llm
 

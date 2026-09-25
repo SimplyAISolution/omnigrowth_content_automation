@@ -20,6 +20,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from omnigrowth.agents.base import AgentDeps
 from omnigrowth.campaigns.orchestrator import plan_campaign
+from omnigrowth.content.qa import cached_qa_config
 from omnigrowth.core import aio
 from omnigrowth.core.enums import JobKind, JobStatus
 from omnigrowth.core.errors import ErrorCode, OmniGrowthError
@@ -27,9 +28,13 @@ from omnigrowth.core.logging import bind_context
 from omnigrowth.core.settings import get_settings
 from omnigrowth.prompts import PromptRegistry
 from omnigrowth.providers.factory import build_router
+from omnigrowth.services import analytics as analytics_service
 from omnigrowth.services import campaigns as campaign_service
+from omnigrowth.services import content as content_service
 from omnigrowth.services import jobs as job_service
+from omnigrowth.services import recommendations as recommendation_service
 from omnigrowth.services import sources as source_service
+from omnigrowth.storage.campaigns import fail_running_agent_runs
 from omnigrowth.storage.db import get_engine, get_sessionmaker
 from omnigrowth.storage.uploads import UploadStore
 
@@ -93,9 +98,65 @@ def _handlers(
         finally:
             await router.aclose()
 
+    async def with_content_deps(
+        run: Callable[[content_service.ContentDeps], Awaitable[dict[str, Any]]],
+    ) -> dict[str, Any]:
+        settings = get_settings()
+        qa = cached_qa_config(settings.config_dir)
+        if agent_deps is not None:
+            return await run(content_service.ContentDeps(agent=agent_deps, qa=qa))
+        router = build_router(settings)
+        try:
+            deps = AgentDeps(router=router, registry=PromptRegistry.load())
+            return await run(content_service.ContentDeps(agent=deps, qa=qa))
+        finally:
+            await router.aclose()
+
+    async def asset_generation(session: AsyncSession, job: job_service.JobView) -> dict[str, Any]:
+        if job.subject_id is None:
+            raise OmniGrowthError(ErrorCode.VALIDATION_FAILURE, "job has no subject")
+        campaign_id = job.subject_id
+        return await with_content_deps(
+            lambda deps: content_service.generate_job(session, campaign_id, job.id, deps=deps)
+        )
+
+    async def qa_run(session: AsyncSession, job: job_service.JobView) -> dict[str, Any]:
+        if job.subject_id is None:
+            raise OmniGrowthError(ErrorCode.VALIDATION_FAILURE, "job has no subject")
+        asset_id = job.subject_id
+
+        async def run(deps: content_service.ContentDeps) -> dict[str, Any]:
+            status = await content_service.run_asset_qa(
+                session, asset_id, deps=deps, correlation_id=str(job.id)
+            )
+            return {"content_asset_id": str(asset_id), "status": status}
+
+        return await with_content_deps(run)
+
+    async def analytics_pull(session: AsyncSession, job: job_service.JobView) -> dict[str, Any]:
+        if job.subject_id is None:
+            raise OmniGrowthError(ErrorCode.VALIDATION_FAILURE, "job has no subject")
+        return await analytics_service.pull_campaign_metrics(session, job.subject_id)
+
+    async def recommendation_generation(
+        session: AsyncSession, job: job_service.JobView
+    ) -> dict[str, Any]:
+        if job.subject_id is None:
+            raise OmniGrowthError(ErrorCode.VALIDATION_FAILURE, "job has no subject")
+        campaign_id = job.subject_id
+        return await with_content_deps(
+            lambda deps: recommendation_service.generate(
+                session, campaign_id, job.id, deps=deps.agent
+            )
+        )
+
     return {
+        JobKind.ANALYTICS_PULL: analytics_pull,
+        JobKind.RECOMMENDATION_GENERATION: recommendation_generation,
         JobKind.SOURCE_INGEST: source_ingest,
         JobKind.CAMPAIGN_PLANNING: campaign_planning,
+        JobKind.ASSET_GENERATION: asset_generation,
+        JobKind.QA_RUN: qa_run,
     }
 
 
@@ -107,6 +168,9 @@ async def _on_failure(
         await source_service.record_failure(session, job.subject_id, exc)
     if job.kind is JobKind.CAMPAIGN_PLANNING and job.subject_id is not None:
         await campaign_service.record_planning_failure(session, job.subject_id, exc, job_id=job.id)
+    if job.kind in (JobKind.ASSET_GENERATION, JobKind.RECOMMENDATION_GENERATION):
+        # Assets stay DRAFT (STATE_MACHINES §2); only orphaned agent runs are closed.
+        await fail_running_agent_runs(session, correlation_id=str(job.id), error_code=exc.code)
     await job_service.mark_failed(session, job, exc)
     await session.commit()
 
@@ -170,16 +234,23 @@ def run_job(job_id: str) -> str:
     return str(aio.run(_run))
 
 
-# RQ job_timeout is 600 s (services.jobs); anything RUNNING well past that is dead.
-STUCK_AFTER = timedelta(seconds=900)
+# A job RUNNING this long past its RQ time budget (services.jobs) is dead.
+STUCK_GRACE = timedelta(seconds=300)
+
+
+def stuck_after(kind: JobKind) -> timedelta:
+    return timedelta(seconds=job_service.job_timeout_s(job_service.queue_for(kind))) + STUCK_GRACE
 
 
 async def reap_stuck_jobs(now: datetime | None = None) -> int:
-    """Fail RUNNING jobs older than ``STUCK_AFTER`` (JB6) and their sources (SA3)."""
-    cutoff = (now or datetime.now(UTC)) - STUCK_AFTER
+    """Fail RUNNING jobs past their kind's time budget (JB6) and their subjects."""
+    current = now or datetime.now(UTC)
+    cutoff = current - min(stuck_after(k) for k in JobKind)
     reaped = 0
     async with get_sessionmaker()() as session:
         for job in await job_service.stuck_running_jobs(session, cutoff):
+            if job.started_at is None or job.started_at > current - stuck_after(job.kind):
+                continue  # still inside its own (longer) time budget
             await job_service.reap(session, job)
             if job.kind is JobKind.SOURCE_INGEST and job.subject_id is not None:
                 await source_service.record_failure(
@@ -193,6 +264,11 @@ async def reap_stuck_jobs(now: datetime | None = None) -> int:
                     job.subject_id,
                     OmniGrowthError(ErrorCode.QUEUE_FAILURE, "planning job never finished"),
                     job_id=job.id,
+                )
+            if job.kind in (JobKind.ASSET_GENERATION, JobKind.QA_RUN):
+                # Assets stay where they are (DRAFT / GENERATED) and can be re-requested.
+                await fail_running_agent_runs(
+                    session, correlation_id=str(job.id), error_code=ErrorCode.QUEUE_FAILURE
                 )
             await session.commit()
             reaped += 1

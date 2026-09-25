@@ -1,0 +1,123 @@
+{
+  "ran_at": "2026-09-25T03:19:23.725603+00:00",
+  "steps": {
+    "planning": {
+      "status": "SUCCEEDED",
+      "seconds": 204.2,
+      "error_code": null
+    },
+    "plan": [
+      "INSTAGRAM",
+      "LINKEDIN",
+      "X"
+    ],
+    "generation": {
+      "status": "SUCCEEDED",
+      "seconds": 294.8,
+      "error_code": null
+    },
+    "generation_result": {
+      "generated": 5,
+      "failed": [],
+      "skipped": [
+        "INSTAGRAM"
+      ]
+    },
+    "assets": [
+      {
+        "platform": "LINKEDIN",
+        "format": "TEXT_POST",
+        "status": "AWAITING_APPROVAL",
+        "fails": []
+      },
+      {
+        "platform": "X",
+        "format": "THREAD",
+        "status": "AWAITING_APPROVAL",
+        "fails": []
+      },
+      {
+        "platform": "LINKEDIN",
+        "format": "ARTICLE",
+        "status": "AWAITING_APPROVAL",
+        "fails": []
+      },
+      {
+        "platform": "LINKEDIN",
+        "format": "POLL",
+        "status": "AWAITING_APPROVAL",
+        "fails": []
+      },
+      {
+        "platform": "LINKEDIN",
+        "format": "ARTICLE",
+        "status": "AWAITING_APPROVAL",
+        "fails": []
+      }
+    ],
+    "approval_queue": 5,
+    "publishing": {
+      "claimed": 5,
+      "succeeded": 5,
+      "published": 5
+    },
+    "analytics_pull": {
+      "status": "SUCCEEDED",
+      "seconds": 0.0,
+      "error_code": null
+    },
+    "report": {
+      "coverage": {
+        "published": 5,
+        "with_snapshot": 5
+      },
+      "derived": {
+        "engagement_rate": {
+          "value": 0.041518,
+          "null_reason": null,
+          "missing_inputs": [
+            "saves"
+          ]
+        },
+        "share_rate": {
+          "value": 0.004868,
+          "null_reason": null,
+          "missing_inputs": []
+        },
+        "save_rate": {
+          "value": null,
+          "null_reason": "saves not captured for every publication",
+          "missing_inputs": [
+            "saves"
+          ]
+        },
+        "comment_rate": {
+          "value": 0.00544,
+          "null_reason": null,
+          "missing_inputs": []
+        },
+        "click_rate": {
+          "value": 0.017466,
+          "null_reason": null,
+          "missing_inputs": []
+        },
+        "follow_conversion": {
+          "value": 0.336842,
+          "null_reason": null,
+          "missing_inputs": []
+        }
+      }
+    },
+    "recommendations": {
+      "stored": 4,
+      "dropped": 0,
+      "statements": [
+        "Prioritize Case Study articles over Data-Driven statements on LinkedIn",
+        "Adopt Question hooks instead of Statements for LinkedIn posts",
+        "Increase Poll frequency to maximize Engagement Rate",
+        "Replicate X Thread success for Saves and Clicks"
+      ]
+    }
+  },
+  "outcome": "PASSED"
+}

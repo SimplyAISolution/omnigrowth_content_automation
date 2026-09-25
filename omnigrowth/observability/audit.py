@@ -11,7 +11,7 @@ import uuid
 from collections.abc import Mapping
 from typing import Any, cast
 
-from sqlalchemy import Table, insert
+from sqlalchemy import Table, func, insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from omnigrowth.core.ids import new_correlation_id, uuid7
@@ -45,6 +45,7 @@ async def record_audit(
     await session.execute(
         insert(_AUDIT).values(
             id=event_id,
+            occurred_at=func.clock_timestamp(),
             correlation_id=correlation_id,
             actor_type=actor.type,
             actor_id=actor.id,

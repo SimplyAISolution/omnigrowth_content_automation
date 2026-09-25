@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import StrEnum
-from typing import Any, Protocol
+from typing import Any, Protocol, runtime_checkable
 
 from omnigrowth.core.errors import ErrorCode, OmniGrowthError
 
@@ -56,3 +56,12 @@ class ChatProvider(Protocol):
     async def list_models(self) -> list[str]: ...
 
     async def aclose(self) -> None: ...
+
+
+@runtime_checkable
+class EmbeddingProvider(Protocol):
+    """Optional capability: ``POST /embeddings`` (EMBEDDING_LOCAL role, §10 / A4)."""
+
+    name: str
+
+    async def embed(self, model: str, texts: list[str]) -> list[list[float]]: ...

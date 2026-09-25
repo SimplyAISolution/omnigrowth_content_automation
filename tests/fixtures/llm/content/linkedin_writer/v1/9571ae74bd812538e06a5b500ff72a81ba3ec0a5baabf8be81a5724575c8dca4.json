@@ -1,0 +1,10 @@
+{
+  "prompt": "content/linkedin_writer",
+  "responses": [
+    {
+      "content": "{\"hook\": \"Your client data does not need to leave your office to get AI help.\", \"body\": \"Most small teams send client files to a cloud AI without thinking twice.\\n\\nLocal AI agents keep proprietary data on the machine. A 9B-parameter model now runs on a consumer GPU with 12 GB of VRAM, which is enough for drafting and classification.\\n\\nStart with one routine task, such as summarising support tickets, and run it locally. Routine work avoids per-token cloud fees when it runs on your own hardware.\\n\\nKeep the long, multi-step reasoning jobs for frontier models where they clearly win.\", \"cta\": \"Follow for plain-English AI explainers\", \"hashtags\": [\"LocalAI\", \"SmallBusiness\"], \"cited_claims\": [1, 2, 3, 4], \"hook_type\": \"statement\", \"cta_type\": \"follow\", \"media_suggestion\": null}",
+      "input_tokens": null,
+      "output_tokens": null
+    }
+  ]
+}

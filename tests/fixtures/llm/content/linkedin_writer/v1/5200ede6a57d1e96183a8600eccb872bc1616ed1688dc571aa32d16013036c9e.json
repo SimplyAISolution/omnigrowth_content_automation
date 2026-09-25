@@ -1,0 +1,10 @@
+{
+  "prompt": "content/linkedin_writer",
+  "responses": [
+    {
+      "content": "{\"hook\": \"How an accounting firm kept client data on-site and still used AI.\", \"body\": \"Slide 1: The problem - client files and cloud AI do not mix.\\n\\nSlide 2: Local AI agents keep proprietary data on the machine.\\n\\nSlide 3: A consumer GPU with 12 GB of VRAM runs a 9B-parameter model.\\n\\nSlide 4: Routine drafting runs locally, with no per-token cloud fees.\\n\\nSlide 5: Hard multi-step reasoning still goes to a frontier model.\", \"cta\": \"Book a free 20-minute local-AI readiness call\", \"hashtags\": [\"LocalAI\"], \"cited_claims\": [1, 2, 3, 4], \"hook_type\": \"story\", \"cta_type\": \"call\", \"media_suggestion\": \"Five-slide PDF carousel, one idea per slide.\"}",
+      "input_tokens": null,
+      "output_tokens": null
+    }
+  ]
+}

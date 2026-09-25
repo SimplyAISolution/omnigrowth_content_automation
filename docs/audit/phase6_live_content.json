@@ -1,0 +1,204 @@
+{
+  "ran_at": "2026-09-24T21:46:36.546533+00:00",
+  "planning_s": 261.6,
+  "planning_status": "SUCCEEDED",
+  "generation_s": 940.9,
+  "generation_status": "SUCCEEDED",
+  "generation_result": {
+    "failed": [],
+    "skipped": [],
+    "generated": [
+      {
+        "status": "AWAITING_APPROVAL",
+        "content_asset_id": "01a0d566-7b88-714c-a07f-f23af78a0158"
+      },
+      {
+        "status": "AWAITING_APPROVAL",
+        "content_asset_id": "01a0d566-7b8e-75b2-a635-fefe7238d0d2"
+      },
+      {
+        "status": "AWAITING_APPROVAL",
+        "content_asset_id": "01a0d566-7b90-7511-a8b2-8502e882c5cf"
+      },
+      {
+        "status": "AWAITING_APPROVAL",
+        "content_asset_id": "01a0d566-7b92-70bc-b84e-124261abf2a8"
+      },
+      {
+        "status": "AWAITING_APPROVAL",
+        "content_asset_id": "01a0d566-7b94-7076-9c3f-0b9173d71379"
+      },
+      {
+        "status": "AWAITING_APPROVAL",
+        "content_asset_id": "01a0d566-7b97-7797-b544-5eeba6bb93d6"
+      },
+      {
+        "status": "AWAITING_APPROVAL",
+        "content_asset_id": "01a0d566-7b99-7410-97b0-812db499cb65"
+      },
+      {
+        "status": "AWAITING_APPROVAL",
+        "content_asset_id": "01a0d566-7b9b-7026-a0fe-13076265c7ce"
+      },
+      {
+        "status": "AWAITING_APPROVAL",
+        "content_asset_id": "01a0d566-7b9d-7007-bf91-eca2e82268fb"
+      },
+      {
+        "status": "AWAITING_APPROVAL",
+        "content_asset_id": "01a0d566-7b9f-7f70-8678-9614b08cfad4"
+      },
+      {
+        "status": "AWAITING_APPROVAL",
+        "content_asset_id": "01a0d566-7ba1-7b32-afa6-1c1dd484191e"
+      },
+      {
+        "status": "AWAITING_APPROVAL",
+        "content_asset_id": "01a0d566-7ba3-7faf-b5f6-2a7dd8fd2ee6"
+      },
+      {
+        "status": "AWAITING_APPROVAL",
+        "content_asset_id": "01a0d566-7ba5-737c-a181-292424b0e694"
+      }
+    ]
+  },
+  "generation_error": null,
+  "assets": [
+    {
+      "platform": "LINKEDIN",
+      "format": "TEXT_POST",
+      "status": "AWAITING_APPROVAL",
+      "quality_score": "100.00",
+      "chars": 561,
+      "findings": []
+    },
+    {
+      "platform": "X",
+      "format": "TEXT_POST",
+      "status": "AWAITING_APPROVAL",
+      "quality_score": "100.00",
+      "chars": 173,
+      "findings": []
+    },
+    {
+      "platform": "LINKEDIN",
+      "format": "CAROUSEL",
+      "status": "AWAITING_APPROVAL",
+      "quality_score": "100.00",
+      "chars": 855,
+      "findings": []
+    },
+    {
+      "platform": "X",
+      "format": "TEXT_POST",
+      "status": "AWAITING_APPROVAL",
+      "quality_score": "100.00",
+      "chars": 172,
+      "findings": []
+    },
+    {
+      "platform": "LINKEDIN",
+      "format": "ARTICLE",
+      "status": "AWAITING_APPROVAL",
+      "quality_score": "98.00",
+      "chars": 714,
+      "findings": [
+        "ACCURACY:WARN:CITES_UNVERIFIED_CLAIM"
+      ]
+    },
+    {
+      "platform": "LINKEDIN",
+      "format": "TEXT_POST",
+      "status": "AWAITING_APPROVAL",
+      "quality_score": "100.00",
+      "chars": 568,
+      "findings": []
+    },
+    {
+      "platform": "LINKEDIN",
+      "format": "TEXT_POST",
+      "status": "AWAITING_APPROVAL",
+      "quality_score": "92.00",
+      "chars": 669,
+      "findings": [
+        "ACCURACY:WARN:CITES_UNVERIFIED_CLAIM",
+        "BRAND:WARN:NEAR_DUPLICATE",
+        "BRAND:WARN:NEAR_DUPLICATE"
+      ]
+    },
+    {
+      "platform": "X",
+      "format": "THREAD",
+      "status": "AWAITING_APPROVAL",
+      "quality_score": "92.00",
+      "chars": 944,
+      "findings": [
+        "ACCURACY:WARN:CITES_UNVERIFIED_CLAIM",
+        "BRAND:WARN:NEAR_DUPLICATE",
+        "BRAND:WARN:NEAR_DUPLICATE"
+      ]
+    },
+    {
+      "platform": "LINKEDIN",
+      "format": "DOCUMENT_CAROUSEL",
+      "status": "AWAITING_APPROVAL",
+      "quality_score": "92.00",
+      "chars": 668,
+      "findings": [
+        "ACCURACY:WARN:CITES_UNVERIFIED_CLAIM",
+        "BRAND:WARN:NEAR_DUPLICATE",
+        "BRAND:WARN:NEAR_DUPLICATE"
+      ]
+    },
+    {
+      "platform": "LINKEDIN",
+      "format": "CAROUSEL",
+      "status": "AWAITING_APPROVAL",
+      "quality_score": "92.00",
+      "chars": 782,
+      "findings": [
+        "ACCURACY:WARN:CITES_UNVERIFIED_CLAIM",
+        "BRAND:WARN:NEAR_DUPLICATE",
+        "BRAND:WARN:NEAR_DUPLICATE"
+      ]
+    },
+    {
+      "platform": "X",
+      "format": "TEXT_POST",
+      "status": "AWAITING_APPROVAL",
+      "quality_score": "100.00",
+      "chars": 177,
+      "findings": []
+    },
+    {
+      "platform": "LINKEDIN",
+      "format": "ARTICLE",
+      "status": "AWAITING_APPROVAL",
+      "quality_score": "88.00",
+      "chars": 772,
+      "findings": [
+        "BRAND:WARN:NEAR_DUPLICATE",
+        "BRAND:WARN:NEAR_DUPLICATE",
+        "BRAND:WARN:NEAR_DUPLICATE",
+        "BRAND:WARN:NEAR_DUPLICATE",
+        "BRAND:WARN:NEAR_DUPLICATE"
+      ]
+    },
+    {
+      "platform": "X",
+      "format": "TEXT_POST",
+      "status": "AWAITING_APPROVAL",
+      "quality_score": "98.00",
+      "chars": 161,
+      "findings": [
+        "BRAND:WARN:NEAR_DUPLICATE"
+      ]
+    }
+  ],
+  "embeddings": [
+    {
+      "model": "text-embedding-nomic-embed-text-v1.5",
+      "dim": 768
+    }
+  ]
+}

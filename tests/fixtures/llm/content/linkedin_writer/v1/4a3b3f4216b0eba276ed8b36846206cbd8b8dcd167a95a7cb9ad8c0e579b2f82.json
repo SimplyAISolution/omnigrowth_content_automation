@@ -1,0 +1,10 @@
+{
+  "prompt": "content/linkedin_writer",
+  "responses": [
+    {
+      "content": "{\"hook\": \"The day we pulled our client files back from the cloud.\", \"body\": \"We had been pasting client documents into a cloud chatbot for months.\\n\\nThen we asked where that data lives. Local AI agents keep proprietary data on the machine, so we moved our drafting to a 9B-parameter model on a GPU with 12 GB of VRAM.\\n\\nIt handles the routine work. We keep a frontier model for the hard reasoning.\", \"cta\": null, \"hashtags\": [], \"cited_claims\": [1, 2], \"hook_type\": \"story\", \"cta_type\": \"none\", \"media_suggestion\": null}",
+      "input_tokens": null,
+      "output_tokens": null
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+# Content QA configuration (spec §10, §11). Platform limits are UNVERIFIED
+# (docs/PLATFORM_CAPABILITIES.md section 4): commonly cited values, to be confirmed from
+# official docs before live publishing (Phase 13). Edit freely; no code change needed.
+
+similarity:
+  # Cosine similarity at or above which a content version is flagged as a near duplicate
+  # of an earlier one for the same brand (warn-only, §10).
+  near_duplicate: 0.90
+  # Hooks are short, so repeated-hook detection uses its own threshold.
+  repeated_hook: 0.92
+  # How many neighbours to report.
+  max_neighbours: 5
+
+platforms:
+  LINKEDIN:
+    formats: [TEXT_POST, ARTICLE, DOCUMENT_CAROUSEL, CAROUSEL, POLL, NEWSLETTER]
+    max_chars: 3000           # post body (UNVERIFIED)
+    min_chars: 150            # shorter than this is flagged (WARN)
+    hook_visible_chars: 210   # text before "see more" (UNVERIFIED) -> WARN when exceeded
+    max_hashtags: 5
+    markdown_rendered: false  # **bold** / # headings show up literally
+  X:
+    formats: [TEXT_POST, THREAD, POLL, COMMENT_DRAFT]
+    max_chars_per_post: 280   # standard accounts (UNVERIFIED; long posts need a subscription)
+    min_chars: 20
+    max_thread_posts: 15
+    max_hashtags: 2
+    markdown_rendered: false

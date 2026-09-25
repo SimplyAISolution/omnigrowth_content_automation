@@ -1,0 +1,10 @@
+{
+  "prompt": "content/linkedin_writer",
+  "responses": [
+    {
+      "content": "{\"hook\": \"Local AI is a game-changer for small teams. Here is the comparison.\", \"body\": \"Local 9B model or frontier API? It depends on the task.\\n\\nLocal AI agents keep proprietary data on the machine and avoid per-token cloud fees. Frontier models still lead at long, multi-step reasoning.\\n\\nUse both, on purpose.\", \"cta\": \"Comment HYBRID for the comparison sheet\", \"hashtags\": [\"AI\"], \"cited_claims\": [1, 3, 4], \"hook_type\": \"contrarian\", \"cta_type\": \"comment\", \"media_suggestion\": \"Two-column comparison document.\"}",
+      "input_tokens": null,
+      "output_tokens": null
+    }
+  ]
+}

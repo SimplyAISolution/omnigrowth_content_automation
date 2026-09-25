@@ -1,0 +1,10 @@
+{
+  "prompt": "campaign/strategy",
+  "responses": [
+    {
+      "content": "{\"positioning\": \"Simply AI Solutions is the practical guide for small businesses that want AI help without handing their data to a cloud vendor: local-first, honest about limits, hybrid when it pays.\", \"audience_summary\": \"Owners and operations leads of 5-50 person businesses who handle client data and are wary of cloud AI costs and privacy.\", \"content_pillars\": [\"Data stays home\", \"Real costs of AI\", \"What local models can do\"], \"key_messages\": [\"Your proprietary data can stay on your own machine.\", \"Routine AI work does not need per-token cloud fees.\", \"Use frontier models only where they clearly win.\"], \"funnel_stage\": \"AWARENESS\", \"primary_cta\": \"Book a free 20-minute local-AI readiness call\", \"primary_platform\": \"LINKEDIN\", \"secondary_platforms\": [\"X\", \"REDDIT\"], \"rationale\": \"LinkedIn reaches decision makers at small businesses; X extends reach for the contrarian cost angle.\"}",
+      "input_tokens": null,
+      "output_tokens": null
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "prompt": "content/x_writer",
+  "responses": [
+    {
+      "content": "{\"posts\": [\"Stop paying per token for work a desktop GPU can do.\", \"Local AI agents keep proprietary data on the machine.\", \"A 9B-parameter model runs on a consumer GPU with 12 GB of VRAM.\", \"Keep frontier models for long, multi-step reasoning.\"], \"cta\": \"Repost if your team pays per token\", \"hashtags\": [\"LocalAI\"], \"cited_claims\": [1, 2, 4], \"hook_type\": \"contrarian\", \"cta_type\": \"comment\"}",
+      "input_tokens": null,
+      "output_tokens": null
+    }
+  ]
+}

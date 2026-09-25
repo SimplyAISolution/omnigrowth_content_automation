@@ -23,6 +23,7 @@ from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 
 from omnigrowth.storage.db import to_async_url
+from tests.integration.campaign_support import Env, open_campaign_env
 
 REPO = Path(__file__).resolve().parents[2]
 
@@ -156,3 +157,10 @@ async def session(engine: AsyncEngine) -> AsyncIterator[AsyncSession]:
         finally:
             await sess.close()
             await trans.rollback()
+
+
+@pytest.fixture
+async def campaign_env(fresh_database: str) -> AsyncIterator[Env]:
+    """Brand + editor + recording job queue for campaign/content tests."""
+    async with open_campaign_env() as env:
+        yield env

@@ -1,11 +1,11 @@
 ```
-phase: 5
-task: phase-5-gate
+phase: 7
+task: phase-7-gate (MVP milestone)
 gate: GATE_PASSED
-last_green_commit: 8dd911a
-next_phase: 6 — Generation + QA + versioning
+last_green_commit: 29b4086
+next_phase: 8 — Analytics
 shell: PowerShell Core 7.6.6 (Git Bash also available)
-blockers: Phase 5 commit pending (signing)
+blockers: Phase 6 + 7 commits pending (signing)
 ```
 
 ## Notes
@@ -16,3 +16,5 @@ blockers: Phase 5 commit pending (signing)
 - Phase 3: model layer (providers, router, structured generation, prompt registry, model probe). Live smoke on LM Studio qwen/qwen3.5-9b passed; see docs/audit/phase3_*.json.
 - Phase 4: auth, brand system, ingestion parsers, SSRF-guarded URL ingestion, sources API + durable jobs, body/rate limits. First OWNER: `uv run poe create-owner --email you@example.com`.
 - Phase 5: planning agents (research/strategy/opportunity/planner), orchestrator, campaign API. Live planning on LM Studio qwen/qwen3.5-9b passed (~3.5 min); see docs/audit/phase5_live_planning.json.
+- Phase 6: LinkedIn/X writers, content versions + diff, deterministic QA stages 1-4 (config/qa.yaml), pgvector duplicate/fatigue warnings, per-queue job timeouts. Live content run passed (20 min, 13 assets); see docs/audit/phase6_live_content.json.
+- Phase 7 (MVP): approvals, outbox scheduler (SKIP LOCKED, leases, UNCERTAIN handling), MockPublisher, mock/fixture analytics + NULL-safe rates, Optimization Agent with evidence, audit timeline. §55 E2E green on fixtures and live (docs/audit/phase7_live_e2e.json).

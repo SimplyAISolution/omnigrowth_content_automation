@@ -1,0 +1,10 @@
+{
+  "prompt": "content/x_writer",
+  "responses": [
+    {
+      "content": "{\"posts\": [\"12 GB of VRAM is now enough for everyday drafting work.\", \"A 9B-parameter model covers drafting and classification on one consumer GPU.\", \"Full benchmark: https://llm-benchmarks.example/local-9b\"], \"cta\": null, \"hashtags\": [], \"cited_claims\": [2], \"hook_type\": \"statistic\", \"cta_type\": \"none\"}",
+      "input_tokens": null,
+      "output_tokens": null
+    }
+  ]
+}

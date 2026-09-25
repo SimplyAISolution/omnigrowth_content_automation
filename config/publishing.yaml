@@ -1,0 +1,12 @@
+# Publication scheduler (spec §14, A3, STATE_MACHINES §3.4-3.5). Edit freely.
+scheduler:
+  tick_seconds: 5            # how often the scheduler claims due jobs
+  batch_size: 20             # jobs claimed per tick
+  lease_seconds: 120         # must exceed request_timeout_seconds + margin
+  request_timeout_seconds: 30
+publishing:
+  max_attempts: 5
+  backoff_base_seconds: 30   # exponential with full jitter: base * 2^(attempt-1)
+  backoff_max_seconds: 3600
+  uncertain_hold_seconds: 900  # guard-4 hold while the account has an uncertain post
+  schedule_grace_seconds: 60   # SCHEDULE may be up to this far in the past

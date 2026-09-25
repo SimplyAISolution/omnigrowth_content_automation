@@ -1,0 +1,10 @@
+{
+  "prompt": "content/x_writer",
+  "responses": [
+    {
+      "content": "{\"posts\": [\"The cloud is not the safe default for your client data. Local AI agents keep proprietary data on the machine, a 9B-parameter model runs on a consumer GPU with 12 GB of VRAM, routine work avoids per-token cloud fees, and you keep frontier models only for the long, multi-step reasoning jobs where they clearly win. That is the whole argument, and it fits on one desk.\"], \"cta\": null, \"hashtags\": [], \"cited_claims\": [1, 2, 3, 4], \"hook_type\": \"contrarian\", \"cta_type\": \"none\"}",
+      "input_tokens": null,
+      "output_tokens": null
+    }
+  ]
+}

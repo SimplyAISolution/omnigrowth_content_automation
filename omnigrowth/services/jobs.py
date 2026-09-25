@@ -42,6 +42,20 @@ QUEUE_FOR_KIND: dict[JobKind, str] = {
 }
 JOB_ENTRYPOINT = "omnigrowth.workflows.tasks.run_job"
 
+# RQ time budget per queue. Model-bound queues run several local LLM calls in sequence
+# (Phase 5 live planning ~4 min; Phase 6 live generation of 7 assets ~8.5 min on a 9B
+# model), so they get far more than parsing/ingest jobs.
+DEFAULT_JOB_TIMEOUT_S = 600
+JOB_TIMEOUT_S: dict[str, int] = {"agents": 1800, "generate": 3600, "qa": 900}
+
+
+def job_timeout_s(queue_name: str) -> int:
+    return JOB_TIMEOUT_S.get(queue_name, DEFAULT_JOB_TIMEOUT_S)
+
+
+def queue_for(kind: JobKind) -> str:
+    return QUEUE_FOR_KIND.get(kind, "agents")
+
 
 class JobQueue(Protocol):
     def enqueue(self, queue_name: str, job_id: uuid.UUID) -> None: ...
@@ -54,7 +68,10 @@ class RqJobQueue:
     def enqueue(self, queue_name: str, job_id: uuid.UUID) -> None:
         try:
             Queue(queue_name, connection=self._redis).enqueue(
-                JOB_ENTRYPOINT, str(job_id), job_id=str(job_id), job_timeout=600
+                JOB_ENTRYPOINT,
+                str(job_id),
+                job_id=str(job_id),
+                job_timeout=job_timeout_s(queue_name),
             )
         except RedisError as exc:
             raise OmniGrowthError(
@@ -144,7 +161,7 @@ async def create_job(
 
 
 def dispatch(queue: JobQueue, kind: JobKind, job_id: uuid.UUID) -> None:
-    queue.enqueue(QUEUE_FOR_KIND.get(kind, "agents"), job_id)
+    queue.enqueue(queue_for(kind), job_id)
 
 
 async def get_job(session: AsyncSession, job_id: uuid.UUID) -> JobView:

@@ -304,6 +304,230 @@ PLAN = {
     ]
 }
 
+# ------------------------------------------------------------------ Phase 6 writers
+# Generation order = plan order. LinkedIn items: day1, day3, day4, day5, day7; X items:
+# day2 (thread), day3 (single post), day6 (thread). Each answer exercises one QA path.
+_LI_BODY = (
+    "Most small teams send client files to a cloud AI without thinking twice.\n\n"
+    "Local AI agents keep proprietary data on the machine. A 9B-parameter model now runs on a "
+    "consumer GPU with 12 GB of VRAM, which is enough for drafting and classification.\n\n"
+    "Start with one routine task, such as summarising support tickets, and run it locally. "
+    "Routine work avoids per-token cloud fees when it runs on your own hardware.\n\n"
+    "Keep the long, multi-step reasoning jobs for frontier models where they clearly win."
+)
+LINKEDIN_POSTS = [
+    {  # day 1: clean -> AWAITING_APPROVAL
+        "hook": "Your client data does not need to leave your office to get AI help.",
+        "body": _LI_BODY,
+        "cta": "Follow for the full local-AI checklist series",
+        "hashtags": ["LocalAI", "SmallBusiness"],
+        "cited_claims": [1, 2, 3, 4],
+        "hook_type": "statement",
+        "cta_type": "follow",
+        "media_suggestion": None,
+    },
+    {  # day 3: carousel script, clean
+        "hook": "How an accounting firm kept client data on-site and still used AI.",
+        "body": (
+            "Slide 1: The problem - client files and cloud AI do not mix.\n\n"
+            "Slide 2: Local AI agents keep proprietary data on the machine.\n\n"
+            "Slide 3: A consumer GPU with 12 GB of VRAM runs a 9B-parameter model.\n\n"
+            "Slide 4: Routine drafting runs locally, with no per-token cloud fees.\n\n"
+            "Slide 5: Hard multi-step reasoning still goes to a frontier model."
+        ),
+        "cta": "Book a free 20-minute local-AI readiness call",
+        "hashtags": ["LocalAI"],
+        "cited_claims": [1, 2, 3, 4],
+        "hook_type": "story",
+        "cta_type": "call",
+        "media_suggestion": "Five-slide PDF carousel, one idea per slide.",
+    },
+    {  # day 4: banned phrase -> QA_FAILED (BRAND)
+        "hook": "Local AI is a game-changer for small teams. Here is the comparison.",
+        "body": (
+            "Local 9B model or frontier API? It depends on the task.\n\n"
+            "Local AI agents keep proprietary data on the machine and avoid per-token cloud "
+            "fees. Frontier models still lead at long, multi-step reasoning.\n\n"
+            "Use both, on purpose."
+        ),
+        "cta": "Comment HYBRID for the comparison sheet",
+        "hashtags": ["AI"],
+        "cited_claims": [1, 3, 4],
+        "hook_type": "contrarian",
+        "cta_type": "comment",
+        "media_suggestion": "Two-column comparison document.",
+    },
+    {  # day 5: near-duplicate of day 1 -> NEAR_DUPLICATE warning, still passes
+        "hook": "Your client data does not need to leave your office to get AI help.",
+        "body": _LI_BODY,
+        "cta": "Follow for plain-English AI explainers",
+        "hashtags": ["LocalAI", "SmallBusiness"],
+        "cited_claims": [1, 2, 3, 4],
+        "hook_type": "statement",
+        "cta_type": "follow",
+        "media_suggestion": None,
+    },
+    {  # day 7: missing CTA although the plan item requires one -> QA_FAILED (STRUCTURAL)
+        "hook": "The day we pulled our client files back from the cloud.",
+        "body": (
+            "We had been pasting client documents into a cloud chatbot for months.\n\n"
+            "Then we asked where that data lives. Local AI agents keep proprietary data on "
+            "the machine, so we moved our drafting to a 9B-parameter model on a GPU with 12 "
+            "GB of VRAM.\n\nIt handles the routine work. We keep a frontier model for the "
+            "hard reasoning."
+        ),
+        "cta": None,
+        "hashtags": [],
+        "cited_claims": [1, 2],
+        "hook_type": "story",
+        "cta_type": "none",
+        "media_suggestion": None,
+    },
+]
+X_POSTS = [
+    {  # day 2: clean thread
+        "posts": [
+            "Stop paying per token for work a desktop GPU can do.",
+            "Local AI agents keep proprietary data on the machine.",
+            "A 9B-parameter model runs on a consumer GPU with 12 GB of VRAM.",
+            "Keep frontier models for long, multi-step reasoning.",
+        ],
+        "cta": "Repost if your team pays per token",
+        "hashtags": ["LocalAI"],
+        "cited_claims": [1, 2, 4],
+        "hook_type": "contrarian",
+        "cta_type": "comment",
+    },
+    {  # day 3: a single post that is far over the limit -> QA_FAILED (PLATFORM)
+        "posts": [
+            "The cloud is not the safe default for your client data. Local AI agents keep "
+            "proprietary data on the machine, a 9B-parameter model runs on a consumer GPU "
+            "with 12 GB of VRAM, routine work avoids per-token cloud fees, and you keep "
+            "frontier models only for the long, multi-step reasoning jobs where they clearly "
+            "win. That is the whole argument, and it fits on one desk."
+        ],
+        "cta": None,
+        "hashtags": [],
+        "cited_claims": [1, 2, 3, 4],
+        "hook_type": "contrarian",
+        "cta_type": "none",
+    },
+    {  # day 6: links a "source" that is not in the research packet -> QA_FAILED (ACCURACY)
+        "posts": [
+            "12 GB of VRAM is now enough for everyday drafting work.",
+            "A 9B-parameter model covers drafting and classification on one consumer GPU.",
+            "Full benchmark: https://llm-benchmarks.example/local-9b",
+        ],
+        "cta": None,
+        "hashtags": [],
+        "cited_claims": [2],
+        "hook_type": "statistic",
+        "cta_type": "none",
+    },
+]
+
+
+# ------------------------------------------------------------------ Phase 7 (§55 E2E)
+# The §55 campaign adds YOUTUBE and INSTAGRAM; the planner answer for it (selected by the
+# platform list in the prompt) includes items for both so the E2E can prove they are
+# reported as skipped (decision D2).
+E2E_PLAN = {
+    "items": [
+        plan_item(
+            1,
+            "I1",
+            "LINKEDIN",
+            "TEXT_POST",
+            "TACTICAL",
+            "AUTHORITY",
+            "AWARENESS",
+            "Follow for the full local-AI checklist series",
+            8,
+            3,
+        ),
+        plan_item(
+            2,
+            "I2",
+            "X",
+            "THREAD",
+            "CONTRARIAN",
+            "REACH",
+            "AWARENESS",
+            "Repost if your team pays per token",
+            12,
+            2,
+        ),
+        plan_item(
+            3,
+            "I3",
+            "YOUTUBE",
+            "LONG_VIDEO_SCRIPT",
+            "CASE_STUDY",
+            "AUTHORITY",
+            "CONSIDERATION",
+            None,
+            15,
+            4,
+        ),
+        plan_item(
+            4,
+            "I4",
+            "LINKEDIN",
+            "CAROUSEL",
+            "COMPARISON",
+            "AUTHORITY",
+            "CONSIDERATION",
+            CALL,
+            9,
+            3,
+            depends_on=1,
+        ),
+        plan_item(
+            5, "I5", "INSTAGRAM", "CAROUSEL", "EDUCATIONAL", "FOLLOWERS", "AWARENESS", None, 18, 3
+        ),
+        plan_item(6, "I6", "X", "TEXT_POST", "DATA_DRIVEN", "REACH", "AWARENESS", None, 11, 3),
+        plan_item(
+            7,
+            "I7",
+            "LINKEDIN",
+            "TEXT_POST",
+            "STORY",
+            "LEADS",
+            "CONVERSION",
+            CALL,
+            9,
+            3,
+            depends_on=4,
+        ),
+    ]
+}
+OPTIMIZER = {
+    "recommendations": [
+        {
+            "statement": "Publish more tactical LinkedIn text posts with a clear follow CTA.",
+            "rationale": (
+                "S1 has the highest engagement rate in the report; the sample is small "
+                "(one post), so treat this as a direction to test, not a conclusion."
+            ),
+            "target": "LINKEDIN format=TEXT_POST",
+            "evidence": ["S1", "S2"],
+        },
+        {
+            "statement": "Keep X threads short and contrarian; they drove clicks.",
+            "rationale": "S3 shows the best click rate among the published posts.",
+            "target": "X format=THREAD",
+            "evidence": ["S3"],
+        },
+        {
+            # Cites a row that does not exist: must be dropped, never stored.
+            "statement": "Double the posting frequency on Instagram.",
+            "rationale": "Instagram was not published in this campaign.",
+            "target": "INSTAGRAM",
+            "evidence": ["S9"],
+        },
+    ]
+}
+
 
 def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
@@ -313,7 +537,13 @@ def main() -> None:
     # First answer skips CASE_STUDY: the schema rejects it and the repair loop runs once.
     incomplete = [i for i in complete if i["angle"] != "CASE_STUDY"]
     write("campaign__opportunity.json", [{"ideas": incomplete}, {"ideas": complete}])
-    write("campaign__planner.json", [PLAN])
+    write(
+        "campaign__planner.json",
+        [PLAN, {"match": "YOUTUBE; INSTAGRAM", "response": E2E_PLAN}],
+    )
+    write("content__linkedin_writer.json", LINKEDIN_POSTS)
+    write("content__x_writer.json", X_POSTS)
+    write("analytics__optimizer.json", [OPTIMIZER])
 
 
 if __name__ == "__main__":

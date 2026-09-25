@@ -84,6 +84,8 @@ class AgentOutcome[T: BaseModel]:
     provider: str
     model: str
     prompt_ref: str
+    prompt_version_id: uuid.UUID
+    model_run_id: uuid.UUID  # the successful call (content provenance, §36)
 
 
 async def run_agent[T: BaseModel](
@@ -160,6 +162,8 @@ async def run_agent[T: BaseModel](
         provider=result.model.provider_name,
         model=result.model.model,
         prompt_ref=rendered.prompt_ref,
+        prompt_version_id=prompt_version_id,
+        model_run_id=result.model_run_id,
     )
 
 

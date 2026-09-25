@@ -9,10 +9,10 @@ so ``core`` stays independent of ``omnigrowth.models`` (import-linter contract).
 from __future__ import annotations
 
 import uuid
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from typing import Any
 
-from sqlalchemy import Table, func, insert, update
+from sqlalchemy import ColumnElement, Table, func, insert, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from omnigrowth.core.errors import ErrorCode, OmniGrowthError
@@ -70,11 +70,14 @@ async def apply_transition(
     values: Mapping[str, Any] | None = None,
     fence: Mapping[str, Any] | None = None,
     extra_metadata: Mapping[str, Any] | None = None,
+    conditions: Sequence[ColumnElement[bool]] = (),
 ) -> Transition:
     """Apply ``trigger`` to an existing row. Guards must have been checked by the caller.
 
     ``values``: extra columns to set in the same UPDATE (e.g. ``approved_version_id``).
     ``fence``: extra equality predicates (e.g. ``{"claim_token": t}`` for job outcomes).
+    ``conditions``: extra SQL predicates evaluated by the database in the same UPDATE (e.g.
+    ``lease_expires_at > now() + timeout`` at dispatch start, STATE_MACHINES §3.4).
     Raises INVALID_STATE_TRANSITION / FORBIDDEN (structural) or CONFLICT (lost race).
     """
     transition = machine.resolve(from_state, trigger, actor)
@@ -90,6 +93,8 @@ async def apply_transition(
         stmt = stmt.values(updated_at=func.now())
     for column, expected in (fence or {}).items():
         stmt = stmt.where(table.c[column] == expected)
+    for condition in conditions:
+        stmt = stmt.where(condition)
 
     result = await session.execute(stmt)
     if result.rowcount != 1:  # type: ignore[attr-defined]
@@ -101,6 +106,8 @@ async def apply_transition(
 
     await session.execute(
         insert(audit_table).values(
+            # clock_timestamp(): transitions within one transaction keep their order.
+            occurred_at=func.clock_timestamp(),
             **build_audit_row(
                 table_name=table.name,
                 entity_id=entity_id,
@@ -111,7 +118,7 @@ async def apply_transition(
                 brand_id=brand_id,
                 reason=reason,
                 extra_metadata=extra_metadata,
-            )
+            ),
         )
     )
     return transition
@@ -140,6 +147,8 @@ async def create_with_state(
     )
     await session.execute(
         insert(audit_table).values(
+            # clock_timestamp(): transitions within one transaction keep their order.
+            occurred_at=func.clock_timestamp(),
             **build_audit_row(
                 table_name=table.name,
                 entity_id=entity_id,
@@ -149,7 +158,7 @@ async def create_with_state(
                 correlation_id=correlation_id,
                 brand_id=brand_id,
                 reason=reason,
-            )
+            ),
         )
     )
     return transition

@@ -21,8 +21,10 @@ from omnigrowth.schemas.campaigns import (
     ResearchPacketRead,
 )
 from omnigrowth.schemas.common import Page
+from omnigrowth.schemas.content import AssetGenerateRequest
 from omnigrowth.schemas.sources import JobRead
 from omnigrowth.services import campaigns as campaign_service
+from omnigrowth.services import content as content_service
 from omnigrowth.services import jobs as job_service
 
 router = APIRouter(prefix="/campaigns", tags=["campaigns"])
@@ -92,6 +94,26 @@ async def activate_campaign(
     campaign_id: uuid.UUID, principal: EditorDep, session: SessionDep
 ) -> CampaignRead:
     return await campaign_service.activate(session, principal.actor, campaign_id)
+
+
+@router.post("/{campaign_id}/generate-assets", response_model=JobRead, status_code=202)
+async def generate_assets(
+    campaign_id: uuid.UUID,
+    principal: EditorDep,
+    session: SessionDep,
+    queue: JobQueueDep,
+    body: AssetGenerateRequest | None = None,
+) -> JobRead:
+    """ACTIVE campaigns only: DRAFT assets per plan item (CA1) + one generation/QA job.
+    Plan items without an MVP writer are listed in the job result as ``skipped`` (D2)."""
+    job_id = await content_service.generate_assets(
+        session,
+        queue,
+        principal.actor,
+        campaign_id,
+        body.plan_item_ids if body is not None else None,
+    )
+    return to_read(await job_service.get_job(session, job_id))
 
 
 @router.get("/{campaign_id}/strategy", response_model=CampaignStrategyRead)

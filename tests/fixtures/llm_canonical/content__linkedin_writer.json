@@ -1,0 +1,86 @@
+{
+  "responses": [
+    {
+      "hook": "Your client data does not need to leave your office to get AI help.",
+      "body": "Most small teams send client files to a cloud AI without thinking twice.\n\nLocal AI agents keep proprietary data on the machine. A 9B-parameter model now runs on a consumer GPU with 12 GB of VRAM, which is enough for drafting and classification.\n\nStart with one routine task, such as summarising support tickets, and run it locally. Routine work avoids per-token cloud fees when it runs on your own hardware.\n\nKeep the long, multi-step reasoning jobs for frontier models where they clearly win.",
+      "cta": "Follow for the full local-AI checklist series",
+      "hashtags": [
+        "LocalAI",
+        "SmallBusiness"
+      ],
+      "cited_claims": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "hook_type": "statement",
+      "cta_type": "follow",
+      "media_suggestion": null
+    },
+    {
+      "hook": "How an accounting firm kept client data on-site and still used AI.",
+      "body": "Slide 1: The problem - client files and cloud AI do not mix.\n\nSlide 2: Local AI agents keep proprietary data on the machine.\n\nSlide 3: A consumer GPU with 12 GB of VRAM runs a 9B-parameter model.\n\nSlide 4: Routine drafting runs locally, with no per-token cloud fees.\n\nSlide 5: Hard multi-step reasoning still goes to a frontier model.",
+      "cta": "Book a free 20-minute local-AI readiness call",
+      "hashtags": [
+        "LocalAI"
+      ],
+      "cited_claims": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "hook_type": "story",
+      "cta_type": "call",
+      "media_suggestion": "Five-slide PDF carousel, one idea per slide."
+    },
+    {
+      "hook": "Local AI is a game-changer for small teams. Here is the comparison.",
+      "body": "Local 9B model or frontier API? It depends on the task.\n\nLocal AI agents keep proprietary data on the machine and avoid per-token cloud fees. Frontier models still lead at long, multi-step reasoning.\n\nUse both, on purpose.",
+      "cta": "Comment HYBRID for the comparison sheet",
+      "hashtags": [
+        "AI"
+      ],
+      "cited_claims": [
+        1,
+        3,
+        4
+      ],
+      "hook_type": "contrarian",
+      "cta_type": "comment",
+      "media_suggestion": "Two-column comparison document."
+    },
+    {
+      "hook": "Your client data does not need to leave your office to get AI help.",
+      "body": "Most small teams send client files to a cloud AI without thinking twice.\n\nLocal AI agents keep proprietary data on the machine. A 9B-parameter model now runs on a consumer GPU with 12 GB of VRAM, which is enough for drafting and classification.\n\nStart with one routine task, such as summarising support tickets, and run it locally. Routine work avoids per-token cloud fees when it runs on your own hardware.\n\nKeep the long, multi-step reasoning jobs for frontier models where they clearly win.",
+      "cta": "Follow for plain-English AI explainers",
+      "hashtags": [
+        "LocalAI",
+        "SmallBusiness"
+      ],
+      "cited_claims": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "hook_type": "statement",
+      "cta_type": "follow",
+      "media_suggestion": null
+    },
+    {
+      "hook": "The day we pulled our client files back from the cloud.",
+      "body": "We had been pasting client documents into a cloud chatbot for months.\n\nThen we asked where that data lives. Local AI agents keep proprietary data on the machine, so we moved our drafting to a 9B-parameter model on a GPU with 12 GB of VRAM.\n\nIt handles the routine work. We keep a frontier model for the hard reasoning.",
+      "cta": null,
+      "hashtags": [],
+      "cited_claims": [
+        1,
+        2
+      ],
+      "hook_type": "story",
+      "cta_type": "none",
+      "media_suggestion": null
+    }
+  ]
+}
