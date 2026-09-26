@@ -7,16 +7,12 @@ Each step lists what it needs from a human, if anything.
 
 ## Next up (in order)
 
-### 1. Phase 8 — Analytics depth
-- Derived-metric definitions as data: `derived_metric_definitions` API (restricted formula AST,
-  never `eval`), configurable weights, `content_efficiency` (§17), report cites the revision used.
-- Attribute comparisons (§16): `GET /analytics/attribute-comparisons` grouped by topic, pillar,
-  hook_type, platform, format, word-count bucket, cta_type, posting hour, model, prompt version;
-  `n`, mean, median and an honest `sufficient` flag against `min_sample`.
-- `GET /analytics/publications/{id}/metrics`, calendar view (`GET /calendar`).
-- Scheduled `ANALYTICS_PULL` for recently published posts (scheduler), X9: stop polling DELETED.
-- Gate: hand-computed metric fixtures; nullable metrics never yield divide-by-zero or fake zeros.
-- Human: none.
+### 1. Phase 8 — Analytics depth — DONE (2026-09-26, see ENGINEERING_LOG, docs/METRICS.md)
+
+Left open from Phase 8:
+- `POST /calendar/items/{id}/reschedule` and `/calendar/plan-items/{id}/move`. Rescheduling works today through `/approvals/{id}/actions` (CA12). Plan-item move is not implemented.
+- Metric normalisation by post age is not done. Reports use the latest snapshot as-is (METRICS.md §5).
+- The inference slot TTL is not renewed, and the backlog cap is best-effort (safeguards_post_mvp.md §3).
 
 ### 2. Phase 9 — Experiments + optimization
 - Experiment framework (§18): variants differing in one declared variable, min sample and
@@ -66,8 +62,8 @@ Each step lists what it needs from a human, if anything.
 | Rate limits beyond login + ingest | No public exposure yet (API bound to 127.0.0.1). | Before any remote deployment |
 | Superuser DB role, CI docker/windows jobs, dev hot-reload profile | Operational hardening. | Before any remote deployment |
 
-## Decisions waiting on a human
-- ADR-0003 partial unique index wording (PROPOSED, used since Phase 1) — confirm.
-- DOCX zip-bomb ratio 100:1 per member instead of 10x overall — accept as a SPEC_AMENDMENT?
-- One local LLM server (LM Studio) vs both LM Studio + Ollama on the 12 GB GPU.
-- Writers on `REASONING_LOCAL` (same model as planning, no GPU swaps) vs `FRONTIER_CREATIVE`.
+## Decisions (resolved 2026-09-26)
+- ADR-0003 was already ACCEPTED at the Phase 1 gate; nothing to confirm.
+- DOCX zip-bomb guard: 100:1 per member accepted -> SPEC_AMENDMENTS A13.
+- Local LLM server: LM Studio only; Ollama removed from role routing (config/models.yaml).
+- Writers stay on REASONING_LOCAL (same model as planning, no GPU swaps).

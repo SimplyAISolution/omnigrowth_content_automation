@@ -22,13 +22,7 @@ providers:
     locality: LOCAL
     preset: lmstudio
     max_concurrency: 1          # A2: single 12 GB GPU; a second request waits
-    concurrency_group: local_gpu # shares the GPU with ollama: one local call at a time overall
-    timeout_s: 180
-  ollama:
-    locality: LOCAL
-    preset: ollama
-    max_concurrency: 1
-    concurrency_group: local_gpu
+    concurrency_group: local_gpu # one local call at a time on the GPU
     timeout_s: 180
   cloud:
     # Enabled only when OMNIGROWTH_CLOUD_API_KEY is set AND base_url is filled in.
@@ -40,25 +34,24 @@ providers:
 
 # Ordered candidates per role. The router filters by routing profile and privacy class.
 # One main local model keeps LM Studio from swapping models on a 12 GB GPU.
+# Decision 2026-09-26 (human): LM Studio is the only local server; writers stay on
+# REASONING_LOCAL (same model as planning). The ollama preset remains available via
+# OMNIGROWTH_LOCAL_LLM_PRESET but no role routes to it.
 roles:
   CHEAP_LOCAL:
     - {provider: lmstudio, model: "qwen/qwen3.5-9b"}
-    - {provider: ollama, model: "qwen3:8b"}
   REASONING_LOCAL:
     - {provider: lmstudio, model: "qwen/qwen3.5-9b"}
-    - {provider: ollama, model: "qwen3:14b"}
   CODING_LOCAL:
     - {provider: lmstudio, model: "qwen/qwen3.5-9b"}
   EMBEDDING_LOCAL:
     - {provider: lmstudio, model: "text-embedding-nomic-embed-text-v1.5"}
-    - {provider: ollama, model: "nomic-embed-text:latest"}
   # Frontier roles: local fallbacks first so LOCAL_ONLY still works; add cloud candidates
   # (provider: cloud, with per-million-token costs) when a cloud key is configured.
   FRONTIER_FAST:
     - {provider: lmstudio, model: "qwen/qwen3.5-9b"}
   FRONTIER_REASONING:
     - {provider: lmstudio, model: "qwen/qwen3.5-9b"}
-    - {provider: ollama, model: "qwen3:14b"}
   FRONTIER_CREATIVE:
     - {provider: lmstudio, model: "google/gemma-4-12b-qat"}
     - {provider: lmstudio, model: "qwen/qwen3.5-9b"}

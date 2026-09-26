@@ -69,3 +69,11 @@ Decision (record as ADR-0003; human may override at the Phase 1 gate):
 
 ## A12 — Definition of "production ready" (clarifies §44, §59)
 A component may be labeled production-ready only if: gates pass, failure tests exist for its external dependencies, it emits structured logs with correlation IDs, its config is documented, and it has been run once outside the test suite (smoke test recorded). Everything else is labeled `FOUNDATION` or `EXPERIMENTAL`.
+
+## A13 — DOCX zip-bomb guard (amends the ingestion limits; accepted by the human 2026-09-26)
+- The "10x overall expansion" rule is replaced: a DOCX is rejected if any ZIP member of 1 MiB or more
+  (uncompressed) expands more than 100:1, if one member exceeds 50 MiB, if the total exceeds 100 MiB,
+  or if it has more than 2000 members. Checked on the ZIP central directory before parsing
+  (`omnigrowth/ingestion/limits.py`).
+- Reason: ordinary text-heavy DOCX files compress 15-30x, so a 10x overall cap rejects real uploads,
+  while the per-member ratio plus absolute caps still stop decompression bombs.
