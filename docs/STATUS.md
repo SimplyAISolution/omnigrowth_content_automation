@@ -1,11 +1,11 @@
 ```
-phase: 7
-task: post-MVP known-issue pass
+phase: 8
+task: phase-8 gate (analytics depth + safeguards)
 gate: GATE_PASSED
-last_green_commit: 4c23159
-next_phase: 8 — Analytics
+last_green_commit: d3db1ec
+next_phase: 9 — Experiments + optimization
 shell: PowerShell Core 7.6.6 (Git Bash also available)
-blockers: known-issue pass commit pending (signing)
+blockers: phase 8 commit pending (signing)
 ```
 
 ## Notes
@@ -19,3 +19,4 @@ blockers: known-issue pass commit pending (signing)
 - Phase 6: LinkedIn/X writers, content versions + diff, deterministic QA stages 1-4 (config/qa.yaml), pgvector duplicate/fatigue warnings, per-queue job timeouts. Live content run passed (20 min, 13 assets); see docs/audit/phase6_live_content.json.
 - Phase 7 (MVP): approvals, outbox scheduler (SKIP LOCKED, leases, UNCERTAIN handling), MockPublisher, mock/fixture analytics + NULL-safe rates, Optimization Agent with evidence, audit timeline. §55 E2E green on fixtures and live (docs/audit/phase7_live_e2e.json).
 - Post-MVP: known issues resolved (Idempotency-Key, full §37, CA12/CA17, auto-approve, QA re-run, per-model similarity thresholds, DB-clock leases, recommendation machine). Follow-up plan: docs/FOLLOW_UPS.md.
+- Phase 8: derived metrics as data (formula grammar, revisions), attribute comparisons, publication metrics, calendar, scheduled pulls, simulated-vs-real provenance (docs/METRICS.md). Upload/inference safeguards hardened (docs/audit/safeguards_post_mvp.md). Live §55 green (17 min).

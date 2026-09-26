@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import asyncio
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
 
 import pytest
@@ -541,3 +543,82 @@ async def test_providers_in_one_concurrency_group_share_a_slot() -> None:
 
     await asyncio.gather(*(call(r) for r in [ModelRole.CHEAP_LOCAL, ModelRole.REASONING_LOCAL] * 2))
     assert peak == 1
+
+
+# ------------------------------------------------------------------ inference guards (post-MVP)
+async def test_oversized_prompt_is_refused_before_any_model_call() -> None:
+    primary = FakeProvider("primary", script=[ok()])
+    huge = StubPrompt(messages=[{"role": "user", "content": "x" * 70_000}])
+    router = ModelRouter(config(two_local=False), {"primary": primary})
+    with pytest.raises(OmniGrowthError) as info:
+        await generate_structured(
+            Answer,
+            huge,
+            router=router,
+            context=context(),
+            recorder=InMemoryRecorder(),
+            capabilities=CapabilityCache(),
+        )
+    assert info.value.code is ErrorCode.VALIDATION_FAILURE
+    assert info.value.details["limit"] == "max_prompt_chars"
+    assert primary.requests == []
+
+
+class RecordingSlots:
+    def __init__(self) -> None:
+        self.calls: list[tuple[str, int, float, float]] = []
+        self.held = 0
+        self.closed = False
+
+    @asynccontextmanager
+    async def slot(
+        self, key: str, limit: int, *, ttl_s: float, max_wait_s: float
+    ) -> AsyncIterator[str]:
+        self.calls.append((key, limit, ttl_s, max_wait_s))
+        self.held += 1
+        try:
+            yield key
+        finally:
+            self.held -= 1
+
+    async def aclose(self) -> None:
+        self.closed = True
+
+
+async def test_every_model_call_holds_a_cross_process_slot() -> None:
+    slots = RecordingSlots()
+    held_during_call: list[int] = []
+
+    class Probe(FakeProvider):
+        async def chat(self, request: ChatRequest) -> ChatResult:
+            held_during_call.append(slots.held)
+            return ok()
+
+    cfg = ModelsConfig.model_validate(
+        {
+            "presets": {"p": {"base_url_host": "http://h/v1", "base_url_docker": "http://d/v1"}},
+            "providers": {
+                "primary": {
+                    "locality": "LOCAL",
+                    "preset": "p",
+                    "concurrency_group": "gpu",
+                    "timeout_s": 50,
+                    "slot_wait_s": 7,
+                }
+            },
+            "roles": {"CHEAP_LOCAL": [{"provider": "primary", "model": "m"}]},
+        }
+    )
+    router = ModelRouter(cfg, {"primary": Probe("primary", script=[])}, slots=slots)
+    await generate_structured(
+        Answer,
+        StubPrompt(),
+        router=router,
+        context=context(),
+        recorder=InMemoryRecorder(),
+        capabilities=CapabilityCache(),
+    )
+    assert held_during_call == [1]
+    assert slots.calls == [("group:gpu", 1, 80.0, 7.0)]
+    await router.aclose()
+    assert slots.closed

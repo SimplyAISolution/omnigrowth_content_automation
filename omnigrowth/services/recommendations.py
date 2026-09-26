@@ -109,6 +109,7 @@ async def generate(
         input_ref={"campaign_id": str(campaign_id), "snapshots": len(rows)},
     )
     by_label = {r["label"]: uuid.UUID(r["snapshot_id"]) for r in rows}
+    by_source: dict[str, str | None] = {r["label"]: r.get("source") for r in rows}
     # Re-check that every id still resolves (arrays cannot carry FKs).
     existing = set(
         (
@@ -146,6 +147,13 @@ async def generate(
                     "source": "campaign_report",
                     "campaign_id": str(campaign_id),
                     "labels": valid,
+                    # Simulated (MOCK/FIXTURE) evidence must stay recognisable downstream.
+                    "data_sources": sorted(
+                        {by_source[lbl] for lbl in valid if by_source.get(lbl) is not None}
+                    ),
+                    "simulated_evidence": any(
+                        by_source.get(lbl) in {"MOCK", "FIXTURE"} for lbl in valid
+                    ),
                 },
             },
             trigger="create",

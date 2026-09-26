@@ -531,3 +531,55 @@ STILL OPEN (by design, see docs/FOLLOW_UPS.md): automatic reconciliation and Man
   limits and ops hardening before any remote deployment.
 NEXT: docs/FOLLOW_UPS.md step 1 — Phase 8 Analytics depth.
 ```
+
+## 2026-09-26 — Human decisions, safeguard audit, Phase 8 gate (commits pending: signing)
+Human decisions (AskUserQuestion): DOCX ratio 100:1 per member -> SPEC_AMENDMENTS A13; LM Studio
+only (Ollama removed from role routing); writers stay on REASONING_LOCAL; ADR-0003 already ACCEPTED.
+Decision commit attempted with explicit paths: failed at SSH signing (passphrase) -> human commits.
+
+Safeguard audit (docs/audit/safeguards_post_mvp.md). NEW: streamed ZIP byte counting + declared-size
+mismatch rejection; DTD/ENTITY rejection in every DOCX part (UTF-8/16/32); 120 s parse budget (ZIP
+chunks, PDF pages); max_prompt_chars per provider (prompts incl. repairs, embedding inputs);
+cross-process Redis inference slots with bounded wait (SLOT_WAIT_TIMEOUT) and TTL; bounded human
+backlog per model queue (429, OMNIGROWTH_MAX_OPEN_MODEL_JOBS=20); repo config proven cloud-free
+under every routing profile. Verified existing: body limits, URL fetch caps, SSRF, member/total caps,
+text caps, timeouts, bounded repairs, outbox duplicate-free recovery. Gaps recorded (doc §3).
+
+Phase 8 (docs/METRICS.md): restricted formula grammar (ast read + whitelist interpreter, never eval),
+derived_metric_definitions as data with immutable revisions (GET/POST/PATCH, OWNER), 7 defaults incl.
+configurable content_efficiency; GET /analytics/publications/{id}/metrics; GET
+/analytics/attribute-comparisons (13 attributes, n/mean/median/sufficient/excluded_null/evidence ids,
+"not causal" note); campaign report with since/until/sources, by_format, cited definition revisions,
+provenance, sufficiency; GET /calendar (day/week/month, tz, DST-safe); scheduled ANALYTICS_PULL
+(config/publishing.yaml analytics); simulated vs real provenance on every analytics response and on
+recommendations (evidence_query.simulated_evidence); POST /analytics/snapshots now [IK].
+
+Debug-loop entries:
+1. Symptom: test_scheduler_process::test_run_honours_stop TimeoutError. Cause: new tick step
+   enqueue_analytics_pulls opened a real DB session (unroutable in unit env); fixture stubbed every
+   other step. Fix: stub it in the fixture. Verify: 5 passed.
+2. Symptom: test_size_limits hit the depth limit before the node limit. Cause: test built a left-deep
+   chain. Fix: balanced tree in the test. Verify: 42 passed.
+3. Symptom: KeyError requested_by_type in phase-8 test. Cause: JobRead does not expose it. Fix: read
+   the jobs row. Verify: 6 passed.
+
+Reviewer (read-only subagent): 2 MAJOR, 7 MINOR. Fixed: M1 strict+captured metric dropped from
+aggregate; M2 constant-bearing formulas (content_efficiency) now aggregate as MEAN_OF_ROWS (size
+independent), rates stay RATIO_OF_SUMS; m3 huge constant -> 422 not 500; m4 defaults seeded once in a
+committed step (no rolled-back cited ids, no writes after first seed); m5 concurrent create -> 409;
+m6 UTF-16/32 DTD markers; m9 embedding size cap falls through to next candidate. Regression tests added.
+
+```
+PHASE 8 GATE — PASSED (run this session, 2026-09-26)
+  uv run poe check -> 198 files already formatted / All checks passed! / Success: no issues found in
+                      144 source files / Contracts: 4 kept, 0 broken. / 607 passed, 99 deselected in 7.81s
+  uv run poe test-int -> 95 passed, 611 deselected in 63.58s (0:01:03)
+  uv run alembic heads -> 83579cc9b1d2 (head)
+  LIVE §55 (LM Studio, Redis slots active): tests/integration/test_live_e2e.py -> 1 passed in 1028.42s
+    (0:17:08); planning 244.2 s, generation 710.8 s (10 generated, INSTAGRAM/YOUTUBE skipped),
+    10 claimed/succeeded/published, analytics pull SUCCEEDED, 4 recommendations stored, 0 dropped.
+KNOWN ISSUES (MINOR, open): slot TTL not renewed / httpx timeout is per-phase (m7); backlog cap
+  best-effort without lock (m8); calendar reschedule/plan-item move endpoints not implemented; no
+  metric normalisation by post age; PDF time budget checked between pages only.
+NEXT: Phase 9 — experiments + optimization (needs human: default min_sample_size / confidence).
+```

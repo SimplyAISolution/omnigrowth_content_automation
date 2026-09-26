@@ -25,6 +25,9 @@ class IngestionLimits:
     # Members smaller than this are exempt from the ratio check: tiny XML parts are often
     # highly compressible and cannot amplify meaningfully.
     zip_ratio_check_min_bytes: int = 1 * MiB
+    # Wall-clock budget for one parse (checked between ZIP chunks and PDF pages). The RQ job
+    # timeout of the ingest queue is the outer, hard limit.
+    max_parse_seconds: float = 120.0
 
 
 DEFAULT_LIMITS = IngestionLimits()

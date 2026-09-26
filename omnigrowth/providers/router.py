@@ -5,13 +5,16 @@ Turns (role, privacy class, routing profile) into an ordered list of concrete mo
 - BALANCED      -> local candidates first, then remote
 - QUALITY_FIRST -> remote candidates first, then local
 PRIVATE tasks never receive a REMOTE model regardless of profile. Each provider has a
-concurrency semaphore (A2: local default 1 — a second request waits, it does not fail).
+concurrency semaphore (A2: local default 1 — a second request waits, it does not fail),
+and in workers a cross-process Redis slot per concurrency group (providers/slots.py).
 """
 
 from __future__ import annotations
 
 import asyncio
 import weakref
+from collections.abc import AsyncIterator, Iterable
+from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from decimal import Decimal
 
@@ -19,6 +22,10 @@ from omnigrowth.core.enums import ModelLocality, ModelRole, PrivacyClass, Routin
 from omnigrowth.core.errors import ErrorCode, OmniGrowthError
 from omnigrowth.providers.base import ChatProvider
 from omnigrowth.providers.config import ModelCandidate, ModelsConfig
+from omnigrowth.providers.slots import SlotLimiter
+
+# A slot outlives the provider timeout by this margin, then expires if its holder crashed.
+SLOT_TTL_MARGIN_S = 30.0
 
 
 @dataclass(frozen=True, slots=True)
@@ -45,9 +52,17 @@ class ResolvedModel:
 
 
 class ModelRouter:
-    def __init__(self, config: ModelsConfig, providers: dict[str, ChatProvider]) -> None:
+    def __init__(
+        self,
+        config: ModelsConfig,
+        providers: dict[str, ChatProvider],
+        *,
+        slots: SlotLimiter | None = None,
+    ) -> None:
         self.config = config
         self.providers = providers
+        # Cross-process slots (Redis) in workers; None in unit tests (in-process only).
+        self.slots = slots
         # Semaphores are created lazily per running event loop: RQ jobs each run their own
         # loop (asyncio.run), and a Semaphore is bound to the loop that first contends it.
         self._semaphores: weakref.WeakKeyDictionary[
@@ -119,6 +134,35 @@ class ModelRouter:
             per_loop[key] = asyncio.Semaphore(limit)
         return per_loop[key]
 
+    @asynccontextmanager
+    async def slot(self, model: ResolvedModel) -> AsyncIterator[None]:
+        """In-process semaphore, then (when configured) the cross-process slot."""
+        async with self.semaphore(model):
+            if self.slots is None:
+                yield
+                return
+            key, limit = self._concurrency_key(model.provider_name)
+            provider = self.config.providers[model.provider_name]
+            async with self.slots.slot(
+                key,
+                limit,
+                ttl_s=provider.timeout_s + SLOT_TTL_MARGIN_S,
+                max_wait_s=provider.slot_wait_s,
+            ):
+                yield
+
+    def check_input_size(self, model: ResolvedModel, texts: Iterable[str]) -> None:
+        limit = self.config.providers[model.provider_name].max_prompt_chars
+        size = sum(len(t) for t in texts)
+        if size > limit:
+            raise OmniGrowthError(
+                ErrorCode.VALIDATION_FAILURE,
+                "model input too large",
+                details={"limit": "max_prompt_chars", "max": limit, "actual": size},
+            )
+
     async def aclose(self) -> None:
         for provider in self.providers.values():
             await provider.aclose()
+        if self.slots is not None:
+            await self.slots.aclose()

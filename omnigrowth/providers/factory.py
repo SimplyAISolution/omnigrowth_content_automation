@@ -12,6 +12,7 @@ from omnigrowth.providers.base import ChatProvider
 from omnigrowth.providers.config import ModelsConfig, ProviderConfig, load_models_config
 from omnigrowth.providers.openai_compatible import OpenAICompatibleProvider
 from omnigrowth.providers.router import ModelRouter
+from omnigrowth.providers.slots import RedisSlotLimiter
 
 log = logging.getLogger(__name__)
 
@@ -71,4 +72,6 @@ def build_router(
     settings: Settings, *, transport: httpx.AsyncBaseTransport | None = None
 ) -> ModelRouter:
     config = load_models_config(settings.config_dir)
-    return ModelRouter(config, build_providers(config, settings, transport=transport))
+    # Every production router shares the GPU slots through Redis (A2 across processes).
+    slots = RedisSlotLimiter.from_url(settings.redis_url.get_secret_value())
+    return ModelRouter(config, build_providers(config, settings, transport=transport), slots=slots)

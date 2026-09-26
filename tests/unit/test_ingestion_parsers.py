@@ -9,6 +9,7 @@ import hashlib
 import io
 import random
 import zipfile
+from collections.abc import Callable
 
 import docx
 import pytest
@@ -658,3 +659,105 @@ def test_document_is_frozen() -> None:
     doc = parse(b"hello", filename="a.txt")
     with pytest.raises(ValidationError):
         doc.title = "changed"  # type: ignore[misc]
+
+
+# ------------------------------------------------------------------ upload hardening (post-MVP)
+def _patch_declared_size(data: bytes, name: str, size: int) -> bytes:
+    """Rewrite the uncompressed size of ``name`` in both its local and central headers."""
+    import struct
+
+    out = bytearray(data)
+    encoded = name.encode()
+    for signature, size_offset, name_offset in ((b"PK\x03\x04", 22, 30), (b"PK\x01\x02", 24, 46)):
+        start = 0
+        while (pos := out.find(signature, start)) != -1:
+            if out[pos + name_offset : pos + name_offset + len(encoded)] == encoded:
+                struct.pack_into("<I", out, pos + size_offset, size)
+            start = pos + 4
+    return bytes(out)
+
+
+def test_docx_member_lying_about_its_size_is_rejected() -> None:
+    data = rewrite_zip(make_docx(), extra={"word/media/liar.bin": bytes(3 * MiB)})
+    lying = _patch_declared_size(data, "word/media/liar.bin", 1000)
+    with zipfile.ZipFile(io.BytesIO(lying)) as archive:
+        assert archive.getinfo("word/media/liar.bin").file_size == 1000  # header check passes
+    err = expect_error(ErrorCode.INGESTION_FAILURE, parse_docx, lying)
+    assert err.details["reason"] == "CORRUPT"
+
+
+def test_docx_streamed_bytes_are_capped_even_below_the_ratio_threshold() -> None:
+    # Each member is under the 1 MiB ratio-exemption line, so only real byte counting stops it.
+    extra = {f"word/media/p{i}.bin": bytes(900 * 1024) for i in range(4)}
+    data = rewrite_zip(make_docx(), extra=extra)
+    limits = IngestionLimits(max_zip_total_uncompressed=10 * MiB)
+    parse_docx(data, limits=limits)  # 3.5 MiB: fine
+    from omnigrowth.ingestion.parsers.docx_parser import verify_zip_stream
+
+    err = expect_error(
+        ErrorCode.VALIDATION_FAILURE,
+        verify_zip_stream,
+        data,
+        IngestionLimits(max_zip_total_uncompressed=2 * MiB),
+    )
+    assert err.details["limit"] == "max_zip_total_uncompressed"
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        b'<?xml version="1.0"?><!DOCTYPE lolz [<!ENTITY lol "lol"><!ENTITY lol2 '
+        b'"&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;">]><w:document>&lol2;</w:document>',
+        b'<?xml version="1.0"?><!DOCTYPE d [<!ENTITY xxe SYSTEM "file:///etc/passwd">]>'
+        b"<w:document>&xxe;</w:document>",
+    ],
+    ids=["billion-laughs", "external-entity"],
+)
+def test_docx_with_dtd_or_entities_is_rejected_before_xml_parsing(payload: bytes) -> None:
+    data = rewrite_zip(make_docx(), replace={"word/document.xml": payload})
+    err = expect_error(ErrorCode.INGESTION_FAILURE, parse_docx, data)
+    assert err.details["reason"] == "UNSAFE_XML"
+    assert err.details["part"] == "word/document.xml"
+
+
+def test_dtd_marker_split_across_chunks_is_found() -> None:
+    from omnigrowth.ingestion.parsers import docx_parser
+
+    filler = b"<!-- " + b"x" * (docx_parser._CHUNK - 8) + b" -->"
+    payload = b'<?xml version="1.0"?>' + filler + b"<!DOCTYPE d []><w:document/>"
+    data = rewrite_zip(make_docx(), replace={"word/document.xml": payload})
+    err = expect_error(ErrorCode.INGESTION_FAILURE, parse_docx, data)
+    assert err.details["reason"] == "UNSAFE_XML"
+
+
+def _fake_clock(step: float) -> Callable[[], float]:
+    import itertools
+
+    counter = itertools.count()
+    return lambda: next(counter) * step
+
+
+def test_parse_time_budget_is_enforced() -> None:
+    from omnigrowth.ingestion.parsers.docx_parser import verify_zip_stream
+
+    limits = IngestionLimits(max_parse_seconds=5)
+    err = expect_error(
+        ErrorCode.VALIDATION_FAILURE, verify_zip_stream, make_docx(), limits, clock=_fake_clock(10)
+    )
+    assert err.details["limit"] == "max_parse_seconds"
+    err = expect_error(
+        ErrorCode.VALIDATION_FAILURE,
+        parse_pdf,
+        make_pdf(["Page one text."]),
+        limits=limits,
+        clock=_fake_clock(10),
+    )
+    assert err.details["limit"] == "max_parse_seconds"
+
+
+@pytest.mark.parametrize("encoding", ["utf-16-le", "utf-16-be", "utf-32-le"])
+def test_docx_dtd_in_utf16_or_utf32_part_is_rejected(encoding: str) -> None:
+    xml = '<?xml version="1.0"?><!DOCTYPE d [<!ENTITY a "b">]><w:document>&a;</w:document>'
+    data = rewrite_zip(make_docx(), replace={"word/document.xml": xml.encode(encoding)})
+    err = expect_error(ErrorCode.INGESTION_FAILURE, parse_docx, data)
+    assert err.details["reason"] == "UNSAFE_XML"

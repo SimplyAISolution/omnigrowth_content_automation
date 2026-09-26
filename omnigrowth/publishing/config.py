@@ -31,11 +31,24 @@ class RetryConfig(BaseModel):
     schedule_grace_seconds: int = Field(ge=0)
 
 
+class AnalyticsPullConfig(BaseModel):
+    """Scheduled metric pulls (Phase 8). Only PUBLISHED publications are polled, so a
+    DELETED post stops being polled (X9)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    enabled: bool = True
+    interval_minutes: int = Field(default=360, ge=5)
+    window_days: int = Field(default=30, ge=1, le=365)
+    max_campaigns_per_tick: int = Field(default=10, ge=1, le=500)
+
+
 class PublishingConfig(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     scheduler: SchedulerConfig
     publishing: RetryConfig
+    analytics: AnalyticsPullConfig = Field(default_factory=AnalyticsPullConfig)
 
     @model_validator(mode="after")
     def _lease_covers_request(self) -> PublishingConfig:

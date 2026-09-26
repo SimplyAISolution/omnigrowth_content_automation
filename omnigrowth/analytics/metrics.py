@@ -1,111 +1,91 @@
-"""Derived metrics (spec §17) with NULL-safe math (DATA_MODEL §5.3, Phase 8 gate).
+"""Default derived metrics (spec §17) and NULL-safe helpers (DATA_MODEL §5.3, Phase 8 gate).
 
-A missing input is never treated as 0: a rate whose denominator is missing or zero is
-``None`` with a ``null_reason``; a numerator made of several counts uses the ones that were
-captured and lists the missing ones, and is ``None`` only when none were captured.
-Formulas are data (ratios over known metric names), never evaluated code (AGENTS.md §3).
+The defaults below are seeded as global (brand-less) ``derived_metric_definitions`` rows;
+brands may add their own definitions or override a key with new revisions (OWNER only).
+Every formula is data parsed by ``analytics/formula.py`` — never evaluated code (AGENTS.md
+§3). Semantics, attribution scope and limitations are documented in docs/METRICS.md.
 """
 
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
-COUNT_METRICS = (
-    "impressions",
-    "views",
-    "reach",
-    "likes",
-    "comments",
-    "shares",
-    "saves",
-    "clicks",
-    "profile_visits",
-    "followers_gained",
-    "conversion_count",
+from omnigrowth.analytics.formula import (
+    SNAPSHOT_METRICS,
+    Evaluation,
+    Formula,
+    evaluate,
+    evaluate_aggregate,
+    parse_formula,
 )
+
+COUNT_METRICS = SNAPSHOT_METRICS
+DerivedValue = Evaluation  # historical name used by reports and tests
 
 
 @dataclass(frozen=True, slots=True)
-class Ratio:
+class DefaultDefinition:
     key: str
     name: str
-    numerator: tuple[str, ...]
-    denominator: str
+    description: str
+    formula: Formula
 
 
-DEFINITIONS: tuple[Ratio, ...] = (
-    Ratio(
+def _default(
+    key: str,
+    name: str,
+    description: str,
+    expression: str,
+    weights: Mapping[str, float] | None = None,
+) -> DefaultDefinition:
+    return DefaultDefinition(key, name, description, parse_formula(expression, weights))
+
+
+DEFINITIONS: tuple[DefaultDefinition, ...] = (
+    _default(
         "engagement_rate",
         "Engagement rate",
-        ("likes", "comments", "shares", "saves"),
-        "impressions",
+        "Interactions (likes, comments, shares, saves that were captured) per impression.",
+        "captured(likes, comments, shares, saves) / impressions",
     ),
-    Ratio("share_rate", "Share rate", ("shares",), "impressions"),
-    Ratio("save_rate", "Save rate", ("saves",), "impressions"),
-    Ratio("comment_rate", "Comment rate", ("comments",), "impressions"),
-    Ratio("click_rate", "Click rate", ("clicks",), "impressions"),
-    Ratio("follow_conversion", "Follow conversion", ("followers_gained",), "profile_visits"),
+    _default("share_rate", "Share rate", "Shares per impression.", "shares / impressions"),
+    _default("save_rate", "Save rate", "Saves per impression.", "saves / impressions"),
+    _default("comment_rate", "Comment rate", "Comments per impression.", "comments / impressions"),
+    _default("click_rate", "Click rate", "Clicks per impression.", "clicks / impressions"),
+    _default(
+        "follow_conversion",
+        "Follow conversion",
+        "Net followers gained per profile visit.",
+        "followers_gained / profile_visits",
+    ),
+    _default(
+        "content_efficiency",
+        "Content efficiency",
+        "Weighted outcome per unit of effort: (reach + meaningful engagement + conversions) "
+        "over (1 + creation cost + production time). NOT an objective score: the weights are "
+        "a starting point to tune per brand (spec §17).",
+        "(w.reach * reach + w.engagement * captured(comments, shares, saves)"
+        " + w.conversion * conversion_count)"
+        " / (1 + w.cost * creation_cost_usd + w.time * production_minutes)",
+        {"reach": 0.001, "engagement": 1.0, "conversion": 5.0, "cost": 10.0, "time": 0.1},
+    ),
 )
 DEFINITION_KEYS = tuple(d.key for d in DEFINITIONS)
 
 
-@dataclass(frozen=True, slots=True)
-class DerivedValue:
-    value: float | None
-    null_reason: str | None = None
-    missing_inputs: tuple[str, ...] = field(default_factory=tuple)
-
-    def as_json(self) -> dict[str, object]:
-        return {
-            "value": None if self.value is None else round(self.value, 6),
-            "null_reason": self.null_reason,
-            "missing_inputs": list(self.missing_inputs),
-        }
+def derive(values: Mapping[str, int | float | None], definition: DefaultDefinition) -> Evaluation:
+    return evaluate(definition.formula, values)
 
 
-def derive(values: Mapping[str, int | None], ratio: Ratio) -> DerivedValue:
-    denominator = values.get(ratio.denominator)
-    if denominator is None:
-        return DerivedValue(None, f"{ratio.denominator} not captured")
-    if denominator == 0:
-        return DerivedValue(None, f"{ratio.denominator} is 0")
-    present = [values[k] for k in ratio.numerator if values.get(k) is not None]
-    missing = tuple(k for k in ratio.numerator if values.get(k) is None)
-    if not present:
-        return DerivedValue(None, f"{', '.join(ratio.numerator)} not captured", missing)
-    return DerivedValue(sum(v for v in present if v is not None) / denominator, None, missing)
+def derive_all(values: Mapping[str, int | float | None]) -> dict[str, Evaluation]:
+    return {d.key: evaluate(d.formula, values) for d in DEFINITIONS}
 
 
-def derive_all(values: Mapping[str, int | None]) -> dict[str, DerivedValue]:
-    return {ratio.key: derive(values, ratio) for ratio in DEFINITIONS}
-
-
-def derive_aggregate(rows: list[Mapping[str, int | None]], ratio: Ratio) -> DerivedValue:
-    """A rate over several publications, computed only from comparable rows.
-
-    Rows without the denominator are left out; a numerator input is used only if every
-    remaining row captured it (otherwise one platform's missing ``saves`` would silently
-    count as 0 against its impressions). Excluded inputs are reported in ``missing_inputs``.
-    """
-    usable = [r for r in rows if r.get(ratio.denominator) is not None]
-    if not usable:
-        return DerivedValue(None, f"{ratio.denominator} not captured")
-    denominator = sum(int(r[ratio.denominator] or 0) for r in usable)
-    if denominator == 0:
-        return DerivedValue(None, f"{ratio.denominator} is 0")
-    inputs = [k for k in ratio.numerator if all(r.get(k) is not None for r in usable)]
-    missing = tuple(k for k in ratio.numerator if k not in inputs)
-    if not inputs:
-        return DerivedValue(
-            None, f"{', '.join(ratio.numerator)} not captured for every publication", missing
-        )
-    numerator = sum(int(r[k] or 0) for r in usable for k in inputs)
-    return DerivedValue(numerator / denominator, None, missing)
-
-
-def derive_all_aggregate(rows: list[Mapping[str, int | None]]) -> dict[str, DerivedValue]:
-    return {ratio.key: derive_aggregate(rows, ratio) for ratio in DEFINITIONS}
+def derive_aggregate(
+    rows: list[Mapping[str, int | float | None]], definition: DefaultDefinition
+) -> Evaluation:
+    return evaluate_aggregate(definition.formula, rows)
 
 
 def sum_counts(rows: Iterable[Mapping[str, int | None]]) -> dict[str, int | None]:

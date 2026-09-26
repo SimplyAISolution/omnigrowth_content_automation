@@ -28,8 +28,10 @@ from omnigrowth.publishing.base import PlatformPublisher
 from omnigrowth.publishing.config import cached_publishing_config
 from omnigrowth.publishing.mock import MockPublisher
 from omnigrowth.publishing.scheduler import run_once
+from omnigrowth.services.analytics import schedule_due_pulls
 from omnigrowth.services.idempotency import purge_expired as purge_idempotency_keys
-from omnigrowth.storage.db import get_engine, ping_database
+from omnigrowth.services.jobs import RqJobQueue
+from omnigrowth.storage.db import get_engine, get_sessionmaker, ping_database
 from omnigrowth.workflows.tasks import reap_stuck_jobs
 
 log = logging.getLogger("omnigrowth.scheduler")
@@ -92,8 +94,29 @@ async def tick() -> bool:
                     "recovered": outbox.recovered,
                 },
             )
+    try:
+        pulls = await enqueue_analytics_pulls(datetime.now(UTC))
+    except (OmniGrowthError, SQLAlchemyError) as exc:
+        log.error(
+            "scheduler tick: analytics pull scheduling failed", extra={"error": type(exc).__name__}
+        )
+    else:
+        if pulls:
+            log.info("scheduler tick: analytics pulls queued", extra={"count": pulls})
     HEARTBEAT_FILE.touch()
     return True
+
+
+async def enqueue_analytics_pulls(now: datetime) -> int:
+    """Phase 8: periodic ANALYTICS_PULL jobs for recently published campaigns."""
+    settings = get_settings()
+    config = cached_publishing_config(settings.config_dir).analytics
+    if not config.enabled:
+        return 0
+    queue = RqJobQueue(settings.redis_url.get_secret_value())
+    async with get_sessionmaker()() as session:
+        created = await schedule_due_pulls(session, queue, now=now, config=config)
+    return len(created)
 
 
 async def run(stop: asyncio.Event, *, tick_seconds: float = TICK_SECONDS) -> None:

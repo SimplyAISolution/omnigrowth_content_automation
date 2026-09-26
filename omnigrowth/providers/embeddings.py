@@ -45,7 +45,12 @@ async def embed_texts(
         if not isinstance(provider, EmbeddingProvider):
             continue
         try:
-            async with router.semaphore(model):
+            router.check_input_size(model, texts)
+        except OmniGrowthError as exc:  # too large for this model: a later one may accept it
+            last_error = exc
+            continue
+        try:
+            async with router.slot(model):
                 vectors = await provider.embed(model.model, texts)
         except OmniGrowthError as exc:
             if exc.code not in FALLBACK_CODES:

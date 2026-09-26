@@ -13,7 +13,7 @@ from typing import Any, Protocol, cast
 from redis import Redis
 from redis.exceptions import RedisError
 from rq import Queue
-from sqlalchemy import Table, select
+from sqlalchemy import Table, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from omnigrowth.core.enums import ActorType, JobKind, JobStatus
@@ -21,6 +21,7 @@ from omnigrowth.core.errors import ErrorCode, OmniGrowthError
 from omnigrowth.core.ids import uuid7
 from omnigrowth.core.logging import get_context
 from omnigrowth.core.masking import mask_mapping
+from omnigrowth.core.settings import get_settings
 from omnigrowth.core.state_machines import JOB, Actor, apply_transition, create_with_state
 from omnigrowth.models import AuditEvent, Job
 
@@ -47,6 +48,10 @@ JOB_ENTRYPOINT = "omnigrowth.workflows.tasks.run_job"
 # model), so they get far more than parsing/ingest jobs.
 DEFAULT_JOB_TIMEOUT_S = 600
 JOB_TIMEOUT_S: dict[str, int] = {"agents": 1800, "generate": 3600, "qa": 900}
+
+
+# Queues whose jobs call the local model; their backlog is bounded for human requests.
+MODEL_QUEUES = frozenset({"agents", "generate", "qa", "embed"})
 
 
 def job_timeout_s(queue_name: str) -> int:
@@ -134,8 +139,16 @@ async def create_job(
     brand_id: uuid.UUID | None,
     subject_type: str | None = None,
     subject_id: uuid.UUID | None = None,
+    max_open_jobs: int | None = None,
 ) -> uuid.UUID:
-    """Insert a QUEUED job row (caller commits, then calls ``dispatch``)."""
+    """Insert a QUEUED job row (caller commits, then calls ``dispatch``).
+
+    Human requests are refused (429 RATE_LIMITED) once the target model queue already holds
+    ``max_open_model_jobs`` open jobs. System/scheduler follow-ups (e.g. a QA re-queue) are
+    never refused, so no work is stranded half-way.
+    """
+    if actor.type is ActorType.HUMAN:
+        await _check_backlog(session, kind, max_open_jobs)
     job_id = uuid7()
     await create_with_state(
         session,
@@ -158,6 +171,29 @@ async def create_job(
         brand_id=brand_id,
     )
     return job_id
+
+
+async def _check_backlog(session: AsyncSession, kind: JobKind, limit: int | None) -> None:
+    queue_name = queue_for(kind)
+    if queue_name not in MODEL_QUEUES:
+        return
+    if limit is None:
+        limit = get_settings().max_open_model_jobs
+    kinds = [k for k in JobKind if queue_for(k) == queue_name]
+    open_jobs = await session.scalar(
+        select(func.count())
+        .select_from(_JOBS)
+        .where(
+            _JOBS.c.kind.in_(kinds),
+            _JOBS.c.status.in_([JobStatus.QUEUED, JobStatus.RUNNING]),
+        )
+    )
+    if (open_jobs or 0) >= limit:
+        raise OmniGrowthError(
+            ErrorCode.RATE_LIMITED,
+            f"the {queue_name} queue is full; retry when current jobs finish",
+            details={"limit": "max_open_model_jobs", "max": limit, "queue": queue_name},
+        )
 
 
 def dispatch(queue: JobQueue, kind: JobKind, job_id: uuid.UUID) -> None:

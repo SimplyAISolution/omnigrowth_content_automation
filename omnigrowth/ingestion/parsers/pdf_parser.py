@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import io
 import struct
+import time
 import zlib
+from collections.abc import Callable
 
 from pypdf import PasswordType, PdfReader
 from pypdf.errors import DependencyError, PyPdfError
@@ -61,9 +63,19 @@ def _info_title(reader: PdfReader) -> str | None:
     return str(title) if title else None
 
 
-def parse_pdf(data: bytes, *, limits: IngestionLimits = DEFAULT_LIMITS) -> NormalizedDocument:
-    """Per-page text; sections are ``Page N``; metadata ``page_count``; title from doc info."""
+def parse_pdf(
+    data: bytes,
+    *,
+    limits: IngestionLimits = DEFAULT_LIMITS,
+    clock: Callable[[], float] = time.monotonic,
+) -> NormalizedDocument:
+    """Per-page text; sections are ``Page N``; metadata ``page_count``; title from doc info.
+
+    Decompression is bounded by pypdf's own per-stream output limits (75 MB defaults); pages,
+    extracted characters and wall-clock time are bounded here.
+    """
     check_size(data, limits)
+    deadline = clock() + limits.max_parse_seconds
     if not data.startswith(b"%PDF-"):
         raise ingestion_error("not a PDF file", "CORRUPT")
     pages: list[tuple[str | None, str]] = []
@@ -76,6 +88,8 @@ def parse_pdf(data: bytes, *, limits: IngestionLimits = DEFAULT_LIMITS) -> Norma
         if page_count > limits.max_pdf_pages:
             raise limit_error("max_pdf_pages", limits.max_pdf_pages, page_count)
         for number, page in enumerate(reader.pages, start=1):
+            if clock() >= deadline:
+                raise limit_error("max_parse_seconds", int(limits.max_parse_seconds))
             page_text = page.extract_text() or ""
             total_chars += len(page_text)
             if total_chars > limits.max_text_chars:

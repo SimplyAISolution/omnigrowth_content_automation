@@ -345,3 +345,16 @@ def test_local_providers_ignore_system_proxies() -> None:
     )
     assert built["lmstudio"]._client._trust_env is False  # type: ignore[attr-defined]
     assert built["cloud"]._client._trust_env is True  # type: ignore[attr-defined]
+
+
+@pytest.mark.parametrize("profile", list(RoutingProfile))
+def test_repo_config_never_reaches_a_cloud_model(profile: RoutingProfile) -> None:
+    """No silent cloud fallback: even with a cloud key and QUALITY_FIRST, the shipped
+    config builds no remote provider and routes every role to LOCAL models only."""
+    config = load_models_config(REPO / "config")
+    built = build_providers(config, settings(OMNIGROWTH_CLOUD_API_KEY="sk-og-0000000000000000"))
+    assert "cloud" not in built  # no base_url configured -> never built
+    router = ModelRouter(config, {name: FakeProvider(name, script=[]) for name in built})
+    for role in config.roles:
+        for model in router.candidates(role, PrivacyClass.PUBLIC, profile):
+            assert model.locality is ModelLocality.LOCAL, (role, model)

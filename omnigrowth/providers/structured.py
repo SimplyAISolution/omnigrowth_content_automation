@@ -48,6 +48,12 @@ from omnigrowth.providers.router import ModelRouter, ResolvedModel
 log = logging.getLogger(__name__)
 
 MAX_REPAIRS = 2
+
+
+def _message_texts(messages: list[dict[str, Any]]) -> list[str]:
+    return [m["content"] for m in messages if isinstance(m.get("content"), str)]
+
+
 FALLBACK_CODES = frozenset(
     {
         ErrorCode.MODEL_UNAVAILABLE,
@@ -303,8 +309,9 @@ class _Attempt:
             request = _build_request(
                 self.model, messages, schema, mode, self.prompt, attempt_no, temperature, max_tokens
             )
+            self.router.check_input_size(self.model, _message_texts(messages))
             try:
-                async with self.router.semaphore(self.model):
+                async with self.router.slot(self.model):
                     return await provider.chat(request), mode
             except UnsupportedResponseFormatError:
                 # The provider was called: record it (every call gets a model_runs row).
@@ -499,7 +506,7 @@ async def probe_structured_mode[T: BaseModel](
             prompt.max_tokens,
         )
         try:
-            async with router.semaphore(model):
+            async with router.slot(model):
                 result = await provider.chat(request)
         except UnsupportedResponseFormatError:
             continue

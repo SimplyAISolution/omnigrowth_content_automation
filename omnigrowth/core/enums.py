@@ -235,6 +235,17 @@ class MetricSource(StrEnum):
     MANUAL = "MANUAL"
 
 
+class MetricNullReason(StrEnum):
+    MISSING_INPUT = "MISSING_INPUT"
+    ZERO_DENOMINATOR = "ZERO_DENOMINATOR"
+    BELOW_MIN_DENOMINATOR = "BELOW_MIN_DENOMINATOR"
+
+
+class CalendarItemKind(StrEnum):
+    PUBLICATION_JOB = "PUBLICATION_JOB"
+    PLAN_ITEM = "PLAN_ITEM"
+
+
 class ContentVersionOrigin(StrEnum):
     GENERATED = "GENERATED"
     HUMAN_EDIT = "HUMAN_EDIT"

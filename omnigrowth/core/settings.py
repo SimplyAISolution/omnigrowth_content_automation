@@ -68,6 +68,11 @@ class Settings(BaseSettings):
     rate_limit_ingest: str = Field(
         default="30/minute;300/hour", validation_alias="OMNIGROWTH_RATE_LIMIT_INGEST"
     )
+    # Bounded inference backlog: a human request that would put more than this many open
+    # (QUEUED or RUNNING) jobs on one model-bound queue is refused with 429 RATE_LIMITED.
+    max_open_model_jobs: int = Field(
+        default=20, ge=1, validation_alias="OMNIGROWTH_MAX_OPEN_MODEL_JOBS"
+    )
     llm_health_timeout_s: float = Field(default=2.0, gt=0, validation_alias="LLM_HEALTH_TIMEOUT_S")
     # API_PLAN §1.6: job-creating and publishing POSTs require an Idempotency-Key.
     require_idempotency_key: bool = Field(

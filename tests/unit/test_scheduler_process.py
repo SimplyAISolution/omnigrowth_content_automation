@@ -31,6 +31,11 @@ def _heartbeat(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
         return 0
 
     monkeypatch.setattr(sched, "purge_idempotency_keys", no_purge)
+
+    async def no_pulls(now: object) -> int:
+        return 0
+
+    monkeypatch.setattr(sched, "enqueue_analytics_pulls", no_pulls)
     return path
 
 

@@ -40,6 +40,13 @@ class ProviderConfig(_Strict):
     # the group limit is the smallest max_concurrency among its members (A2).
     concurrency_group: str | None = None
     timeout_s: float = Field(default=120.0, gt=0)
+    # Bounded wait for a cross-process inference slot (providers/slots.py) before the call
+    # fails with MODEL_UNAVAILABLE instead of queueing forever.
+    slot_wait_s: float = Field(default=300.0, gt=0)
+    # Hard cap on the characters sent in one request (all messages, or all embedding inputs).
+    # Keeps prompts inside the served context window instead of relying on silent server-side
+    # truncation. ~4 characters per token.
+    max_prompt_chars: int = Field(default=64_000, ge=1_000)
 
     @model_validator(mode="after")
     def _one_url_source(self) -> ProviderConfig:

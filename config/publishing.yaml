@@ -10,3 +10,8 @@ publishing:
   backoff_max_seconds: 3600
   uncertain_hold_seconds: 900  # guard-4 hold while the account has an uncertain post
   schedule_grace_seconds: 60   # SCHEDULE may be up to this far in the past
+analytics:
+  enabled: true
+  interval_minutes: 360        # re-pull a campaign's metrics at most this often
+  window_days: 30              # only campaigns with a post published in this window
+  max_campaigns_per_tick: 10

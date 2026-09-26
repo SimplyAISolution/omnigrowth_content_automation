@@ -243,6 +243,8 @@ async def test_success_scenario_end_to_end(env: Env) -> None:
     snapshot_ids = {s["id"] for s in snapshots}
     for rec in recs:
         assert rec["evidence_snapshot_ids"] and rec["status"] == "PROPOSED"
+        assert rec["evidence_query"]["simulated_evidence"] is True  # MOCK pull data
+        assert rec["evidence_query"]["data_sources"] == ["MOCK"]
         for sid in rec["evidence_snapshot_ids"]:
             assert sid in snapshot_ids
             assert (await _ok(env, "GET", f"/analytics/snapshots/{sid}"))["id"] == sid
