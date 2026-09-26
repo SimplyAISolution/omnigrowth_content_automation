@@ -88,6 +88,7 @@ async def transition_asset(
     values: Mapping[str, Any] | None = None,
     fence: Mapping[str, Any] | None = None,
     reason: str | None = None,
+    extra: Mapping[str, Any] | None = None,
 ) -> str:
     transition = await apply_transition(
         session,
@@ -103,6 +104,7 @@ async def transition_asset(
         values=values,
         fence=fence,
         reason=reason,
+        extra_metadata=extra,
     )
     return transition.target
 

@@ -5,9 +5,11 @@ from __future__ import annotations
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, Request
+from fastapi.responses import JSONResponse
 
 from omnigrowth.api.deps import EditorDep, SessionDep, ViewerDep
+from omnigrowth.api.idempotency import Outcome, idempotent
 from omnigrowth.core.enums import PublicationJobStatus, PublicationStatus
 from omnigrowth.schemas.common import Page
 from omnigrowth.schemas.publishing import (
@@ -70,10 +72,17 @@ async def get_publication(
 
 @router.post("/{publication_id}/reconcile", response_model=PublicationRead)
 async def reconcile(
+    request: Request,
     publication_id: uuid.UUID,
     body: PublicationReconcileRequest,
     principal: EditorDep,
     session: SessionDep,
-) -> PublicationRead:
+) -> JSONResponse:
     """Resolve PUBLICATION_UNCERTAIN: confirm published (EDITOR) or not published (OWNER)."""
-    return await publishing_service.reconcile(session, principal.actor, publication_id, body)
+
+    async def run() -> Outcome:
+        result = await publishing_service.reconcile(session, principal.actor, publication_id, body)
+        return 200, result, {}
+
+    inputs = {"publication_id": publication_id, **body.model_dump()}
+    return await idempotent(request, principal, inputs, run)

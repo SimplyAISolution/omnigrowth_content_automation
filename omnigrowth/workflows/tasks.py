@@ -103,12 +103,13 @@ def _handlers(
     ) -> dict[str, Any]:
         settings = get_settings()
         qa = cached_qa_config(settings.config_dir)
-        if agent_deps is not None:
+        if agent_deps is not None:  # tests: jobs are driven by hand, no queue
             return await run(content_service.ContentDeps(agent=agent_deps, qa=qa))
         router = build_router(settings)
+        queue = job_service.RqJobQueue(settings.redis_url.get_secret_value())
         try:
             deps = AgentDeps(router=router, registry=PromptRegistry.load())
-            return await run(content_service.ContentDeps(agent=deps, qa=qa))
+            return await run(content_service.ContentDeps(agent=deps, qa=qa, queue=queue))
         finally:
             await router.aclose()
 

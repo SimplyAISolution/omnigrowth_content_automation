@@ -88,6 +88,7 @@ def test_agent_only_records_its_own_output() -> None:
         ("job", "enqueue"),
         ("agent_run", "start"),
         ("content_idea", "create"),
+        ("recommendation", "create"),
     }
 
 

@@ -22,9 +22,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from omnigrowth.agents import opportunity, planner, research, strategy
 from omnigrowth.agents.base import AgentDeps, AgentScope, run_agent
 from omnigrowth.campaigns.context import PlanningContext, load_planning_context
+from omnigrowth.content.qa import cached_qa_config
 from omnigrowth.core.enums import ActorType, CampaignStatus
 from omnigrowth.core.errors import ErrorCode, OmniGrowthError
 from omnigrowth.core.ids import uuid7
+from omnigrowth.core.settings import get_settings
 from omnigrowth.core.state_machines import Actor
 from omnigrowth.models import PlanItem
 from omnigrowth.storage import campaigns as repo
@@ -203,6 +205,13 @@ async def plan_campaign(
         platforms=ctx.platforms,
         start=_start_date(ctx, today),
         timezone=ctx.timezone,
+        formats={
+            platform: rules.formats
+            for platform, rules in cached_qa_config(get_settings().config_dir).platforms.items()
+        },
+    )
+    formats_adjusted = sum(
+        s.entry.format is not raw.format for s, raw in zip(entries, plan.value.items, strict=True)
     )
     rows: list[PlanItem] = []
     for scheduled in entries:
@@ -252,6 +261,7 @@ async def plan_campaign(
         "ideas": len(ideas),
         "selected_ideas": len(selected),
         "plan_items": len(rows),
+        "formats_adjusted": formats_adjusted,
         "agent_runs": {
             "research": str(res.agent_run_id),
             "strategy": str(strat.agent_run_id),

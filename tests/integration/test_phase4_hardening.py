@@ -20,7 +20,7 @@ from omnigrowth.services.jobs import RecordingJobQueue
 from omnigrowth.storage.db import get_engine
 from omnigrowth.storage.uploads import UploadStore
 from omnigrowth.workflows.tasks import execute_job, reap_stuck_jobs
-from tests.integration.helpers import auth_headers, make_user
+from tests.integration.helpers import IK_HOOKS, auth_headers, make_user
 
 pytestmark = pytest.mark.integration
 
@@ -44,7 +44,9 @@ async def test_login_is_rate_limited_per_ip(
     get_settings.cache_clear()
     app = create_app()
     email = await make_user(UserRole.VIEWER)
-    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://t") as c:
+    async with httpx.AsyncClient(
+        event_hooks=IK_HOOKS, transport=httpx.ASGITransport(app=app), base_url="http://t"
+    ) as c:
         codes = [
             (
                 await c.post(
@@ -78,7 +80,9 @@ async def env(fresh_database: str, tmp_path: Path) -> AsyncIterator[_Env]:
     app = create_app()
     app.dependency_overrides[get_job_queue] = lambda: e.queue
     app.dependency_overrides[get_upload_store] = lambda: e.store
-    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://t") as c:
+    async with httpx.AsyncClient(
+        event_hooks=IK_HOOKS, transport=httpx.ASGITransport(app=app), base_url="http://t"
+    ) as c:
         e.client = c
         e.headers = await auth_headers(c, UserRole.EDITOR)
         e.brand_id = await _brand(c, e.headers)

@@ -1,26 +1,28 @@
 {
-  "ran_at": "2026-09-25T03:19:23.725603+00:00",
+  "ran_at": "2026-09-25T14:24:26.697338+00:00",
   "steps": {
     "planning": {
       "status": "SUCCEEDED",
-      "seconds": 204.2,
+      "seconds": 205.5,
       "error_code": null
     },
     "plan": [
       "INSTAGRAM",
       "LINKEDIN",
-      "X"
+      "X",
+      "YOUTUBE"
     ],
     "generation": {
       "status": "SUCCEEDED",
-      "seconds": 294.8,
+      "seconds": 289.1,
       "error_code": null
     },
     "generation_result": {
       "generated": 5,
       "failed": [],
       "skipped": [
-        "INSTAGRAM"
+        "INSTAGRAM",
+        "YOUTUBE"
       ]
     },
     "assets": [
@@ -32,7 +34,7 @@
       },
       {
         "platform": "X",
-        "format": "THREAD",
+        "format": "TEXT_POST",
         "status": "AWAITING_APPROVAL",
         "fails": []
       },
@@ -43,14 +45,14 @@
         "fails": []
       },
       {
-        "platform": "LINKEDIN",
+        "platform": "X",
         "format": "POLL",
         "status": "AWAITING_APPROVAL",
         "fails": []
       },
       {
         "platform": "LINKEDIN",
-        "format": "ARTICLE",
+        "format": "CAROUSEL",
         "status": "AWAITING_APPROVAL",
         "fails": []
       }
@@ -73,14 +75,14 @@
       },
       "derived": {
         "engagement_rate": {
-          "value": 0.041518,
+          "value": 0.025687,
           "null_reason": null,
           "missing_inputs": [
             "saves"
           ]
         },
         "share_rate": {
-          "value": 0.004868,
+          "value": 0.004655,
           "null_reason": null,
           "missing_inputs": []
         },
@@ -92,17 +94,17 @@
           ]
         },
         "comment_rate": {
-          "value": 0.00544,
+          "value": 0.007413,
           "null_reason": null,
           "missing_inputs": []
         },
         "click_rate": {
-          "value": 0.017466,
+          "value": 0.019481,
           "null_reason": null,
           "missing_inputs": []
         },
         "follow_conversion": {
-          "value": 0.336842,
+          "value": 0.263158,
           "null_reason": null,
           "missing_inputs": []
         }
@@ -112,10 +114,10 @@
       "stored": 4,
       "dropped": 0,
       "statements": [
-        "Prioritize Case Study articles over Data-Driven statements on LinkedIn",
-        "Adopt Question hooks instead of Statements for LinkedIn posts",
-        "Increase Poll frequency to maximize Engagement Rate",
-        "Replicate X Thread success for Saves and Clicks"
+        "Prioritize LinkedIn Text Posts with an Educational angle for the next content cycle.",
+        "Scale production of LinkedIn Carousels featuring Case Study angles to support authority objectives.",
+        "Reduce reliance on LinkedIn Article format in the upcoming cycle.",
+        "Increase X Text Posts with a Data Driven angle to maximize click-through performance."
       ]
     }
   },

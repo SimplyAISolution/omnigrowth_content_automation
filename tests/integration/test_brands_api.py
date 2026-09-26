@@ -14,7 +14,7 @@ from sqlalchemy import select
 from omnigrowth.core.enums import UserRole
 from omnigrowth.models import AuditEvent, BrandProfile
 from omnigrowth.storage.db import get_sessionmaker
-from tests.integration.helpers import auth_headers
+from tests.integration.helpers import IK_HOOKS, auth_headers
 
 pytestmark = pytest.mark.integration
 
@@ -31,7 +31,9 @@ async def client(fresh_database: str) -> AsyncIterator[httpx.AsyncClient]:
     if not any(getattr(r, "path", "").startswith(f"{API}/brands") for r in app.routes):
         app.include_router(brands.router, prefix=API)
     transport = httpx.ASGITransport(app=app)
-    async with httpx.AsyncClient(transport=transport, base_url="http://test") as c:
+    async with httpx.AsyncClient(
+        event_hooks=IK_HOOKS, transport=transport, base_url="http://test"
+    ) as c:
         yield c
     from omnigrowth.storage import db
 

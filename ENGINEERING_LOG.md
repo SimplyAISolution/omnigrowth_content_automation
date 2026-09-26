@@ -481,3 +481,53 @@ KNOWN ISSUES:
 DECISIONS NEEDED: none blocking. MVP milestone reached.
 NEXT PHASE: 8 — Analytics (per docs/PHASES.md)
 ```
+
+## 2026-09-25 — Post-MVP known-issue pass (commit pending)
+Debug-loop entries:
+1. Symptom: E2E and a publishing test expected 409 for a second SCHEDULE of a SCHEDULED asset.
+   Cause: CA12 reschedule was implemented (the old refusal was the known issue). Fix: tests assert the
+   reschedule (old job CANCELLED, new job, audit SCHEDULED->SCHEDULED) and IK replay instead.
+2. Symptom: lease-refusal test depended on a stale tick clock. Cause: leases now come from the DB clock.
+   Fix: the test expires the lease in the DB (lease_expires_at only, never status). Verify: 15 passed.
+
+```
+POST-MVP KNOWN ISSUES — RESOLVED
+  - Idempotency-Key (API_PLAN §1.6): idempotency_keys store (services/idempotency.py, own transactions),
+    api/idempotency.py wrapper on every [IK] route (sources upload/url/retry, wizard when generate=true,
+    campaigns generate + generate-assets, approvals SCHEDULE/PUBLISH_NOW/REGENERATE, reconcile, analytics
+    pull, recommendations generate, content regenerate + qa). Replay -> stored response +
+    Idempotent-Replayed: true, no side effects; reused key with other input -> 409 IDEMPOTENCY_KEY_REUSED;
+    in progress -> 409; missing -> 400 IDEMPOTENCY_KEY_REQUIRED (setting OMNIGROWTH_REQUIRE_IDEMPOTENCY_KEY,
+    default true); failed request forgets its key; scheduler purges expired keys. Test clients send a key.
+  - VALIDATION_FAILURE reason NOT_IMPLEMENTED -> HTTP 501; missing/invalid header -> 400 (API_PLAN).
+  - §37 complete: EDIT and REGENERATE via /approvals/{id}/actions; REGENERATE (CA18/CA19) also at
+    POST /content/{id}/regenerate -> DRAFT + ASSET_GENERATION job -> REGENERATION version (based_on the
+    replaced one, instructions from the REGENERATE action); CA17 edit of a SCHEDULED asset and CA12
+    reschedule cancel the pending job first (refused while CLAIMED/UNCERTAIN).
+  - Approval invalidation recorded: EDIT/REGENERATE put invalidated_approval_of in the audit metadata.
+  - Brand auto-approve: CA7 by SYSTEM after CA6, approval_actions row actor SYSTEM:auto-approve.
+  - POST /content/{id}/qa re-run; a QA error after CA2 no longer strands the asset: reported as qa_pending
+    and, in the worker, re-queued as a QA_RUN job.
+  - QA no longer holds the asset row lock during the embedding call (lock taken after, re-checked, fenced).
+  - X link length counted as 23 characters (config/qa.yaml url_chars, UNVERIFIED).
+  - Near-duplicate thresholds per embedding model (config/qa.yaml similarity.per_model). Calibrated on
+    LM Studio nomic: light edit 0.996, same body other CTA 0.982, paraphrase ~0.93, distinct same-topic
+    <= 0.91 -> near_duplicate 0.95; hooks identical 1.00, paraphrase 0.80, distinct <= 0.76 -> 0.90.
+  - Scheduler claim/lease timestamps from the database clock (func.now()); dispatch start keeps the DB-side
+    lease check; lease recovery counts a lease expired by either clock.
+  - Planner formats constrained per platform (config/qa.yaml formats; e.g. LinkedIn THREAD -> TEXT_POST),
+    counted as formats_adjusted in the planning job result.
+  - RECOMMENDATION state machine (RC1-RC3, STATE_MACHINES §7.5); recommendations created through it;
+    POST /recommendations/{id}/accept|dismiss (EDITOR, final, decided_by recorded).
+TESTS (run this session, 2026-09-25):
+  uv run poe check -> 190 files already formatted / All checks passed! / Success: no issues found in 139 source
+                      files / Contracts: 4 kept, 0 broken. / 548 passed, 89 deselected in 6.18s
+  uv run poe test-int -> 85 passed, 552 deselected in 51.00s (new: test_known_issues.py 6, publishing +2)
+  LIVE §55 on this code: tests/integration/test_live_e2e.py -> 1 passed in 553.63s (0:09:13); planning 205.5 s,
+    5 generated in 289.1 s (INSTAGRAM, YOUTUBE skipped), 5 approved/scheduled/published, 4 recommendations
+    stored, 0 dropped (docs/audit/phase7_live_e2e.json)
+STILL OPEN (by design, see docs/FOLLOW_UPS.md): automatic reconciliation and ManualExportPublisher (need
+  real platform APIs, Phase 13); LLM tone QA; HNSW index; replan/14-30 day plans/budget pre-flight; rate
+  limits and ops hardening before any remote deployment.
+NEXT: docs/FOLLOW_UPS.md step 1 — Phase 8 Analytics depth.
+```

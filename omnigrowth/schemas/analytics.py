@@ -9,7 +9,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from omnigrowth.core.enums import MetricSource, RecommendationStatus
+from omnigrowth.core.enums import ActorType, MetricSource, RecommendationStatus
 
 
 class _Read(BaseModel):
@@ -116,4 +116,6 @@ class RecommendationRead(_Read):
     evidence_snapshot_ids: list[uuid.UUID]
     evidence_query: dict[str, Any]
     status: RecommendationStatus
+    decided_by_actor_type: ActorType | None = None
+    decided_by_actor_id: str | None = None
     created_at: datetime

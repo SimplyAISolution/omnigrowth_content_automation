@@ -69,6 +69,10 @@ class Settings(BaseSettings):
         default="30/minute;300/hour", validation_alias="OMNIGROWTH_RATE_LIMIT_INGEST"
     )
     llm_health_timeout_s: float = Field(default=2.0, gt=0, validation_alias="LLM_HEALTH_TIMEOUT_S")
+    # API_PLAN §1.6: job-creating and publishing POSTs require an Idempotency-Key.
+    require_idempotency_key: bool = Field(
+        default=True, validation_alias="OMNIGROWTH_REQUIRE_IDEMPOTENCY_KEY"
+    )
 
     @field_validator("publish_mode", mode="before")
     @classmethod

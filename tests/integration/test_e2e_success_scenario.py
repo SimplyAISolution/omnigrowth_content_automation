@@ -176,18 +176,22 @@ async def test_success_scenario_end_to_end(env: Env) -> None:
         assert resp["asset"]["status"] == "SCHEDULED"
         latest_due = due if latest_due is None or due > latest_due else latest_due
     assert latest_due is not None
-    # A second SCHEDULE of the same version is refused (no duplicate posts, A3).
-    again = await env.client.post(
-        f"/api/v1/approvals/{approved[0]['id']}/actions",
-        headers=env.headers,
-        json={
-            "action": "SCHEDULE",
-            "content_version_id": approved[0]["approved_version_id"],
-            "platform_account_id": accounts[approved[0]["platform"]],
-            "scheduled_at": (latest_due + timedelta(hours=1)).isoformat(),
-        },
-    )
-    assert again.status_code == 409
+    # Negative checks (API_PLAN §4): replaying a SCHEDULE with the same Idempotency-Key
+    # returns the stored response and creates nothing; a new key reschedules (CA12), which
+    # cancels the pending job instead of creating a second post (A3).
+    body = {
+        "action": "SCHEDULE",
+        "content_version_id": approved[0]["approved_version_id"],
+        "platform_account_id": accounts[approved[0]["platform"]],
+        "scheduled_at": latest_due.isoformat(),
+    }
+    keyed = {**env.headers, "Idempotency-Key": "e2e-reschedule-0001"}
+    url = f"/api/v1/approvals/{approved[0]['id']}/actions"
+    moved = await env.client.post(url, headers=keyed, json=body)
+    assert moved.status_code == 200, moved.text
+    replay = await env.client.post(url, headers=keyed, json=body)
+    assert replay.headers["Idempotent-Replayed"] == "true"
+    assert replay.json()["publication_job"]["id"] == moved.json()["publication_job"]["id"]
 
     # 14. 13. mock publisher publishes (frozen clock, one scheduler tick in-process) ---------------
     config = load_publishing_config(REPO / "config")
@@ -195,7 +199,9 @@ async def test_success_scenario_end_to_end(env: Env) -> None:
     jobs = (await _ok(env, "GET", "/publications/jobs", params={"campaign_id": campaign_id}))[
         "items"
     ]
-    assert len(jobs) == len(approved) and {j["status"] for j in jobs} == {"SUCCEEDED"}
+    live_jobs = [j for j in jobs if j["status"] != "CANCELLED"]
+    assert [j["status"] for j in jobs].count("CANCELLED") == 1  # the rescheduled one
+    assert len(live_jobs) == len(approved) and {j["status"] for j in live_jobs} == {"SUCCEEDED"}
     pubs = (await _ok(env, "GET", "/publications", params={"campaign_id": campaign_id}))["items"]
     assert len(pubs) == len(approved) and {p["status"] for p in pubs} == {"PUBLISHED"}
     assert all(p["external_post_id"].startswith("mock_") for p in pubs)
@@ -256,8 +262,9 @@ async def test_success_scenario_end_to_end(env: Env) -> None:
         ("QA_PASSED", "AWAITING_APPROVAL"),
         ("AWAITING_APPROVAL", "APPROVED"),
         ("APPROVED", "SCHEDULED"),
+        ("SCHEDULED", "SCHEDULED"),  # the reschedule above (CA12)
         ("SCHEDULED", "PUBLISHED"),
     ]
     assert all(e["actor_type"] and e["correlation_id"] for e in events)
     actors = [e["actor_type"] for e in events if e["action"] == "status.transition"]
-    assert actors == ["HUMAN", "AGENT", "SYSTEM", "SYSTEM", "HUMAN", "HUMAN", "SYSTEM"]
+    assert actors == ["HUMAN", "AGENT", "SYSTEM", "SYSTEM", "HUMAN", "HUMAN", "HUMAN", "SYSTEM"]

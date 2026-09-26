@@ -262,3 +262,27 @@ def test_trivial_or_number_dropping_quotes_do_not_prove_a_claim() -> None:
         ClaimLabel.NEEDS_VERIFICATION,
         ClaimLabel.SOURCE_STATED,
     ]
+
+
+def test_schedule_replaces_formats_the_platform_does_not_support() -> None:
+    from omnigrowth.core.enums import ContentFormat
+
+    items = [_entry(d) for d in range(1, 8)]
+    items[0]["format"] = "THREAD"  # not a LinkedIn format
+    items[1]["platform"] = "X"
+    items[1]["format"] = "CAROUSEL"  # not an X format
+    plan = planner.PlannerOutput.model_validate({"items": items})
+    scheduled = planner.schedule(
+        plan,
+        selected_count=7,
+        platforms=(Platform.LINKEDIN, Platform.X),
+        start=date(2026, 10, 5),
+        timezone="UTC",
+        formats={
+            Platform.LINKEDIN: [ContentFormat.TEXT_POST, ContentFormat.CAROUSEL],
+            Platform.X: [ContentFormat.THREAD, ContentFormat.TEXT_POST],
+        },
+    )
+    assert scheduled[0].entry.format is ContentFormat.TEXT_POST
+    assert scheduled[1].entry.format is ContentFormat.TEXT_POST
+    assert scheduled[2].entry.format is ContentFormat.TEXT_POST  # already allowed, unchanged

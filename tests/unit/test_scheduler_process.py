@@ -26,6 +26,11 @@ def _heartbeat(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
         return sched_outbox.TickResult()
 
     monkeypatch.setattr(sched, "run_once", no_outbox)  # unit tests never reach a database
+
+    async def no_purge() -> int:
+        return 0
+
+    monkeypatch.setattr(sched, "purge_idempotency_keys", no_purge)
     return path
 
 

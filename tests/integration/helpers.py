@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import secrets
+import uuid
+from collections.abc import Callable
+from typing import Any
 
 import httpx
 
@@ -36,3 +39,19 @@ async def login(client: httpx.AsyncClient, email: str) -> dict[str, str]:
 
 async def auth_headers(client: httpx.AsyncClient, role: UserRole) -> dict[str, str]:
     return await login(client, await make_user(role))
+
+
+SKIP_IK = "X-Test-No-Idempotency-Key"
+
+
+async def add_idempotency_key(request: httpx.Request) -> None:
+    """httpx request hook: every POST gets a fresh Idempotency-Key (API_PLAN §1.6), like a
+    well-behaved client. Send ``X-Test-No-Idempotency-Key`` to test the missing-key path;
+    set the header yourself to test replays."""
+    if request.headers.pop(SKIP_IK, None) is not None:
+        return
+    if request.method == "POST" and "idempotency-key" not in request.headers:
+        request.headers["Idempotency-Key"] = uuid.uuid4().hex
+
+
+IK_HOOKS: dict[str, list[Callable[..., Any]]] = {"request": [add_idempotency_key]}

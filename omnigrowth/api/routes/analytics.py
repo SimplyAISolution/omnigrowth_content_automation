@@ -4,9 +4,11 @@ from __future__ import annotations
 
 import uuid
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Request, status
+from fastapi.responses import JSONResponse
 
 from omnigrowth.api.deps import EditorDep, JobQueueDep, SessionDep, ViewerDep
+from omnigrowth.api.idempotency import Outcome, idempotent
 from omnigrowth.api.routes.jobs import to_read
 from omnigrowth.schemas.analytics import (
     AnalyticsPullRequest,
@@ -29,11 +31,21 @@ recommendations_router = APIRouter(prefix="/recommendations", tags=["recommendat
 
 @router.post("/pull", response_model=JobRead, status_code=status.HTTP_202_ACCEPTED)
 async def pull(
-    body: AnalyticsPullRequest, principal: EditorDep, session: SessionDep, queue: JobQueueDep
-) -> JobRead:
+    request: Request,
+    body: AnalyticsPullRequest,
+    principal: EditorDep,
+    session: SessionDep,
+    queue: JobQueueDep,
+) -> JSONResponse:
     """Fetch metrics for the campaign's published posts (mock publisher in the MVP)."""
-    job_id = await analytics_service.request_pull(session, queue, principal.actor, body.campaign_id)
-    return to_read(await job_service.get_job(session, job_id))
+
+    async def run() -> Outcome:
+        job_id = await analytics_service.request_pull(
+            session, queue, principal.actor, body.campaign_id
+        )
+        return 202, to_read(await job_service.get_job(session, job_id)), {}
+
+    return await idempotent(request, principal, body, run)
 
 
 @router.post(
@@ -73,15 +85,37 @@ async def campaign_report(
     "/generate", response_model=JobRead, status_code=status.HTTP_202_ACCEPTED
 )
 async def generate_recommendations(
+    request: Request,
     body: RecommendationGenerateRequest,
     principal: EditorDep,
     session: SessionDep,
     queue: JobQueueDep,
-) -> JobRead:
-    job_id = await recommendation_service.request_generation(
-        session, queue, principal.actor, body.campaign_id
+) -> JSONResponse:
+    async def run() -> Outcome:
+        job_id = await recommendation_service.request_generation(
+            session, queue, principal.actor, body.campaign_id
+        )
+        return 202, to_read(await job_service.get_job(session, job_id)), {}
+
+    return await idempotent(request, principal, body, run)
+
+
+@recommendations_router.post("/{recommendation_id}/accept", response_model=RecommendationRead)
+async def accept_recommendation(
+    recommendation_id: uuid.UUID, principal: EditorDep, session: SessionDep
+) -> RecommendationRead:
+    return await recommendation_service.decide(
+        session, principal.actor, recommendation_id, "accept"
     )
-    return to_read(await job_service.get_job(session, job_id))
+
+
+@recommendations_router.post("/{recommendation_id}/dismiss", response_model=RecommendationRead)
+async def dismiss_recommendation(
+    recommendation_id: uuid.UUID, principal: EditorDep, session: SessionDep
+) -> RecommendationRead:
+    return await recommendation_service.decide(
+        session, principal.actor, recommendation_id, "dismiss"
+    )
 
 
 @recommendations_router.get("", response_model=Page[RecommendationRead])

@@ -9,24 +9,33 @@ from __future__ import annotations
 
 import logging
 import uuid
-from typing import Any
+from typing import Any, cast
 
-from sqlalchemy import select
+from sqlalchemy import Table, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from omnigrowth.agents import optimizer
 from omnigrowth.agents.base import AgentDeps, AgentScope, run_agent
 from omnigrowth.campaigns.context import load_planning_context
-from omnigrowth.core.enums import JobKind
+from omnigrowth.core.enums import ActorType, JobKind
 from omnigrowth.core.errors import ErrorCode, OmniGrowthError
 from omnigrowth.core.ids import uuid7
-from omnigrowth.core.state_machines import Actor
-from omnigrowth.models import AnalyticsSnapshot, Campaign, Recommendation
+from omnigrowth.core.logging import get_context
+from omnigrowth.core.state_machines import (
+    RECOMMENDATION,
+    Actor,
+    apply_transition,
+    create_with_state,
+)
+from omnigrowth.models import AnalyticsSnapshot, AuditEvent, Campaign, Recommendation
 from omnigrowth.schemas.analytics import RecommendationRead
 from omnigrowth.services.analytics import campaign_report
 from omnigrowth.services.jobs import JobQueue, cancel_queued, create_job, dispatch
 
 log = logging.getLogger(__name__)
+
+_RECOMMENDATIONS = cast(Table, Recommendation.__table__)
+_AUDIT = cast(Table, AuditEvent.__table__)
 
 
 async def request_generation(
@@ -118,23 +127,33 @@ async def generate(
             dropped.append({"statement": rec.statement[:120], "evidence": rec.evidence})
             continue
         cited = [by_label[lbl] for lbl in valid]
-        row = Recommendation(
-            id=uuid7(),
-            brand_id=ctx.brand_id,
-            campaign_id=campaign_id,
-            agent_run_id=outcome.agent_run_id,
-            statement=rec.statement,
-            rationale=rec.rationale,
-            target=rec.target,
-            evidence_snapshot_ids=cited,
-            evidence_query={
-                "source": "campaign_report",
-                "campaign_id": str(campaign_id),
-                "labels": valid,
+        rec_id = uuid7()
+        await create_with_state(
+            session,
+            machine=RECOMMENDATION,
+            table=_RECOMMENDATIONS,
+            audit_table=_AUDIT,
+            row={
+                "id": rec_id,
+                "brand_id": ctx.brand_id,
+                "campaign_id": campaign_id,
+                "agent_run_id": outcome.agent_run_id,
+                "statement": rec.statement,
+                "rationale": rec.rationale,
+                "target": rec.target,
+                "evidence_snapshot_ids": cited,
+                "evidence_query": {
+                    "source": "campaign_report",
+                    "campaign_id": str(campaign_id),
+                    "labels": valid,
+                },
             },
+            trigger="create",
+            actor=Actor(ActorType.AGENT, optimizer.SPEC.name),
+            correlation_id=str(job_id),
+            brand_id=ctx.brand_id,
         )
-        session.add(row)
-        stored.append(str(row.id))
+        stored.append(str(rec_id))
     if not stored:
         await session.rollback()
         raise OmniGrowthError(
@@ -150,6 +169,31 @@ async def generate(
         "dropped": dropped,
         "agent_run_id": str(outcome.agent_run_id),
     }
+
+
+async def decide(
+    session: AsyncSession, actor: Actor, recommendation_id: uuid.UUID, trigger: str
+) -> RecommendationRead:
+    """RC2 ``accept`` / RC3 ``dismiss`` by a human, recorded with who decided."""
+    row = await session.get(Recommendation, recommendation_id)
+    if row is None:
+        raise OmniGrowthError(ErrorCode.NOT_FOUND, "recommendation not found")
+    await apply_transition(
+        session,
+        machine=RECOMMENDATION,
+        table=_RECOMMENDATIONS,
+        audit_table=_AUDIT,
+        entity_id=row.id,
+        from_state=row.status,
+        trigger=trigger,
+        actor=actor,
+        correlation_id=get_context().get("correlation_id") or uuid7().hex,
+        brand_id=row.brand_id,
+        values={"decided_by_actor_type": actor.type, "decided_by_actor_id": actor.id},
+    )
+    await session.commit()
+    refreshed = await session.get(Recommendation, recommendation_id, populate_existing=True)
+    return RecommendationRead.model_validate(refreshed)
 
 
 async def list_recommendations(

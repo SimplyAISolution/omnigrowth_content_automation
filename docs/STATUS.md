@@ -1,11 +1,11 @@
 ```
 phase: 7
-task: phase-7-gate (MVP milestone)
+task: post-MVP known-issue pass
 gate: GATE_PASSED
-last_green_commit: 29b4086
+last_green_commit: 4c23159
 next_phase: 8 — Analytics
 shell: PowerShell Core 7.6.6 (Git Bash also available)
-blockers: Phase 6 + 7 commits pending (signing)
+blockers: known-issue pass commit pending (signing)
 ```
 
 ## Notes
@@ -18,3 +18,4 @@ blockers: Phase 6 + 7 commits pending (signing)
 - Phase 5: planning agents (research/strategy/opportunity/planner), orchestrator, campaign API. Live planning on LM Studio qwen/qwen3.5-9b passed (~3.5 min); see docs/audit/phase5_live_planning.json.
 - Phase 6: LinkedIn/X writers, content versions + diff, deterministic QA stages 1-4 (config/qa.yaml), pgvector duplicate/fatigue warnings, per-queue job timeouts. Live content run passed (20 min, 13 assets); see docs/audit/phase6_live_content.json.
 - Phase 7 (MVP): approvals, outbox scheduler (SKIP LOCKED, leases, UNCERTAIN handling), MockPublisher, mock/fixture analytics + NULL-safe rates, Optimization Agent with evidence, audit timeline. §55 E2E green on fixtures and live (docs/audit/phase7_live_e2e.json).
+- Post-MVP: known issues resolved (Idempotency-Key, full §37, CA12/CA17, auto-approve, QA re-run, per-model similarity thresholds, DB-clock leases, recommendation machine). Follow-up plan: docs/FOLLOW_UPS.md.

@@ -5,9 +5,11 @@ from __future__ import annotations
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Query, Response, status
+from fastapi import APIRouter, Query, Request, status
+from fastapi.responses import JSONResponse
 
 from omnigrowth.api.deps import EditorDep, JobQueueDep, SessionDep, ViewerDep
+from omnigrowth.api.idempotency import Outcome, idempotent
 from omnigrowth.api.routes.jobs import to_read
 from omnigrowth.core.enums import AngleType, CampaignStatus, ContentIdeaStatus, Platform
 from omnigrowth.schemas.campaigns import (
@@ -57,20 +59,22 @@ async def create_campaign(
     responses={202: {"model": CampaignWizardResultRead, "description": "Planning enqueued"}},
 )
 async def campaign_wizard(
+    request: Request,
     body: CampaignWizardRequest,
     principal: EditorDep,
     session: SessionDep,
     queue: JobQueueDep,
-    response: Response,
-) -> CampaignWizardResultRead:
-    campaign, source_id, job_id = await campaign_service.run_wizard(
-        session, queue, principal.actor, body
-    )
-    job = None
-    if job_id is not None:
-        response.status_code = status.HTTP_202_ACCEPTED
-        job = to_read(await job_service.get_job(session, job_id))
-    return CampaignWizardResultRead(campaign=campaign, source_asset_id=source_id, job=job)
+) -> JSONResponse:
+    async def run() -> Outcome:
+        campaign, source_id, job_id = await campaign_service.run_wizard(
+            session, queue, principal.actor, body
+        )
+        job = to_read(await job_service.get_job(session, job_id)) if job_id else None
+        result = CampaignWizardResultRead(campaign=campaign, source_asset_id=source_id, job=job)
+        return (202 if job else 201), result, {}
+
+    # [IK] when it starts planning (a job); optional for a plain create.
+    return await idempotent(request, principal, body, run, required=body.generate)
 
 
 @router.get("/{campaign_id}", response_model=CampaignRead)
@@ -82,11 +86,19 @@ async def get_campaign(
 
 @router.post("/{campaign_id}/generate", response_model=JobRead, status_code=202)
 async def generate_plan(
-    campaign_id: uuid.UUID, principal: EditorDep, session: SessionDep, queue: JobQueueDep
-) -> JobRead:
+    request: Request,
+    campaign_id: uuid.UUID,
+    principal: EditorDep,
+    session: SessionDep,
+    queue: JobQueueDep,
+) -> JSONResponse:
     """Planning pipeline only (research -> strategy -> ideas -> plan); never assets."""
-    job_id = await campaign_service.start_planning(session, queue, principal.actor, campaign_id)
-    return to_read(await job_service.get_job(session, job_id))
+
+    async def run() -> Outcome:
+        job_id = await campaign_service.start_planning(session, queue, principal.actor, campaign_id)
+        return 202, to_read(await job_service.get_job(session, job_id)), {}
+
+    return await idempotent(request, principal, {"campaign_id": campaign_id}, run)
 
 
 @router.post("/{campaign_id}/activate", response_model=CampaignRead)
@@ -98,22 +110,25 @@ async def activate_campaign(
 
 @router.post("/{campaign_id}/generate-assets", response_model=JobRead, status_code=202)
 async def generate_assets(
+    request: Request,
     campaign_id: uuid.UUID,
     principal: EditorDep,
     session: SessionDep,
     queue: JobQueueDep,
     body: AssetGenerateRequest | None = None,
-) -> JobRead:
+) -> JSONResponse:
     """ACTIVE campaigns only: DRAFT assets per plan item (CA1) + one generation/QA job.
     Plan items without an MVP writer are listed in the job result as ``skipped`` (D2)."""
-    job_id = await content_service.generate_assets(
-        session,
-        queue,
-        principal.actor,
-        campaign_id,
-        body.plan_item_ids if body is not None else None,
-    )
-    return to_read(await job_service.get_job(session, job_id))
+    plan_item_ids = body.plan_item_ids if body is not None else None
+
+    async def run() -> Outcome:
+        job_id = await content_service.generate_assets(
+            session, queue, principal.actor, campaign_id, plan_item_ids
+        )
+        return 202, to_read(await job_service.get_job(session, job_id)), {}
+
+    inputs = {"campaign_id": campaign_id, "plan_item_ids": plan_item_ids}
+    return await idempotent(request, principal, inputs, run)
 
 
 @router.get("/{campaign_id}/strategy", response_model=CampaignStrategyRead)

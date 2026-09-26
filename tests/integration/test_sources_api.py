@@ -20,7 +20,7 @@ from omnigrowth.security.http import FetchResult
 from omnigrowth.services.jobs import RecordingJobQueue
 from omnigrowth.storage.uploads import UploadStore
 from omnigrowth.workflows.tasks import execute_job
-from tests.integration.helpers import auth_headers
+from tests.integration.helpers import IK_HOOKS, auth_headers
 
 pytestmark = pytest.mark.integration
 
@@ -48,7 +48,7 @@ async def env(fresh_database: str, tmp_path: Path) -> AsyncIterator[Env]:
     app.dependency_overrides[get_job_queue] = lambda: queue
     app.dependency_overrides[get_upload_store] = lambda: store
     async with httpx.AsyncClient(
-        transport=httpx.ASGITransport(app=app), base_url="http://test"
+        event_hooks=IK_HOOKS, transport=httpx.ASGITransport(app=app), base_url="http://test"
     ) as client:
         e = Env(client, queue, store)
         e.headers = await auth_headers(client, UserRole.EDITOR)

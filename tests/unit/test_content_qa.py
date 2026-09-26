@@ -292,3 +292,28 @@ def test_x_hashtags_match_whole_tags_across_all_posts() -> None:
     draft = build_draft(Platform.X, ContentFormat.THREAD, fields)
     assert draft.segments[-1].endswith("#AI")  # #AI is not "present" inside #AIethics
     assert "#AIethics" not in draft.segments[-1]  # already in post 1
+
+
+def test_x_counts_every_link_as_23_characters() -> None:
+    url = "https://simplyai.example/" + "a" * 120  # 145 characters written out
+    text = "x" * 200 + " " + url  # 346 raw, 224 as X counts it
+    fields = fields_from_output(XPost(posts=[text]))
+    draft = build_draft(Platform.X, ContentFormat.TEXT_POST, fields)
+    context = ctx(cta_required=False, allowed_urls=frozenset({url}))
+    assert "OVER_LENGTH" not in codes(draft, context)
+    long_fields = fields_from_output(XPost(posts=["y" * 260 + " " + url]))
+    longer = build_draft(Platform.X, ContentFormat.TEXT_POST, long_fields)
+    assert "OVER_LENGTH" in codes(longer, context)  # 260 + 1 + 23 > 280
+
+
+def test_similarity_thresholds_are_per_embedding_model() -> None:
+    rules = CONFIG.similarity
+    nomic = rules.for_model("text-embedding-nomic-embed-text-v1.5")
+    assert (nomic.near_duplicate, nomic.repeated_hook) == (0.95, 0.90)
+    default = rules.for_model("some-other-model")
+    assert default.near_duplicate == rules.near_duplicate
+    hit = (SimilarHit("FULL", "a1", "v1", 0.93),)  # a paraphrase under nomic
+    assert "NEAR_DUPLICATE" not in codes(
+        linkedin(), ctx(similar=hit, embedding_model="text-embedding-nomic-embed-text-v1.5")
+    )
+    assert "NEAR_DUPLICATE" in codes(linkedin(), ctx(similar=hit))  # default 0.90

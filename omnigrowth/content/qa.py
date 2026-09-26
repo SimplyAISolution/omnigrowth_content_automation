@@ -46,6 +46,15 @@ class PlatformRules(BaseModel):
     max_thread_posts: int | None = None
     max_hashtags: int = 5
     markdown_rendered: bool = False
+    # Platforms that shorten links count every URL as this many characters (X: t.co).
+    url_chars: int | None = None
+
+
+class ModelThresholds(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    near_duplicate: float = Field(ge=0.0, le=1.0)
+    repeated_hook: float = Field(ge=0.0, le=1.0)
 
 
 class SimilarityRules(BaseModel):
@@ -54,6 +63,14 @@ class SimilarityRules(BaseModel):
     near_duplicate: float = Field(ge=0.0, le=1.0)
     repeated_hook: float = Field(ge=0.0, le=1.0)
     max_neighbours: int = Field(ge=1, le=50)
+    per_model: dict[str, ModelThresholds] = Field(default_factory=dict)
+
+    def for_model(self, model: str | None) -> ModelThresholds:
+        """Thresholds calibrated for this embedding model, else the defaults."""
+        override = self.per_model.get(model or "")
+        return override or ModelThresholds(
+            near_duplicate=self.near_duplicate, repeated_hook=self.repeated_hook
+        )
 
 
 class QaConfig(BaseModel):
@@ -125,6 +142,7 @@ class QaContext:
     similar: tuple[SimilarHit, ...] = ()
     # False when no embedding model was reachable: reported, never blocking (§10).
     similarity_checked: bool = True
+    embedding_model: str | None = None  # selects the calibrated thresholds
 
 
 @dataclass(frozen=True, slots=True)
@@ -234,6 +252,14 @@ def _hashtags(draft: Draft) -> list[str]:
     return [tag for segment in draft.segments for tag in _HASHTAG.findall(segment)]
 
 
+def _counted_length(text: str, rules: PlatformRules) -> int:
+    """Length as the platform counts it (shortened links count as ``url_chars``)."""
+    if rules.url_chars is None:
+        return len(text)
+    urls = [u for u in _URL.findall(text) if "://" in u or u.lower().startswith("www.")]
+    return len(text) - sum(len(u) for u in urls) + rules.url_chars * len(urls)
+
+
 # ------------------------------------------------------------------ stages
 def structural(draft: Draft, ctx: QaContext, rules: PlatformRules) -> StageResult:
     findings: list[Finding] = []
@@ -277,7 +303,7 @@ def brand(draft: Draft, ctx: QaContext, config: QaConfig) -> StageResult:
         findings.append(
             _warn("DUPLICATE_CHECK_SKIPPED", "no embedding model available; not checked")
         )
-    rules = config.similarity
+    rules = config.similarity.for_model(ctx.embedding_model)
     for hit in ctx.similar:
         if hit.field == "FULL" and hit.similarity >= rules.near_duplicate:
             findings.append(
@@ -361,13 +387,14 @@ def platform(draft: Draft, rules: PlatformRules) -> StageResult:
         )
     if rules.max_chars_per_post is not None:
         for index, segment in enumerate(draft.segments, start=1):
-            if len(segment) > rules.max_chars_per_post:
+            length = _counted_length(segment, rules)
+            if length > rules.max_chars_per_post:
                 findings.append(
                     _fail(
                         "OVER_LENGTH",
-                        f"post {index} is {len(segment)} characters",
+                        f"post {index} is {length} characters",
                         post=index,
-                        length=len(segment),
+                        length=length,
                         max=rules.max_chars_per_post,
                     )
                 )

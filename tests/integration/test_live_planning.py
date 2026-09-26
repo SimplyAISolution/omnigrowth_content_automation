@@ -29,7 +29,7 @@ from omnigrowth.services.jobs import RecordingJobQueue
 from omnigrowth.storage.db import get_engine, get_sessionmaker
 from omnigrowth.workflows.tasks import execute_job
 from tests.integration.campaign_support import ARTICLE, START, TZ
-from tests.integration.helpers import auth_headers
+from tests.integration.helpers import IK_HOOKS, auth_headers
 
 pytestmark = pytest.mark.live_llm
 
@@ -88,7 +88,9 @@ async def test_live_planning_pipeline(fresh_database: str, monkeypatch: pytest.M
     queue = RecordingJobQueue()
     app = create_app()
     app.dependency_overrides[get_job_queue] = lambda: queue
-    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://t") as c:
+    async with httpx.AsyncClient(
+        event_hooks=IK_HOOKS, transport=httpx.ASGITransport(app=app), base_url="http://t"
+    ) as c:
         headers = await auth_headers(c, UserRole.EDITOR)
         brand = await c.post(
             "/api/v1/brands",

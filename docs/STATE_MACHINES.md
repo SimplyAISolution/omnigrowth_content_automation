@@ -577,3 +577,24 @@ the previous mix back to `PROPOSED` (CI4, SYSTEM); only humans restore a discard
 | CI3 | PROPOSED | DISCARDED | `discard` | SYSTEM; H:OWNER,EDITOR |
 | CI4 | SELECTED | PROPOSED | `deselect` (SYSTEM: a newer planning run supersedes the mix) | SYSTEM; H:OWNER,EDITOR |
 | CI5 | DISCARDED | PROPOSED | `restore` | H:OWNER,EDITOR |
+
+### 7.5 Recommendation (`recommendation_status`, added after the MVP milestone)
+Created by the Optimization Agent only when every cited label resolves to a stored
+`analytics_snapshots` row (evidence rule, Phase 9 gate enforced since Phase 7). A human then
+accepts or dismisses it; the decision is final and records `decided_by_actor_*`.
+
+| ID | From | To | Trigger | Actors |
+|---|---|---|---|---|
+| RC1 | — | PROPOSED | `create` | AGENT (optimizer); SYSTEM |
+| RC2 | PROPOSED | ACCEPTED | `accept` (`POST /recommendations/{id}/accept`) | H:OWNER,EDITOR |
+| RC3 | PROPOSED | DISMISSED | `dismiss` (`POST /recommendations/{id}/dismiss`) | H:OWNER,EDITOR |
+
+### 7.6 Notes on content-asset transitions implemented after the MVP
+- CA12 reschedule = J9 cancel of the pending job + new J1 row + SCHEDULED -> SCHEDULED, one
+  transaction; refused while the job is CLAIMED or UNCERTAIN.
+- CA17 / CA19 (EDIT / REGENERATE of a SCHEDULED asset) cancel the pending job first (X7).
+- EDIT and REGENERATE record `invalidated_approval_of` in the transition's audit metadata when
+  they clear an approval.
+- CA7 by SYSTEM (brand `auto_approve_enabled`) runs right after CA6 and writes an
+  `approval_actions` row with actor `SYSTEM:auto-approve`.
+

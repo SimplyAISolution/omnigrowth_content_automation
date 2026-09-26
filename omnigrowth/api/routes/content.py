@@ -5,9 +5,12 @@ from __future__ import annotations
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Query, Response, status
+from fastapi import APIRouter, Query, Request, Response, status
+from fastapi.responses import JSONResponse
 
 from omnigrowth.api.deps import EditorDep, JobQueueDep, SessionDep, ViewerDep
+from omnigrowth.api.idempotency import Outcome, idempotent
+from omnigrowth.api.routes.jobs import to_read
 from omnigrowth.content.qa import cached_qa_config
 from omnigrowth.core.enums import ContentAssetStatus
 from omnigrowth.core.settings import get_settings
@@ -18,9 +21,12 @@ from omnigrowth.schemas.content import (
     ContentVersionDiffRead,
     ContentVersionRead,
     QaResultRead,
+    RegenerateRequest,
     SimilarContentRead,
 )
+from omnigrowth.schemas.sources import JobRead
 from omnigrowth.services import content as content_service
+from omnigrowth.services import jobs as job_service
 
 router = APIRouter(prefix="/content", tags=["content"])
 
@@ -110,7 +116,45 @@ async def similar_content(
 ) -> Page[SimilarContentRead]:
     """§10 duplicate/fatigue neighbours (warn-only). Default threshold from config/qa.yaml."""
     config = cached_qa_config(get_settings().config_dir)
-    items = await content_service.similar(
-        session, asset_id, threshold if threshold is not None else config.similarity.near_duplicate
-    )
+    items = await content_service.similar(session, asset_id, threshold, config)
     return Page[SimilarContentRead](items=items)
+
+
+@router.post("/{asset_id}/regenerate", response_model=JobRead, status_code=status.HTTP_202_ACCEPTED)
+async def regenerate(
+    request: Request,
+    asset_id: uuid.UUID,
+    body: RegenerateRequest,
+    principal: EditorDep,
+    session: SessionDep,
+    queue: JobQueueDep,
+) -> JSONResponse:
+    """§37 REGENERATE: back to DRAFT (CA18/CA19); the writer produces a REGENERATION version
+    from ``instructions`` and QA re-runs. Same service as the approval action."""
+
+    async def run() -> Outcome:
+        job_id = await content_service.regenerate_asset(
+            session, queue, principal.actor, asset_id, body.content_version_id, body.instructions
+        )
+        job = to_read(await job_service.get_job(session, job_id))
+        return 202, job, {"Location": f"/api/v1/jobs/{job_id}"}
+
+    return await idempotent(request, principal, {"asset_id": asset_id, **body.model_dump()}, run)
+
+
+@router.post("/{asset_id}/qa", response_model=JobRead, status_code=status.HTTP_202_ACCEPTED)
+async def rerun_qa(
+    request: Request,
+    asset_id: uuid.UUID,
+    principal: EditorDep,
+    session: SessionDep,
+    queue: JobQueueDep,
+) -> JSONResponse:
+    """Re-run QA stages 1-4 on the current version of a GENERATED asset (e.g. after an
+    infrastructure failure left it without results)."""
+
+    async def run() -> Outcome:
+        job_id = await content_service.request_qa(session, queue, principal.actor, asset_id)
+        return 202, to_read(await job_service.get_job(session, job_id)), {}
+
+    return await idempotent(request, principal, {"asset_id": asset_id}, run)

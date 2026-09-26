@@ -253,8 +253,10 @@ async def claim_due(
                 values={
                     "claim_token": token,
                     "claimed_by": scheduler_id,
-                    "claimed_at": now,
-                    "lease_expires_at": now + lease,
+                    # The database clock sets and checks leases: scheduler hosts may
+                    # disagree about the time, the database is the single referee.
+                    "claimed_at": func.now(),
+                    "lease_expires_at": func.now() + lease,
                 },
             )
             claimed.append((job.id, token))
@@ -304,8 +306,8 @@ async def _start(
     if job is None or job.status is not PublicationJobStatus.CLAIMED or job.claim_token != token:
         return None
     request_timeout = timedelta(seconds=config.scheduler.request_timeout_seconds)
-    if job.lease_expires_at is None or job.lease_expires_at <= now + request_timeout:
-        return None  # not enough lease left to send safely; lease recovery handles it
+    if job.lease_expires_at is None:
+        return None
     asset = await session.get(ContentAsset, job.content_asset_id)
     account = await session.get(PlatformAccount, job.platform_account_id)
     version = await session.get(ContentVersion, job.content_version_id)
@@ -663,7 +665,9 @@ async def recover_expired_leases(
                 select(PublicationJob)
                 .where(
                     PublicationJob.status == PublicationJobStatus.CLAIMED,
-                    PublicationJob.lease_expires_at < now,
+                    # ``now`` may be ahead of the DB clock in tests (frozen clock), never
+                    # behind it in production: expired by either clock counts.
+                    PublicationJob.lease_expires_at < func.greatest(now, func.now()),
                 )
                 .with_for_update(skip_locked=True)
             )
@@ -736,3 +740,52 @@ transition_job = _job
 transition_publication = _publication
 asset_follows_publication = _asset
 RELEASE_CLAIM = _RELEASE
+
+
+async def cancel_open_job(
+    session: AsyncSession, asset_id: uuid.UUID, actor: Actor, reason: str | None
+) -> PublicationJob | None:
+    """J9 (+ P3b) for the asset's pending job, before EDIT/REGENERATE/reschedule (X7).
+
+    Refuses when the job is already with the dispatcher (CLAIMED) or its outcome is unknown
+    (UNCERTAIN): the post may exist, so the asset must not change underneath it.
+    """
+    job = (
+        await session.execute(
+            select(PublicationJob)
+            .where(
+                PublicationJob.content_asset_id == asset_id,
+                PublicationJob.status.in_(
+                    [
+                        PublicationJobStatus.PENDING,
+                        PublicationJobStatus.RETRY_WAIT,
+                        PublicationJobStatus.CLAIMED,
+                        PublicationJobStatus.UNCERTAIN,
+                    ]
+                ),
+            )
+            .with_for_update()
+        )
+    ).scalar_one_or_none()
+    if job is None:
+        return None
+    if job.status is PublicationJobStatus.UNCERTAIN:
+        raise OmniGrowthError(
+            ErrorCode.PUBLICATION_UNCERTAIN, "reconcile the uncertain publication first"
+        )
+    if job.status is PublicationJobStatus.CLAIMED:
+        raise OmniGrowthError(
+            ErrorCode.INVALID_STATE_TRANSITION,
+            "the post is being published right now; try again shortly",
+            details={"failed_guard": "job_cancellable"},
+        )
+    await _job(session, job, "cancel", actor, reason=reason)
+    await _publication(
+        session,
+        job,
+        "cancel",
+        actor,
+        expect=PublicationStatus.PUBLISHING,
+        values={"error": {"reason": "cancelled"}},
+    )
+    return job

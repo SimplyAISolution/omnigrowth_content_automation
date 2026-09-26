@@ -11,6 +11,7 @@ from omnigrowth.core.state_machines.definitions import (
     JOB,
     PUBLICATION,
     PUBLICATION_JOB,
+    RECOMMENDATION,
     SOURCE_ASSET,
 )
 from omnigrowth.core.state_machines.machine import Actor, StateMachine, Transition
@@ -25,6 +26,7 @@ __all__ = [
     "JOB",
     "PUBLICATION",
     "PUBLICATION_JOB",
+    "RECOMMENDATION",
     "SOURCE_ASSET",
     "Actor",
     "StateMachine",

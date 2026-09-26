@@ -28,6 +28,7 @@ from omnigrowth.publishing.base import PlatformPublisher
 from omnigrowth.publishing.config import cached_publishing_config
 from omnigrowth.publishing.mock import MockPublisher
 from omnigrowth.publishing.scheduler import run_once
+from omnigrowth.services.idempotency import purge_expired as purge_idempotency_keys
 from omnigrowth.storage.db import get_engine, ping_database
 from omnigrowth.workflows.tasks import reap_stuck_jobs
 
@@ -59,6 +60,12 @@ async def tick() -> bool:
     else:
         if reaped:
             log.warning("scheduler tick: reaped stuck jobs", extra={"count": reaped})
+    try:
+        # Idempotency keys live 24 h (API_PLAN §1.6); expired rows are the one hard-deleted
+        # class besides superseded embeddings (DATA_MODEL §6a.2).
+        await purge_idempotency_keys()
+    except (OmniGrowthError, SQLAlchemyError) as exc:
+        log.error("scheduler tick: key purge failed", extra={"error": type(exc).__name__})
     try:
         # A fresh mock per tick: it keeps no state worth carrying (its idempotency comes
         # from the key), and a long-lived one would grow without bound.

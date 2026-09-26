@@ -203,3 +203,16 @@ def test_uuid7_version_order_and_uniqueness() -> None:
 
 def test_pg_enum_name_rule() -> None:
     assert pg_enum_name(ContentAssetStatus) == "content_asset_status"
+
+
+def test_not_implemented_and_header_errors_have_their_own_http_status() -> None:
+    from omnigrowth.core.errors import ErrorCode, OmniGrowthError
+
+    def status(reason: str | None) -> int:
+        details = {"reason": reason} if reason else {}
+        return OmniGrowthError(ErrorCode.VALIDATION_FAILURE, "x", details=details).http_status
+
+    assert status("NOT_IMPLEMENTED") == 501
+    assert status("IDEMPOTENCY_KEY_REQUIRED") == 400
+    assert status("IDEMPOTENCY_KEY_INVALID") == 400
+    assert status(None) == 422

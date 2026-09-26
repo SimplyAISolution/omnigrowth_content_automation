@@ -21,7 +21,8 @@ from omnigrowth.core.enums import (
 )
 from omnigrowth.core.errors import ErrorCode
 from omnigrowth.schemas.brand import Timezone
-from omnigrowth.schemas.content import ContentAssetRead
+from omnigrowth.schemas.content import ContentAssetRead, ContentVersionRead
+from omnigrowth.schemas.sources import JobRead
 
 
 class _Request(BaseModel):
@@ -59,16 +60,29 @@ class PlatformAccountRead(_Read):
 
 
 # ------------------------------------------------------------------ approvals (§37)
+class ApprovalEdit(_Request):
+    """The new content for an EDIT (§37); omitted fields keep the reviewed version's."""
+
+    body: str = Field(min_length=1, max_length=20_000)
+    hook: str | None = Field(default=None, max_length=600)
+    cta: str | None = Field(default=None, max_length=400)
+    title: str | None = Field(default=None, max_length=300)
+    hashtags: list[str] | None = Field(default=None, max_length=10)
+
+
 class ApprovalActionRequest(_Request):
     action: ApprovalActionType
     content_version_id: uuid.UUID
     comment: str | None = Field(default=None, max_length=4000)
     platform_account_id: uuid.UUID | None = None
     scheduled_at: datetime | None = None
+    edit: ApprovalEdit | None = None
 
     @model_validator(mode="after")
     def _required_fields(self) -> ApprovalActionRequest:
         a = self.action
+        if a is ApprovalActionType.EDIT and self.edit is None:
+            raise ValueError("EDIT requires edit")
         if a in (ApprovalActionType.REJECT, ApprovalActionType.REQUEST_REVISION) and not (
             self.comment and self.comment.strip()
         ):
@@ -144,6 +158,8 @@ class PublicationRead(_Read):
 class ApprovalActionResultRead(BaseModel):
     asset: ContentAssetRead
     publication_job: PublicationJobRead | None = None
+    job: JobRead | None = None  # QA_RUN after EDIT, ASSET_GENERATION after REGENERATE
+    version: ContentVersionRead | None = None  # the version an EDIT created
 
 
 class CancelRequest(_Request):

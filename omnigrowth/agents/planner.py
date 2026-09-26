@@ -7,6 +7,7 @@ never contain dates.
 
 from __future__ import annotations
 
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta
 from zoneinfo import ZoneInfo
@@ -93,8 +94,11 @@ def schedule(
     platforms: tuple[Platform, ...],
     start: date,
     timezone: str,
+    formats: Mapping[Platform, Sequence[ContentFormat]] | None = None,
 ) -> list[ScheduledEntry]:
-    """Resolve idea refs, clamp platforms to the campaign and compute absolute windows."""
+    """Resolve idea refs, clamp platforms to the campaign, keep formats the platform
+    supports (``formats``: allowed formats for platforms that have writers/QA rules) and
+    compute absolute windows."""
     tz = ZoneInfo(timezone)
     scheduled: list[ScheduledEntry] = []
     for ordinal, entry in enumerate(output.items, start=1):
@@ -102,6 +106,12 @@ def schedule(
         idea_index = ref - 1 if ref <= selected_count else None
         if entry.platform not in platforms:
             entry = entry.model_copy(update={"platform": platforms[0]})
+        allowed = (formats or {}).get(entry.platform)
+        if allowed and entry.format not in allowed:
+            # e.g. a LinkedIn "THREAD": use the platform's plain post instead of planning
+            # content QA would reject as UNSUPPORTED_FORMAT.
+            fallback = ContentFormat.TEXT_POST if ContentFormat.TEXT_POST in allowed else allowed[0]
+            entry = entry.model_copy(update={"format": fallback})
         day = start + timedelta(days=entry.day - 1)
         window_start = datetime.combine(day, time(entry.window_start_hour), tzinfo=tz)
         scheduled.append(

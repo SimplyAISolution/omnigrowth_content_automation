@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import dataclasses
+import hashlib
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, File, Form, Query, Response, UploadFile, status
+from fastapi import APIRouter, File, Form, Query, Request, Response, UploadFile, status
+from fastapi.responses import JSONResponse
 
 from omnigrowth.api.deps import (
     EditorDep,
@@ -16,6 +18,7 @@ from omnigrowth.api.deps import (
     UploadStoreDep,
     ViewerDep,
 )
+from omnigrowth.api.idempotency import Outcome, idempotent
 from omnigrowth.api.routes.jobs import to_read
 from omnigrowth.core.enums import SourceType
 from omnigrowth.core.errors import ErrorCode, OmniGrowthError
@@ -73,38 +76,46 @@ async def create_text_source(
     responses={200: {"model": SourceAssetRead, "description": "Duplicate of an existing source"}},
 )
 async def upload_source(
+    request: Request,
     principal: EditorDep,
     session: SessionDep,
     queue: JobQueueDep,
     store: UploadStoreDep,
-    response: Response,
     file: Annotated[UploadFile, File()],
     brand_id: Annotated[uuid.UUID, Form()],
     title: Annotated[str | None, Form(max_length=500)] = None,
-) -> JobRead | SourceAssetRead:
+) -> JSONResponse:
     # Read at most limit+1 bytes: never buffer an arbitrarily large body.
     data = await file.read(DEFAULT_LIMITS.max_bytes + 1)
     if len(data) > DEFAULT_LIMITS.max_bytes:
         raise OmniGrowthError(
             ErrorCode.VALIDATION_FAILURE, "upload too large", details={"limit": "25 MiB"}
         )
-    accepted = await source_service.accept_upload(
-        session,
-        actor=principal.actor,
-        store=store,
-        queue=queue,
-        brand_id=brand_id,
-        data=data,
-        filename=file.filename,
-        declared_content_type=file.content_type,
-        title=title,
-    )
-    if accepted.duplicate or accepted.job_id is None:
-        response.status_code = status.HTTP_200_OK
-        response.headers["X-Duplicate-Of"] = str(accepted.source.id)
-        return _read(accepted.source)
-    response.headers["Location"] = f"/api/v1/jobs/{accepted.job_id}"
-    return await _job_read(session, accepted.job_id)
+
+    async def run() -> Outcome:
+        accepted = await source_service.accept_upload(
+            session,
+            actor=principal.actor,
+            store=store,
+            queue=queue,
+            brand_id=brand_id,
+            data=data,
+            filename=file.filename,
+            declared_content_type=file.content_type,
+            title=title,
+        )
+        if accepted.duplicate or accepted.job_id is None:
+            return 200, _read(accepted.source), {"X-Duplicate-Of": str(accepted.source.id)}
+        job = await _job_read(session, accepted.job_id)
+        return 202, job, {"Location": f"/api/v1/jobs/{accepted.job_id}"}
+
+    inputs = {
+        "brand_id": brand_id,
+        "title": title,
+        "filename": file.filename,
+        "sha256": hashlib.sha256(data).hexdigest(),
+    }
+    return await idempotent(request, principal, inputs, run)
 
 
 @router.post(
@@ -114,25 +125,28 @@ async def upload_source(
     dependencies=[IngestRateLimit],
 )
 async def ingest_url(
+    request: Request,
     body: SourceUrlIngestRequest,
     principal: EditorDep,
     session: SessionDep,
     queue: JobQueueDep,
-    response: Response,
-) -> JobRead:
-    accepted = await source_service.accept_url(
-        session,
-        actor=principal.actor,
-        queue=queue,
-        brand_id=body.brand_id,
-        url=body.url,
-        source_type=body.source_type,
-        title=body.title,
-    )
-    if accepted.job_id is None:  # pragma: no cover - accept_url always enqueues
-        raise OmniGrowthError(ErrorCode.QUEUE_FAILURE, "job was not created")
-    response.headers["Location"] = f"/api/v1/jobs/{accepted.job_id}"
-    return await _job_read(session, accepted.job_id)
+) -> JSONResponse:
+    async def run() -> Outcome:
+        accepted = await source_service.accept_url(
+            session,
+            actor=principal.actor,
+            queue=queue,
+            brand_id=body.brand_id,
+            url=body.url,
+            source_type=body.source_type,
+            title=body.title,
+        )
+        if accepted.job_id is None:  # pragma: no cover - accept_url always enqueues
+            raise OmniGrowthError(ErrorCode.QUEUE_FAILURE, "job was not created")
+        job = await _job_read(session, accepted.job_id)
+        return 202, job, {"Location": f"/api/v1/jobs/{accepted.job_id}"}
+
+    return await idempotent(request, principal, body, run)
 
 
 @router.get("", response_model=Page[SourceAssetRead])
@@ -190,17 +204,21 @@ async def archive_source(
     dependencies=[IngestRateLimit],
 )
 async def retry_source(
+    request: Request,
     source_id: uuid.UUID,
     principal: EditorDep,
     session: SessionDep,
     queue: JobQueueDep,
-    response: Response,
-) -> JobRead:
+) -> JSONResponse:
     """FAILED -> PENDING + new ingest job (transient failures must be recoverable)."""
-    accepted = await source_service.retry_source(
-        session, actor=principal.actor, queue=queue, source_id=source_id
-    )
-    if accepted.job_id is None:  # pragma: no cover - retry always enqueues
-        raise OmniGrowthError(ErrorCode.QUEUE_FAILURE, "job was not created")
-    response.headers["Location"] = f"/api/v1/jobs/{accepted.job_id}"
-    return await _job_read(session, accepted.job_id)
+
+    async def run() -> Outcome:
+        accepted = await source_service.retry_source(
+            session, actor=principal.actor, queue=queue, source_id=source_id
+        )
+        if accepted.job_id is None:  # pragma: no cover - retry always enqueues
+            raise OmniGrowthError(ErrorCode.QUEUE_FAILURE, "job was not created")
+        job = await _job_read(session, accepted.job_id)
+        return 202, job, {"Location": f"/api/v1/jobs/{accepted.job_id}"}
+
+    return await idempotent(request, principal, {"source_id": source_id}, run)

@@ -4,12 +4,21 @@
 
 similarity:
   # Cosine similarity at or above which a content version is flagged as a near duplicate
-  # of an earlier one for the same brand (warn-only, §10).
+  # of an earlier one for the same brand (warn-only, §10). Similarity scales differ per
+  # embedding model, so these defaults are overridden per model below.
   near_duplicate: 0.90
   # Hooks are short, so repeated-hook detection uses its own threshold.
   repeated_hook: 0.92
   # How many neighbours to report.
   max_neighbours: 5
+  per_model:
+    # Calibrated 2026-09-25 on the canonical campaign posts (ENGINEERING_LOG Phase 7
+    # follow-up): light edit 0.996, same body + other CTA 0.982, full paraphrase ~0.93,
+    # distinct same-topic posts <= 0.91; hooks: identical 1.00, paraphrase 0.80, distinct
+    # <= 0.76.
+    text-embedding-nomic-embed-text-v1.5:
+      near_duplicate: 0.95
+      repeated_hook: 0.90
 
 platforms:
   LINKEDIN:
@@ -26,3 +35,4 @@ platforms:
     max_thread_posts: 15
     max_hashtags: 2
     markdown_rendered: false
+    url_chars: 23             # every link counts as 23 characters (t.co; UNVERIFIED)

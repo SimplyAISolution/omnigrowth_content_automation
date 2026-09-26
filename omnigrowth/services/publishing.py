@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import uuid
+from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import cast
 
@@ -50,10 +51,11 @@ from omnigrowth.publishing.config import cached_publishing_config
 from omnigrowth.publishing.scheduler import (
     RELEASE_CLAIM,
     asset_follows_publication,
+    cancel_open_job,
     transition_job,
     transition_publication,
 )
-from omnigrowth.schemas.content import ContentAssetRead
+from omnigrowth.schemas.content import ContentAssetRead, ContentVersionCreate
 from omnigrowth.schemas.publishing import (
     ApprovalActionRead,
     ApprovalActionRequest,
@@ -65,6 +67,7 @@ from omnigrowth.schemas.publishing import (
     ReconcileMethod,
 )
 from omnigrowth.services import content as content_service
+from omnigrowth.services.jobs import JobQueue
 from omnigrowth.storage import content as content_repo
 
 _JOBS = cast(Table, PublicationJob.__table__)
@@ -168,17 +171,41 @@ async def _campaign_is(
     return campaign
 
 
+@dataclass(frozen=True, slots=True)
+class ActionOutcome:
+    publication_job_id: uuid.UUID | None = None
+    job_id: uuid.UUID | None = None  # QA_RUN (EDIT) or ASSET_GENERATION (REGENERATE)
+    version_id: uuid.UUID | None = None  # the new version created by EDIT
+
+
 async def apply_action(
-    session: AsyncSession, actor: Actor, asset_id: uuid.UUID, body: ApprovalActionRequest
-) -> tuple[uuid.UUID, uuid.UUID | None]:
-    """Run one §37 action. Returns (asset id, publication job id if one was created)."""
+    session: AsyncSession,
+    queue: JobQueue,
+    actor: Actor,
+    asset_id: uuid.UUID,
+    body: ApprovalActionRequest,
+) -> ActionOutcome:
+    """Run one of the seven §37 actions; every one records the actor."""
     action = body.action
-    if action in (ApprovalActionType.EDIT, ApprovalActionType.REGENERATE):
-        raise OmniGrowthError(
-            ErrorCode.VALIDATION_FAILURE,
-            f"{action.value} is not available here yet; edit via POST /content/{{id}}/versions",
-            details={"reason": "NOT_IMPLEMENTED"},
+    if action is ApprovalActionType.EDIT:
+        assert body.edit is not None  # noqa: S101 - enforced by the request schema
+        version, qa_job = await content_service.edit_asset(
+            session,
+            queue,
+            actor,
+            asset_id,
+            ContentVersionCreate(
+                based_on_version_id=body.content_version_id,
+                comment=body.comment,
+                **body.edit.model_dump(exclude_unset=True),
+            ),
         )
+        return ActionOutcome(job_id=qa_job, version_id=version.id)
+    if action is ApprovalActionType.REGENERATE:
+        job = await content_service.regenerate_asset(
+            session, queue, actor, asset_id, body.content_version_id, body.comment
+        )
+        return ActionOutcome(job_id=job)
     asset = await content_repo.get_asset(session, asset_id, lock=True)
     if asset is None:
         raise _not_found("content asset")
@@ -240,7 +267,7 @@ async def apply_action(
         platform_account_id=body.platform_account_id,
     )
     await session.commit()
-    return asset.id, job_id
+    return ActionOutcome(publication_job_id=job_id)
 
 
 def _same_version(requested: uuid.UUID, current: uuid.UUID | None) -> None:
@@ -260,12 +287,6 @@ async def _schedule(
     correlation_id: str,
 ) -> tuple[str, uuid.UUID]:
     campaign = await _campaign_is(session, asset, (CampaignStatus.ACTIVE,), "campaign_active")
-    if asset.status is ContentAssetStatus.SCHEDULED:
-        raise OmniGrowthError(
-            ErrorCode.CONFLICT,
-            "the asset is already scheduled; cancel the job to reschedule",
-            details={"reason": "NOT_IMPLEMENTED"},
-        )
     CONTENT_ASSET.resolve(asset.status, body.action.value, actor)  # before any insert
     if body.content_version_id != asset.approved_version_id:
         raise OmniGrowthError(
@@ -305,6 +326,10 @@ async def _schedule(
             )
     else:
         due_at = now
+    if asset.status is ContentAssetStatus.SCHEDULED:
+        # CA12 reschedule: the pending job is cancelled (J9) and a new one queued below;
+        # refused while the dispatcher holds it or its outcome is unknown.
+        await cancel_open_job(session, asset.id, actor, reason="rescheduled")
     job_id = uuid7()
     try:
         async with session.begin_nested():

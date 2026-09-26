@@ -24,6 +24,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engin
 
 from omnigrowth.storage.db import to_async_url
 from tests.integration.campaign_support import Env, open_campaign_env
+from tests.integration.helpers import IK_HOOKS
 
 REPO = Path(__file__).resolve().parents[2]
 
@@ -114,7 +115,9 @@ async def api_client(fresh_database: str) -> AsyncIterator[httpx.AsyncClient]:
     from omnigrowth.api.app import create_app
 
     transport = httpx.ASGITransport(app=create_app())
-    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+    async with httpx.AsyncClient(
+        event_hooks=IK_HOOKS, transport=transport, base_url="http://test"
+    ) as client:
         yield client
     from omnigrowth.storage import db
 

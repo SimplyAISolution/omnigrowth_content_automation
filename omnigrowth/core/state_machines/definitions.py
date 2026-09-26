@@ -12,6 +12,7 @@ from omnigrowth.core.enums import (
     AgentRunStatus,
     ContentIdeaStatus,
     JobStatus,
+    RecommendationStatus,
     SourceAssetStatus,
 )
 from omnigrowth.core.enums import (
@@ -295,6 +296,32 @@ CONTENT_IDEA = StateMachine(
 )
 
 
+# `recommendations.status` (DATA_MODEL §5.7): the Optimization Agent proposes, a human
+# decides. A decision is final; a changed mind is a new recommendation run.
+RECOMMENDATION = StateMachine(
+    name="recommendation",
+    states=RecommendationStatus,
+    terminal=frozenset({RecommendationStatus.ACCEPTED.value, RecommendationStatus.DISMISSED.value}),
+    transitions=(
+        tr("RC1", None, RecommendationStatus.PROPOSED, "create", AGENT, SYSTEM),
+        tr(
+            "RC2",
+            RecommendationStatus.PROPOSED,
+            RecommendationStatus.ACCEPTED,
+            "accept",
+            OWNER_EDITOR,
+        ),
+        tr(
+            "RC3",
+            RecommendationStatus.PROPOSED,
+            RecommendationStatus.DISMISSED,
+            "dismiss",
+            OWNER_EDITOR,
+        ),
+    ),
+)
+
+
 ALL_MACHINES = (
     CAMPAIGN,
     CONTENT_ASSET,
@@ -305,4 +332,5 @@ ALL_MACHINES = (
     SOURCE_ASSET,
     AGENT_RUN,
     CONTENT_IDEA,
+    RECOMMENDATION,
 )

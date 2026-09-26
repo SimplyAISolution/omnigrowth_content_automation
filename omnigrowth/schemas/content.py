@@ -128,3 +128,10 @@ class SimilarContentRead(BaseModel):
     content_version_id: uuid.UUID
     similarity: float
     near_duplicate: bool
+
+
+class RegenerateRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    content_version_id: uuid.UUID
+    instructions: str | None = Field(default=None, max_length=4000)

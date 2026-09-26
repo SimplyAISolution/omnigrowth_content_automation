@@ -130,23 +130,69 @@ async def test_scheduled_asset_is_published_by_the_scheduler(env: Env) -> None:
     assert job["id"] not in again.job_ids and _mine(publisher, ready) == 1  # exactly once
 
 
-async def test_duplicate_schedule_is_a_conflict(env: Env) -> None:
+async def test_reschedule_replaces_the_pending_job(env: Env) -> None:
     ready = await _ready(env)
     asset = _of(ready, "X")[0]
     due = datetime.now(UTC) + timedelta(hours=1)
-    assert (await _schedule(env, ready, asset, due)).status_code == 200
-    again = await _schedule(env, ready, asset, due + timedelta(minutes=5))
-    assert again.status_code == 409  # asset already SCHEDULED
+    first = (await _schedule(env, ready, asset, due)).json()["publication_job"]
+    # CA12: SCHEDULE on a SCHEDULED asset cancels the pending job (J9) and queues a new one.
+    moved = await _schedule(env, ready, asset, due + timedelta(minutes=30))
+    assert moved.status_code == 200, moved.text
+    second = moved.json()["publication_job"]
+    assert second["id"] != first["id"] and second["idempotency_key"] == first["idempotency_key"]
+    assert (await _get(env, f"/publications/jobs/{first['id']}"))["status"] == "CANCELLED"
+    assert moved.json()["asset"]["status"] == "SCHEDULED"
     # Cancel (J9 + CA13), then the same version may be scheduled again as a new row.
-    jobs = (await _get(env, "/publications/jobs", campaign_id=ready.campaign_id))["items"]
     cancel = await env.client.post(
-        f"/api/v1/publications/jobs/{jobs[0]['id']}/cancel",
+        f"/api/v1/publications/jobs/{second['id']}/cancel",
         headers=env.headers,
         json={"reason": "moving it"},
     )
     assert cancel.status_code == 200 and cancel.json()["status"] == "CANCELLED"
     assert (await _get(env, f"/content/{asset['id']}"))["status"] == "APPROVED"
     assert (await _schedule(env, ready, asset, due + timedelta(hours=1))).status_code == 200
+    # PUBLISH_NOW is not a reschedule: from SCHEDULED it is refused.
+    now = await _schedule(env, ready, asset, due, action="PUBLISH_NOW")
+    assert now.status_code == 409
+
+
+async def test_idempotency_key_replays_and_guards_reuse(env: Env) -> None:
+    ready = await _ready(env)
+    asset = _of(ready, "LINKEDIN")[0]
+    body = {
+        "action": "SCHEDULE",
+        "content_version_id": asset["approved_version_id"],
+        "platform_account_id": ready.accounts["LINKEDIN"],
+        "scheduled_at": (datetime.now(UTC) + timedelta(hours=3)).isoformat(),
+    }
+    url = f"/api/v1/approvals/{asset['id']}/actions"
+    keyed = {**env.headers, "Idempotency-Key": "schedule-li-0001"}
+    first = await env.client.post(url, headers=keyed, json=body)
+    assert first.status_code == 200 and "Idempotent-Replayed" not in first.headers
+    replay = await env.client.post(url, headers=keyed, json=body)
+    assert replay.status_code == 200 and replay.headers["Idempotent-Replayed"] == "true"
+    assert replay.json()["publication_job"]["id"] == first.json()["publication_job"]["id"]
+    jobs = (await _get(env, "/publications/jobs", campaign_id=ready.campaign_id))["items"]
+    assert len(jobs) == 1  # the replay had no side effects
+    reused = await env.client.post(
+        url, headers=keyed, json={**body, "scheduled_at": datetime.now(UTC).isoformat()}
+    )
+    assert reused.status_code == 409 and reused.json()["details"]["reason"] == (
+        "IDEMPOTENCY_KEY_REUSED"
+    )
+    missing = await env.client.post(
+        url, headers={**env.headers, "X-Test-No-Idempotency-Key": "1"}, json=body
+    )
+    assert missing.status_code == 400
+    assert missing.json()["details"]["reason"] == "IDEMPOTENCY_KEY_REQUIRED"
+    bad = await env.client.post(url, headers={**env.headers, "Idempotency-Key": "x!"}, json=body)
+    assert bad.status_code == 400
+    # A failed request forgets its key: retrying with it runs again (and fails the same way).
+    stale = {**body, "content_version_id": str(uuid.uuid4())}
+    retry_key = {**env.headers, "Idempotency-Key": "stale-version-01"}
+    assert (await env.client.post(url, headers=retry_key, json=stale)).status_code == 409
+    again = await env.client.post(url, headers=retry_key, json=stale)
+    assert again.status_code == 409 and "Idempotent-Replayed" not in again.headers
 
 
 async def test_schedule_requires_the_approved_version_and_matching_account(env: Env) -> None:
@@ -415,36 +461,47 @@ async def test_claim_skips_rows_locked_by_another_scheduler(env: Env) -> None:
 
 
 async def test_dispatch_refuses_when_the_database_says_the_lease_is_gone(env: Env) -> None:
+    """Leases are set and checked by the database clock: a slow batch (or a host whose clock
+    runs behind) can never start a dispatch on a lease the database considers expired."""
+    from sqlalchemy import func, update
+
+    from omnigrowth.models import PublicationJob
     from omnigrowth.publishing.scheduler import dispatch_one
+    from omnigrowth.storage.db import get_sessionmaker
 
     ready = await _ready(env)
     asset = _of(ready, "LINKEDIN")[0]
-    due = datetime.now(UTC) - timedelta(seconds=50)  # within the schedule grace
+    due = datetime.now(UTC) + timedelta(minutes=5)
     job = (await _schedule(env, ready, asset, due)).json()["publication_job"]
-    short = CONFIG.model_copy(
-        update={
-            "scheduler": CONFIG.scheduler.model_copy(
-                update={"lease_seconds": 10, "request_timeout_seconds": 1}
-            )
-        }
-    )
-    claimed = await claim_due(due, scheduler_id="slow", config=short)
+    now = due + timedelta(seconds=1)
+    claimed = await claim_due(now, scheduler_id="slow", config=CONFIG)
     token = dict(claimed)[uuid.UUID(job["id"])]
+    claimed_job = await _get(env, f"/publications/jobs/{job['id']}")
+    assert claimed_job["status"] == "CLAIMED"
+    # Time passes for the database while this scheduler is busy with other jobs.
+    async with get_sessionmaker()() as session:
+        await session.execute(
+            update(PublicationJob)
+            .where(PublicationJob.id == uuid.UUID(job["id"]))
+            .values(lease_expires_at=func.now() - timedelta(seconds=1))
+        )
+        await session.commit()
     publisher = MockPublisher()
-    # The tick's own clock (``due``) thinks 9 s of lease remain; the database knows the
-    # lease ended ~40 s ago, so dispatch start is refused and nothing is sent.
     await dispatch_one(
         uuid.UUID(job["id"]),
         token,
-        due,
+        now,
         publisher=publisher,
-        config=short,
+        config=CONFIG,
         scheduler_id="slow",
         result=TickResult(),
     )
-    assert _mine(publisher, ready) == 0
+    assert _mine(publisher, ready) == 0  # nothing was sent
     after = await _get(env, f"/publications/jobs/{job['id']}")
     assert after["status"] == "CLAIMED" and after["dispatch_started_at"] is None
+    # Lease recovery then returns it to PENDING (J10): nothing was dispatched.
+    await recover_expired_leases(now, publisher=publisher, scheduler_id="s2", result=TickResult())
+    assert (await _get(env, f"/publications/jobs/{job['id']}"))["status"] == "PENDING"
 
 
 class _RecoveredMidCall(MockPublisher):

@@ -68,6 +68,9 @@ HTTP_STATUS: dict[ErrorCode, int] = {
 }
 
 
+_BAD_REQUEST_REASONS = frozenset({"IDEMPOTENCY_KEY_REQUIRED", "IDEMPOTENCY_KEY_INVALID"})
+
+
 class OmniGrowthError(Exception):
     """Base error. ``message`` is safe to show users; ``details`` must already be masked."""
 
@@ -87,6 +90,12 @@ class OmniGrowthError(Exception):
 
     @property
     def http_status(self) -> int:
+        if self.code is ErrorCode.VALIDATION_FAILURE:
+            reason = self.details.get("reason")
+            if reason == "NOT_IMPLEMENTED":
+                return 501  # in the v1 contract, not built yet (API_PLAN §1.4)
+            if reason in _BAD_REQUEST_REASONS:
+                return 400  # a required header is missing or malformed (API_PLAN §1.6)
         return HTTP_STATUS[self.code]
 
 

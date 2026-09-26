@@ -24,7 +24,7 @@ from omnigrowth.providers.fake import CannedProvider, FakeProvider
 from omnigrowth.providers.router import ModelRouter
 from omnigrowth.services.jobs import RecordingJobQueue
 from omnigrowth.storage.db import get_engine
-from tests.integration.helpers import auth_headers
+from tests.integration.helpers import IK_HOOKS, auth_headers
 
 REPO = Path(__file__).resolve().parents[2]
 FIXTURES = REPO / "tests" / "fixtures" / "llm"
@@ -74,7 +74,9 @@ async def open_campaign_env() -> AsyncIterator[Env]:
     e.queue = RecordingJobQueue()
     app = create_app()
     app.dependency_overrides[get_job_queue] = lambda: e.queue
-    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://t") as c:
+    async with httpx.AsyncClient(
+        event_hooks=IK_HOOKS, transport=httpx.ASGITransport(app=app), base_url="http://t"
+    ) as c:
         e.client = c
         e.headers = await auth_headers(c, UserRole.EDITOR)
         brand = await c.post(
