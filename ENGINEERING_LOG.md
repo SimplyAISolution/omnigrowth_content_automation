@@ -644,3 +644,59 @@ KNOWN ISSUES: GPU exclusivity after a client-side cancel assumes the server stop
   3 chars/token heuristic; allocation within a block partly predictable (random sizes V/2V).
 NEXT: human frees VRAM, re-run the live test; then Phase 10.
 ```
+
+## 2026-09-27 — Phase 9 closing checks (items 1-5 of the human's list) — gate PASSED, limitations listed
+Commits b8b1b04 (safeguards; its message was mistakenly the Phase 9 title) and 495d6c4 (Phase 9)
+were made by the human; both carry SSH signatures. History not rewritten.
+
+1. Controlled environment + rerun. LM Studio had qwen3.5-4b-uncensored (not OmniGrowth config)
+   loaded and qwen3.5-9b not loaded; with `lms` I unloaded all and loaded qwen/qwen3.5-9b
+   Q4_K_M at --context-length 32768 (--gpu max). Same 300-token probe: 83-88 tok/s (failure day:
+   23.1; Phase 5: 91). Controlled rerun of the failed request (live_e2e_20260927T021557Z):
+   research 540 in / 2,773 out / 31.5 s / 88 tok/s (was: timeout > 180 s) -> contention supported.
+   That run's generation step is INVALID (I edited config during the run; recorded in the file).
+2. Cancellation / lease loss against the real server (docs/audit/live/cancellation_*,
+   gpu_exclusivity_*): client cancel at 4.34 s -> server log "Client disconnected. Stopping
+   generation...", status idle 4.69 s, GPU 93 % -> 2 %. Lease deleted mid-generation -> caller A
+   SLOT_LOST at 10.05 s, server idle from 10.55 s, zero busy samples until B started at 33.98 s.
+   New: every call also requires server-verified idleness (`lms ps --json`, 2 samples,
+   fail-closed: SERVER_BUSY / IDLENESS_UNVERIFIABLE). Non-OmniGrowth clients: not guaranteed.
+3. Token budget: LM Studio SDK chat template + tokenizer + loaded context (exact); equals the
+   server's usage.prompt_tokens in 6/6 cases (English, Chinese, Arabic, emoji/ZWJ/flags, long URLs,
+   mixed); chars/3 under-counted 5/6 (emoji 74 vs 358). Approximate estimator only where
+   configured, labelled. Counting never loads a model (list_loaded; MODEL_NOT_LOADED).
+4. Dependence: decision now a randomization test re-drawing the actual blocked allocation
+   (valid under any within-account dependence); CI by inversion; Welch kept as descriptive.
+   Power study (scripts/simulate_experiment_power.py, 400 reps x 6 scenarios): without inflation
+   power fell to 0.69 (AR -0.3) / 0.74 (level shift); pre-registered power_inflation 1.25 met
+   >= 0.825 everywhere; type I 0.03-0.055 (2,000-rep check 0.046 / 0.051).
+5. Timing: allocation_end_at -> collection cutoff (+ observation + tolerance + analytics lag) =
+   evaluation time, frozen; start guards on pull cadence; exclusions PUBLISHED_AFTER_ALLOCATION_END
+   / PUBLISHED_BEFORE_START; E6 at allocation end; a post at the last allowed second is measured.
+
+Reviewer (read-only, second pass): 2 BLOCKER, 4 MAJOR, 8 MINOR. Fixed: B1 counting could load a
+model outside the lease (now list_loaded only); B2 legacy rows without timeline (fallback);
+M3 token-evidence provenance (annotated, re-run); M4 unreproducible simulation (script + record);
+M5 POSTING_TIME (refused, documented); M6 memory/event loop (int8 chunked, cap, to_thread);
+m7 CI agreement both directions; m8 idle check without slots; m10 docstring; m11 clip test;
+m12 live-record hygiene; m13 run index for legacy; m14 doc wording. Open: m9 (Docker workers have
+no `lms` CLI -> blocked by design).
+
+```
+PHASE 9 GATE — PASSED (all run this session, 2026-09-27; limitations below stay open)
+  uv run poe check -> 216 files already formatted / All checks passed! / Success: no issues found
+                      in 152 source files / Contracts: 4 kept, 0 broken. / 663 passed, 119 deselected
+  uv run poe test-int -> 113 passed, 669 deselected in 99.01s
+  uv run alembic heads -> a14e0f9b2c31 (head); alembic check -> No new upgrade operations detected.
+  LIVE §55 — "real local inference with mock publication" (frozen tree, sha256 of tracked+untracked
+    files identical before/after): tests/integration/test_live_e2e.py -> 1 passed in 606.33s;
+    record docs/audit/live/live_e2e_20260927T031326664939Z.json: qwen/qwen3.5-9b Q4_K_M ctx 32768
+    + nomic ctx 2048 only; 11 calls, 9,548 in / 52,126 out tokens, 89.8 tok/s end-to-end;
+    planning 216.6 s, generation 302.3 s; 5 generated, INSTAGRAM + YOUTUBE skipped (asserted);
+    5 published by MockPublisher (no platform call, no real audience); 4 recommendations, 0 dropped.
+  Not established: real-platform publishing readiness.
+  Live checks: tests/live/test_token_budget_live.py 1 passed; tests/live/test_gpu_exclusivity_live.py 1 passed.
+LIMITATIONS (explicit): non-OmniGrowth LM Studio clients can overlap (parallel=4; idle-check race);
+  a frozen holder > lease/3; Docker workers blocked without `lms`; POSTING_TIME experiments refused;
+  shift-model CIs; missing-at-age assumed unrelated to variant; parser memory cap POSIX-only.
+```

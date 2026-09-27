@@ -1,11 +1,11 @@
 ```
 phase: 9
 task: phase-9 gate (experiments + safeguard fixes)
-gate: BLOCKED (live §55 re-run pending: VRAM contention in LM Studio)
-last_green_commit: a3011dd
+gate: GATE_PASSED (2026-09-27; limitations listed in ENGINEERING_LOG — human to accept)
+last_green_commit: 495d6c4
 next_phase: 10 — Platforms + repurposing
 shell: PowerShell Core 7.6.6 (Git Bash also available)
-blockers: live re-run after VRAM is freed; phase 9 commits pending (human signs)
+blockers: phase 9 closing commits pending (human signs)
 ```
 
 ## Notes
@@ -21,3 +21,4 @@ blockers: live re-run after VRAM is freed; phase 9 commits pending (human signs)
 - Post-MVP: known issues resolved (Idempotency-Key, full §37, CA12/CA17, auto-approve, QA re-run, per-model similarity thresholds, DB-clock leases, recommendation machine). Follow-up plan: docs/FOLLOW_UPS.md.
 - Phase 8: derived metrics as data (formula grammar, revisions), attribute comparisons, publication metrics, calendar, scheduled pulls, simulated-vs-real provenance (docs/METRICS.md). Upload/inference safeguards hardened (docs/audit/safeguards_post_mvp.md). Live §55 green (17 min).
 - Phase 9: experiments (A14: unit = post at fixed age, floor 30/variant, power 80 %, fixed 0.95, Bonferroni, fixed endpoint, simulated evidence separated) + GPU lease, backlog lock, killable parsing, context budget. Unit/integration green; live blocked by environment.
+- Phase 9 closing checks: controlled live rerun, real-server cancellation/lease-loss evidence + idle gate, exact server tokenization, randomization inference + power inflation 1.25, frozen timeline. Live §55 (real local inference, mock publication) passed on a frozen tree.

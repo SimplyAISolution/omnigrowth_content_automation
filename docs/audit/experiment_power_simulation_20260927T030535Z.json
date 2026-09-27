@@ -1,0 +1,85 @@
+{
+  "ran_at": "2026-09-27T03:03:46.542705+00:00",
+  "script": "scripts/simulate_experiment_power.py",
+  "reps_per_cell": 400,
+  "planned_n_per_variant": 55,
+  "independence_formula_n_per_variant": 44,
+  "power_inflation": 1.25,
+  "plan": {
+    "sigma": 1.0,
+    "delta": 0.6,
+    "alpha": 0.05,
+    "power": 0.8
+  },
+  "monte_carlo_se": {
+    "power_near_0.8": 0.02,
+    "type_I_near_0.05": 0.011
+  },
+  "scenarios": {
+    "independent": {
+      "spec": {
+        "rho": 0.0
+      },
+      "randomization_power_without_inflation": 0.7675,
+      "randomization_power": 0.87,
+      "randomization_type_I": 0.055,
+      "welch_power": 0.845,
+      "welch_type_I": 0.045
+    },
+    "ar1_+0.5": {
+      "spec": {
+        "rho": 0.5
+      },
+      "randomization_power_without_inflation": 0.9475,
+      "randomization_power": 0.965,
+      "randomization_type_I": 0.045,
+      "welch_power": 0.8925,
+      "welch_type_I": 0.005
+    },
+    "ar1_+0.8": {
+      "spec": {
+        "rho": 0.8
+      },
+      "randomization_power_without_inflation": 1.0,
+      "randomization_power": 1.0,
+      "randomization_type_I": 0.0325,
+      "welch_power": 0.9825,
+      "welch_type_I": 0.0
+    },
+    "ar1_-0.3": {
+      "spec": {
+        "rho": -0.3
+      },
+      "randomization_power_without_inflation": 0.6875,
+      "randomization_power": 0.825,
+      "randomization_type_I": 0.04,
+      "welch_power": 0.845,
+      "welch_type_I": 0.0525
+    },
+    "level_shift": {
+      "spec": {
+        "rho": 0.0,
+        "shift": 2.0
+      },
+      "randomization_power_without_inflation": 0.7375,
+      "randomization_power": 0.8375,
+      "randomization_type_I": 0.055,
+      "welch_power": 0.4625,
+      "welch_type_I": 0.0
+    },
+    "heterogeneous_effect": {
+      "spec": {
+        "rho": 0.3,
+        "effects": [
+          0.3,
+          0.9
+        ]
+      },
+      "randomization_power_without_inflation": 0.85,
+      "randomization_power": 0.9075,
+      "randomization_type_I": 0.0475,
+      "welch_power": 0.8725,
+      "welch_type_I": 0.025
+    }
+  }
+}

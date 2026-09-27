@@ -3,8 +3,14 @@
 Same flow as test_e2e_success_scenario.py, but every agent (research, strategy, opportunity,
 planner, writers, optimizer) and the embeddings use the real models from config/models.yaml;
 publishing stays MOCK. Model output legitimately varies, so content-level expectations are
-relaxed: what must hold is that every step reaches its state and nothing is faked. The
-outcome is written to ``docs/audit/phase7_live_e2e.json`` pass or fail.
+relaxed: what must hold is that every step reaches its state and nothing is faked.
+
+Every run writes a NEW record ``docs/audit/live/live_e2e_<UTC timestamp>.json`` (pass or fail;
+historical records are never overwritten) labelled "real local inference with mock
+publication", with the LM Studio load state (models, quantization, context) and one row per
+model call (task, model, input/output tokens, latency, throughput) read from ``model_runs``.
+A pass does NOT establish real-platform publishing readiness; INSTAGRAM and YOUTUBE writers
+are not implemented and are skipped (decision D2).
 """
 
 from __future__ import annotations
@@ -30,7 +36,9 @@ from tests.integration.helpers import auth_headers
 pytestmark = pytest.mark.live_llm
 
 REPO = Path(__file__).resolve().parents[2]
-REPORT = REPO / "docs" / "audit" / "phase7_live_e2e.json"
+AUDIT_DIR = REPO / "docs" / "audit" / "live"
+LABEL = "real local inference with mock publication"
+EXCLUDED = ["INSTAGRAM", "YOUTUBE"]  # writers NOT_IMPLEMENTED (D2); not a platform test
 TOPIC = "Local AI agents will become an important alternative to fully cloud-hosted AI."
 
 
@@ -48,9 +56,78 @@ async def _ok(env: Env, method: str, path: str, expect: int = 200, **kw: Any) ->
     return resp.json()
 
 
+def _server_state() -> dict[str, Any]:
+    """LM Studio's own view of what is loaded (model, quantization, context)."""
+    import urllib.request
+
+    try:
+        with urllib.request.urlopen("http://127.0.0.1:1234/api/v0/models", timeout=5) as r:
+            data = json.load(r)["data"]
+    except OSError as exc:
+        return {"error": type(exc).__name__}
+    return {
+        "loaded": [
+            {
+                "id": m["id"],
+                "quantization": m.get("quantization"),
+                "loaded_context_length": m.get("loaded_context_length"),
+                "arch": m.get("arch"),
+            }
+            for m in data
+            if m.get("state") == "loaded"
+        ]
+    }
+
+
+async def _model_calls(since: datetime) -> list[dict[str, Any]]:
+    from sqlalchemy import select
+
+    from omnigrowth.models import ModelRun
+    from omnigrowth.storage.db import get_sessionmaker
+
+    async with get_sessionmaker()() as session:
+        rows = (
+            await session.execute(
+                select(ModelRun).where(ModelRun.created_at >= since).order_by(ModelRun.created_at)
+            )
+        ).scalars()
+        return [
+            {
+                "task": r.task,
+                "model": r.model,
+                "status": str(r.status),
+                "error_code": str(r.error_code) if r.error_code else None,
+                "input_tokens": r.input_tokens,
+                "output_tokens": r.output_tokens,
+                "latency_s": round(r.latency_ms / 1000, 1) if r.latency_ms else None,
+                # End-to-end: output tokens / whole call latency (includes prompt processing).
+                "output_tok_per_s_end_to_end": round(r.output_tokens / (r.latency_ms / 1000), 1)
+                if r.output_tokens and r.latency_ms
+                else None,
+            }
+            for r in rows
+        ]
+
+
 async def test_live_success_scenario(env: Env) -> None:
-    report: dict[str, Any] = {"ran_at": datetime.now(UTC).isoformat(), "steps": {}}
+    started_at = datetime.now(UTC)
+    AUDIT_DIR.mkdir(parents=True, exist_ok=True)
+    report_path = AUDIT_DIR / f"live_e2e_{started_at:%Y%m%dT%H%M%S%fZ}.json"
+    report_path.touch(exist_ok=False)  # claim the name: a record is never overwritten
+    report: dict[str, Any] = {
+        "ran_at": started_at.isoformat(),
+        "label": LABEL,
+        "publishing": "MockPublisher (PUBLISH_MODE=MOCK): no platform call, no real audience",
+        "excluded_platforms": EXCLUDED,
+        "not_established": "real-platform publishing readiness",
+        "server_before": _server_state(),
+        "outcome": "INCOMPLETE (the run stopped before recording an outcome)",
+        "steps": {},
+    }
     steps: dict[str, Any] = report["steps"]
+
+    def write() -> None:
+        report_path.write_text(json.dumps(report, indent=2, default=str) + "\n", encoding="utf-8")
 
     async def run(name: str, job_id: str) -> dict[str, Any]:
         started = time.monotonic()
@@ -61,7 +138,7 @@ async def test_live_success_scenario(env: Env) -> None:
             "seconds": round(time.monotonic() - started, 1),
             "error_code": job.get("error_code"),
         }
-        REPORT.write_text(json.dumps(report, indent=2, default=str) + "\n", encoding="utf-8")
+        write()
         assert status is JobStatus.SUCCEEDED, steps[name]
         return job
 
@@ -121,6 +198,10 @@ async def test_live_success_scenario(env: Env) -> None:
             "failed": job["result"]["failed"],
             "skipped": sorted({s["platform"] for s in job["result"]["skipped"]}),
         }
+        # Excluded platforms are asserted, not just labelled (writers NOT_IMPLEMENTED, D2).
+        assert set(EXCLUDED) <= set(steps["generation_result"]["skipped"]), steps[
+            "generation_result"
+        ]
         assets = (await _ok(env, "GET", "/content", params={"campaign_id": campaign_id}))["items"]
         steps["assets"] = [
             {
@@ -203,4 +284,20 @@ async def test_live_success_scenario(env: Env) -> None:
         report["outcome"] = f"FAILED: {exc}"[:2000]
         raise
     finally:
-        REPORT.write_text(json.dumps(report, indent=2, default=str) + "\n", encoding="utf-8")
+        report["finished_at"] = datetime.now(UTC).isoformat()
+        report["server_after"] = _server_state()
+        calls = await _model_calls(started_at)
+        report["model_calls"] = calls
+        timed = [c for c in calls if c["output_tokens"] and c["latency_s"]]
+        report["throughput"] = {
+            "calls": len(calls),
+            "output_tokens": sum(c["output_tokens"] or 0 for c in calls),
+            "input_tokens": sum(c["input_tokens"] or 0 for c in calls),
+            "model_seconds": round(sum(c["latency_s"] or 0 for c in calls), 1),
+            "mean_output_tok_per_s_end_to_end": round(
+                sum(c["output_tokens"] for c in timed) / sum(c["latency_s"] for c in timed), 1
+            )
+            if timed
+            else None,
+        }
+        write()

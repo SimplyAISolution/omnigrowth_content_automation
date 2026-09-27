@@ -38,8 +38,10 @@ from tests.integration.helpers import auth_headers
 
 pytestmark = pytest.mark.integration
 
-OBS_H = 4
-TOL_H = 1  # tolerance <= observation / 4 (A14)
+OBS_H = 12
+TOL_H = 3  # tolerance <= observation / 4, and 2 x tolerance >= 6 h pull interval
+LAG_H = 6  # analytics lag >= pull interval
+ALLOC_H = 2  # allocation period after creation
 
 
 @pytest.fixture
@@ -84,12 +86,13 @@ def _body(
         "hypothesis": "A question hook raises the click rate of LinkedIn posts.",
         "variable": "HOOK",
         "metric": "click_rate",
-        "end_at": (datetime.now(UTC) + timedelta(hours=OBS_H + TOL_H + 2)).isoformat(),
+        "allocation_end_at": (datetime.now(UTC) + timedelta(hours=ALLOC_H)).isoformat(),
         "design": {
             "platform": "LINKEDIN",
             "platform_account_ids": accounts,
             "observation_hours": OBS_H,
             "age_tolerance_hours": TOL_H,
+            "analytics_lag_hours": LAG_H,
             "minimum_effect": {"kind": "ABSOLUTE", "value": 0.005},
             "single_variable_attested": True,
             **design,
@@ -170,7 +173,7 @@ async def _start_publish_measure(
     rng = random.Random(seed)  # noqa: S311 - simulated metric noise in a test
     run.published = {}
     brand = uuid.UUID(env.brand_id)
-    published_at = datetime.now(UTC) - timedelta(hours=OBS_H + TOL_H + 1)
+    published_at = datetime.now(UTC) + timedelta(minutes=1)  # inside the allocation period
     effects = effect if isinstance(effect, dict) else {"B": effect}
     async with get_sessionmaker()() as session:
         for unit in run.units:
@@ -197,7 +200,7 @@ async def _start_publish_measure(
                 clicks=clicks,
             )
             # Repeated pulls at other ages must not become extra samples.
-            for hours in (0.25, OBS_H + TOL_H + 3):
+            for hours in (0.25, OBS_H + TOL_H + 2):
                 await snapshot(
                     session,
                     brand_id=brand,
@@ -295,8 +298,10 @@ async def test_winner_needs_real_randomized_sufficient_significant_data(env: Env
     assert results["confidence_level"] == 0.95
     assert "NOT the probability" in results["interpretation"]
     # n counts posts: one value per post, whatever the impressions or number of pulls.
-    assert [v["n"] for v in results["real"]["per_variant"]] == [32, 32]
-    assert all(len(v["snapshot_ids"]) == 32 for v in results["real"]["per_variant"])
+    counts = [v["n"] for v in results["real"]["per_variant"]]
+    # 64 posts, blocked allocation with V or 2V runs: arms differ by at most one run (2).
+    assert sum(counts) == 64 and max(counts) - min(counts) <= 2
+    assert all(len(v["snapshot_ids"]) == v["n"] for v in results["real"]["per_variant"])
     comparison = results["real"]["comparisons"][0]
     for key in ("difference", "relative_lift", "hedges_g", "ci_low", "ci_high", "p_value_adjusted"):
         assert comparison[key] is not None
@@ -317,9 +322,15 @@ async def test_winner_needs_real_randomized_sufficient_significant_data(env: Env
             values[v["label"]] = [s.clicks / s.impressions for s in rows]
     expected = compare({"acct": values["A"]}, {"acct": values["B"]}, ci_level=0.95)
     assert expected is not None
+    # Same stratified estimator; Welch figures are stored as descriptive only.
     assert comparison["difference"] == pytest.approx(expected.difference)
-    assert comparison["p_value"] == pytest.approx(expected.p_value)
-    assert comparison["ci_low"] == pytest.approx(expected.ci_low)
+    assert comparison["welch_descriptive"]["p_value"] == pytest.approx(expected.p_value)
+    assert comparison["welch_descriptive"]["ci_low"] == pytest.approx(expected.ci_low)
+    # The decision is the randomization test: p from 9,999 re-draws of the allocation,
+    # interval by inversion containing the estimate and excluding 0.
+    assert comparison["p_value"] == pytest.approx(1 / 10_000)
+    assert comparison["ci_low"] > 0 and comparison["ci_low"] <= comparison["difference"]
+    assert "randomization test" in comparison["method"]
     assert results["evidence_snapshot_ids"]
     async with get_sessionmaker()() as session:
         experiment = await session.get(Experiment, run.experiment_id)
@@ -337,7 +348,8 @@ async def test_simulated_evidence_never_selects_a_winner(env: Env) -> None:
     assert results["status"] == "INCONCLUSIVE" and results["winner_variant_id"] is None
     simulated = results["simulated"]
     assert simulated is not None and "never selects a winner" in simulated["note"]
-    assert [v["n"] for v in simulated["per_variant"]] == [32, 32]
+    sim_counts = [v["n"] for v in simulated["per_variant"]]
+    assert sum(sim_counts) == 64 and max(sim_counts) - min(sim_counts) <= 2
     assert simulated["comparisons"][0]["significant"]  # huge simulated "effect", ignored
     assert [v["n"] for v in results["real"]["per_variant"]] == [0, 0]
     assert results["evidence_snapshot_ids"] == []
@@ -402,6 +414,10 @@ async def test_design_guards(env: Env) -> None:
     other_level = {**_body(env, campaign_id, [account]), "confidence_level": 0.8}
     resp = await env.client.post("/api/v1/experiments", headers=env.headers, json=other_level)
     assert resp.status_code == 422  # the confidence level is fixed at 0.95
+    timing = {**_body(env, campaign_id, [account]), "variable": "POSTING_TIME"}
+    resp = await env.client.post("/api/v1/experiments", headers=env.headers, json=timing)
+    assert resp.status_code == 422  # exclusions would depend on the variant (review M5)
+    assert resp.json()["details"]["field"] == "variable"
     unattested = _body(env, campaign_id, [account], single_variable_attested=False)
     created = await env.client.post("/api/v1/experiments", headers=env.headers, json=unattested)
     assert created.status_code == 201, created.text
@@ -485,9 +501,11 @@ async def test_sample_plan_uses_real_baseline_variability_and_the_floor(env: Env
     plan = started.json()["design"]["sample_plan"]
     sigma = statistics.stdev(rates)
     z = z_ppf(0.975) + z_ppf(0.8)
-    expected = math.ceil(2 * z * z * sigma**2 / 0.005**2)  # delta = 0.005 absolute
+    # delta = 0.005 absolute; default power_inflation 1.25 for within-account dependence
+    expected = math.ceil(2 * z * z * sigma**2 / 0.005**2 * 1.25)
     assert plan["baseline_posts"] == len(rates) and plan["baseline_sd"] == pytest.approx(sigma)
     assert plan["power_based"] == expected
+    assert plan["power_inflation"] == 1.25
     assert plan["required_units_per_variant"] == max(expected, 30)
     assert started.json()["min_units_per_variant"] == max(expected, 30)
     assert started.json()["status"] == ExperimentStatus.RUNNING.value
@@ -582,3 +600,123 @@ async def test_a_clearly_best_treatment_wins_among_several(env: Env) -> None:
         excludes_zero = comparison["ci_low"] > 0 or comparison["ci_high"] < 0
         assert comparison["significant"] == excludes_zero
         assert comparison["ci_level"] == pytest.approx(1 - 0.05 / 2)
+
+
+# ------------------------------------------------------------------ item 5: frozen timing
+async def test_timeline_is_frozen_and_evaluation_waits_for_the_last_window(env: Env) -> None:
+    run = await _setup(env, per_variant=32)
+    detail = (
+        await env.client.get(f"/api/v1/experiments/{run.experiment_id}", headers=env.headers)
+    ).json()
+    timeline = detail["design"]["timeline"]
+    alloc_end = datetime.fromisoformat(timeline["allocation_end_at"])
+    cutoff = datetime.fromisoformat(timeline["collection_cutoff_at"])
+    assert cutoff - alloc_end == timedelta(hours=OBS_H + TOL_H + LAG_H)
+    assert datetime.fromisoformat(detail["end_at"]) == cutoff  # evaluation at the cutoff
+    await _start_publish_measure(env, run, source=MetricSource.MANUAL, effect=0.006)
+    # A post published at the very end of the allocation period is still measured.
+    async with get_sessionmaker()() as session:
+        from sqlalchemy import update
+
+        from omnigrowth.models import Publication
+
+        late_asset = run.units[0]["content_asset_id"]
+        pub_id = run.published[late_asset]
+        await session.execute(
+            update(Publication)
+            .where(Publication.id == pub_id)
+            .values(published_at=alloc_end - timedelta(seconds=1))
+        )
+        await snapshot(
+            session,
+            brand_id=uuid.UUID(env.brand_id),
+            publication_id=pub_id,
+            captured_at=alloc_end + timedelta(hours=OBS_H),
+            source=MetricSource.MANUAL,
+            impressions=2_000,
+            clicks=40,
+        )
+        await session.commit()
+    before_cutoff = await _evaluate(run, at=cutoff - timedelta(seconds=1))
+    assert before_cutoff["no_transition"] == "WINDOW_OPEN"
+    outcome = await _evaluate(run, at=cutoff)
+    results = await _results(env, run)
+    excluded = [v["excluded"] for v in results["real"]["per_variant"]]
+    assert not any("NOT_YET_AT_AGE" in e for e in excluded), (outcome, excluded)
+    assert sum(v["n"] for v in results["real"]["per_variant"]) == 64
+
+
+async def test_posts_outside_the_allocation_period_are_excluded_and_labelled(env: Env) -> None:
+    run = await _setup(env, per_variant=32)
+    await _start_publish_measure(env, run, source=MetricSource.MANUAL, effect=0.006)
+    alloc_end = datetime.fromisoformat(
+        (
+            await env.client.get(f"/api/v1/experiments/{run.experiment_id}", headers=env.headers)
+        ).json()["design"]["timeline"]["allocation_end_at"]
+    )
+    async with get_sessionmaker()() as session:
+        from sqlalchemy import update
+
+        from omnigrowth.models import Publication
+
+        ids = list(run.published.values())
+        await session.execute(
+            update(Publication)
+            .where(Publication.id == ids[0])
+            .values(published_at=alloc_end + timedelta(hours=1))
+        )
+        await session.execute(
+            update(Publication)
+            .where(Publication.id == ids[1])
+            .values(published_at=datetime.now(UTC) - timedelta(days=2))
+        )
+        await session.commit()
+    await _evaluate(run)
+    results = await _results(env, run)
+    excluded: dict[str, int] = {}
+    for v in results["real"]["per_variant"]:
+        for reason, n in v["excluded"].items():
+            excluded[reason] = excluded.get(reason, 0) + n
+    assert excluded.get("PUBLISHED_AFTER_ALLOCATION_END") == 1
+    assert excluded.get("PUBLISHED_BEFORE_START") == 1
+
+
+async def test_no_units_after_allocation_end_and_sparse_pulls_block_the_start(env: Env) -> None:
+    campaign_id = await generated_campaign(env)
+    account = await _account(env, f"tl-{uuid.uuid4().hex[:6]}")
+    sparse = _body(env, campaign_id, [account], observation_hours=4, age_tolerance_hours=1)
+    created = await env.client.post("/api/v1/experiments", headers=env.headers, json=sparse)
+    assert created.status_code == 201, created.text
+    exp_id = created.json()["id"]
+    async with get_sessionmaker()() as session:
+        assets = await make_assets(
+            session,
+            brand_id=uuid.UUID(env.brand_id),
+            campaign_id=uuid.UUID(campaign_id),
+            platform=Platform.LINKEDIN,
+            n=4,
+        )
+    await env.client.post(
+        f"/api/v1/experiments/{exp_id}/units",
+        headers=env.headers,
+        json={
+            "units": [{"content_asset_id": str(a), "platform_account_id": account} for a in assets]
+        },
+    )
+    start = await env.client.post(f"/api/v1/experiments/{exp_id}/start", headers=env.headers)
+    assert start.status_code == 409
+    assert start.json()["details"]["failed_guard"] == "pulls_cover_measurement_window"
+
+    past = {
+        **_body(env, campaign_id, [account]),
+        "allocation_end_at": datetime.now(UTC).isoformat(),
+    }
+    closed = await env.client.post("/api/v1/experiments", headers=env.headers, json=past)
+    assert closed.status_code == 201
+    late = await env.client.post(
+        f"/api/v1/experiments/{closed.json()['id']}/units",
+        headers=env.headers,
+        json={"units": [{"content_asset_id": str(assets[0]), "platform_account_id": account}]},
+    )
+    assert late.status_code == 409
+    assert late.json()["details"]["failed_guard"] == "before_allocation_end"

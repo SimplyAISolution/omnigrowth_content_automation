@@ -1,0 +1,110 @@
+{
+  "ran_at": "2026-09-27T02:15:57.323481+00:00",
+  "label": "real local inference with mock publication",
+  "publishing": "MockPublisher (PUBLISH_MODE=MOCK): no platform call, no real audience",
+  "excluded_platforms": [
+    "INSTAGRAM",
+    "YOUTUBE"
+  ],
+  "not_established": "real-platform publishing readiness",
+  "server_before": {
+    "loaded": [
+      {
+        "id": "qwen/qwen3.5-9b",
+        "quantization": "Q4_K_M",
+        "loaded_context_length": 32768,
+        "arch": "qwen35"
+      }
+    ]
+  },
+  "steps": {
+    "planning": {
+      "status": "SUCCEEDED",
+      "seconds": 243.7,
+      "error_code": null
+    },
+    "plan": [
+      "INSTAGRAM",
+      "LINKEDIN",
+      "X",
+      "YOUTUBE"
+    ],
+    "generation": {
+      "status": "FAILED",
+      "seconds": 0.0,
+      "error_code": "CONFIGURATION_ERROR"
+    }
+  },
+  "outcome": "FAILED: {'status': 'FAILED', 'seconds': 0.0, 'error_code': 'CONFIGURATION_ERROR'}\nassert <JobStatus.FAILED: 'FAILED'> is <JobStatus.SUCCEEDED: 'SUCCEEDED'>\n +  where <JobStatus.SUCCEEDED: 'SUCCEEDED'> = JobStatus.SUCCEEDED",
+  "finished_at": "2026-09-27T02:20:01.406316+00:00",
+  "server_after": {
+    "loaded": [
+      {
+        "id": "qwen/qwen3.5-9b",
+        "quantization": "Q4_K_M",
+        "loaded_context_length": 32768,
+        "arch": "qwen35"
+      },
+      {
+        "id": "text-embedding-nomic-embed-text-v1.5",
+        "quantization": "Q4_K_M",
+        "loaded_context_length": 2048,
+        "arch": "nomic-bert"
+      }
+    ]
+  },
+  "model_calls": [
+    {
+      "task": "research",
+      "model": "qwen/qwen3.5-9b",
+      "status": "SUCCEEDED",
+      "error_code": null,
+      "input_tokens": 540,
+      "output_tokens": 2773,
+      "latency_s": 31.5,
+      "output_tok_per_s": 88.0
+    },
+    {
+      "task": "strategy",
+      "model": "qwen/qwen3.5-9b",
+      "status": "SUCCEEDED",
+      "error_code": null,
+      "input_tokens": 510,
+      "output_tokens": 2389,
+      "latency_s": 27.2,
+      "output_tok_per_s": 87.8
+    },
+    {
+      "task": "opportunity",
+      "model": "qwen/qwen3.5-9b",
+      "status": "SUCCEEDED",
+      "error_code": null,
+      "input_tokens": 781,
+      "output_tokens": 6682,
+      "latency_s": 76.6,
+      "output_tok_per_s": 87.3
+    },
+    {
+      "task": "planner",
+      "model": "qwen/qwen3.5-9b",
+      "status": "SUCCEEDED",
+      "error_code": null,
+      "input_tokens": 973,
+      "output_tokens": 6752,
+      "latency_s": 77.7,
+      "output_tok_per_s": 86.9
+    }
+  ],
+  "throughput": {
+    "calls": 4,
+    "output_tokens": 18596,
+    "input_tokens": 2804,
+    "model_seconds": 213.0,
+    "mean_output_tok_per_s": 87.3
+  },
+  "validity": {
+    "status": "PARTIALLY INVALID",
+    "planning": "valid: controlled rerun of the request that failed on 2026-09-26 (research, strategy, opportunity, planner) with only qwen/qwen3.5-9b loaded at 32,768 context",
+    "generation_onward": "INVALID: the working tree (config/models.yaml and providers/*) was being edited during this run; the CONFIGURATION_ERROR at 0.0 s came from that concurrent edit, not from the system under test"
+  }
+}

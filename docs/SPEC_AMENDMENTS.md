@@ -87,13 +87,25 @@ A component may be labeled production-ready only if: gates pass, failure tests e
   - δ is the pre-registered minimum meaningful effect;
   - m is the number of treatments.
 
-  The requirement is max(n, 30). Without a baseline, the plan says `FLOOR_ONLY_NO_BASELINE`. The plan is frozen at E2.
-- **Confidence.** Fixed at 0.95; it is not configurable per experiment. Each treatment is compared with the control by a two-sided Welch t-test, blocked by account. With m treatments, both the **decisions and the intervals use Bonferroni** (p·m < α ⇔ the 1 − α/m interval excludes 0), so a significant result never shows an interval containing 0. `confidence` stores the level (1 − α); it is never described as the probability that a variant is better.
-- **Several significant treatments.** If more than one treatment beats the control, the best one wins only if it is also significantly better than each of the others in pairwise Welch tests (Bonferroni over those pairs). Otherwise the verdict is `TREATMENTS_BEAT_CONTROL_UNRANKED`, with no winner.
+  n is then multiplied by a pre-registered `power_inflation` (default 1.25) for within-account dependence. The requirement is max(inflated n, 30). Without a baseline, the plan says `FLOOR_ONLY_NO_BASELINE`. The plan is frozen at E2.
+  - Verified by `scripts/simulate_experiment_power.py`: 1.25 met 80% power in all six simulated dependence scenarios; without it, power fell to 0.69 under negative serial correlation.
+  - `POSTING_TIME` experiments are refused until a design keeps every variant's slots inside the allocation period.
+- **Confidence and method.** Fixed at 0.95; it is not configurable per experiment.
+  - **Decision: a design-based randomization test.** The actual blocked allocation is re-drawn 9,999 times within each account's runs, and the statistic is the account-stratified difference in means (weights n_c·n_t/(n_c+n_t)). It is valid **whatever the dependence between posts of the same account**. The interval comes from inverting the same test (constant-shift model).
+  - With m treatments, the decision uses p ≤ α/m and the interval is at level 1 − α/m (Bonferroni), so the decision and the interval always agree.
+  - Welch statistics are reported as descriptive only, because they assume independence.
+  - The power plan (normal approximation) was verified by simulation against this test under within-account dependence (docs/EXPERIMENTS.md §4).
+  - `confidence` stores the level (1 − α); it is never described as the probability that a variant is better.
+- **Several significant treatments.** If more than one treatment beats the control, the best one wins only if it is also significantly better than each of the others in pairwise randomization tests (Bonferroni over those pairs). Otherwise the verdict is `TREATMENTS_BEAT_CONTROL_UNRANKED`, with no winner.
 - **Pre-registration.** The following are fixed at E1 and frozen at E2: primary metric, direction, allocation, observation window, stopping rule, platform, accounts, and variant order (the first is the control).
   - Allocation is blocked by account, with random block sizes of V or 2V and seeded order, so it is re-derivable.
   - The stopping rule is `FIXED_ENDPOINT`: one evaluation after `end_at`, never before, never repeated.
-  - `end_at` must leave `observation_hours + age_tolerance_hours`. Posts not yet at their age by then are counted as `NOT_YET_AT_AGE`.
+  - **Timeline**, fixed at E1 and checked at E2:
+    - `allocation_end_at` is the last registration or publication.
+    - `collection_cutoff_at` = `allocation_end_at` + observation + tolerance + `analytics_lag_hours`.
+    - `end_at` = the evaluation time = `collection_cutoff_at`.
+    - Start guards: pulls must fall inside every measurement window (2 × tolerance ≥ pull interval), and the lag must be ≥ the pull interval.
+    - Posts published after `allocation_end_at` (or, for randomized designs, before the start) are excluded and labelled. A post published at the last allowed moment is fully measured.
   - A post can be a unit of only one active experiment.
 - **Verdicts.**
   - `WINNER` (CONCLUDED) requires a randomized design, REAL data, and every variant ≥ the frozen requirement.

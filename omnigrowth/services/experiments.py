@@ -16,6 +16,7 @@ Pre-registered, fixed-endpoint experiments whose unit of analysis is one publish
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import random
 import secrets
@@ -24,7 +25,7 @@ import uuid
 from collections import defaultdict
 from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from typing import Any, cast
 
@@ -32,13 +33,15 @@ from sqlalchemy import Table, func, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from omnigrowth.analytics.experiment_stats import bonferroni, compare, required_sample
+from omnigrowth.analytics.experiment_stats import compare, required_sample
 from omnigrowth.analytics.formula import COST_METRICS, SNAPSHOT_METRICS, Formula, evaluate
+from omnigrowth.analytics.randomization import randomization_test
 from omnigrowth.core.enums import (
     ActorType,
     CampaignStatus,
     ContentAssetStatus,
     ExperimentStatus,
+    ExperimentVariable,
     JobKind,
     MetricSource,
     PublicationStatus,
@@ -47,6 +50,7 @@ from omnigrowth.core.enums import (
 from omnigrowth.core.errors import ErrorCode, OmniGrowthError
 from omnigrowth.core.ids import uuid7
 from omnigrowth.core.logging import get_context
+from omnigrowth.core.settings import get_settings
 from omnigrowth.core.state_machines import EXPERIMENT, Actor, apply_transition, create_with_state
 from omnigrowth.models import (
     AnalyticsSnapshot,
@@ -60,6 +64,7 @@ from omnigrowth.models import (
     PlatformAccount,
     Publication,
 )
+from omnigrowth.publishing.config import cached_publishing_config
 from omnigrowth.schemas.experiments import (
     CONFIDENCE_LEVEL,
     ExperimentCreate,
@@ -188,6 +193,13 @@ async def create_experiment(
             "every platform account must belong to the brand and to the design's platform",
             field="design.platform_account_ids",
         )
+    if body.variable is ExperimentVariable.POSTING_TIME:
+        # Which posts miss the allocation end would depend on the variant (its time slot),
+        # so exclusions would depend on the label and bias the comparison (review M5).
+        raise _invalid(
+            "POSTING_TIME experiments are not supported with a fixed allocation end yet",
+            field="variable",
+        )
     metric = await _resolve_metric(session, body.brand_id, None, body.metric)
     experiment_id = uuid7()
     design = body.design.model_dump(mode="json")
@@ -199,6 +211,7 @@ async def create_experiment(
     design["randomization_seed"] = secrets.randbits(63)
     design["metric"] = metric.citation()
     design["variant_order"] = [v.label for v in body.variants]  # first = control
+    design["timeline"] = timeline(body.allocation_end_at, design)
     await create_with_state(
         session,
         machine=EXPERIMENT,
@@ -215,7 +228,7 @@ async def create_experiment(
             "raw_metric": None if metric.definition_id else metric.key,
             "min_sample_size": body.design.min_units_per_variant,
             "confidence_threshold": Decimal(str(CONFIDENCE_LEVEL)),
-            "end_at": body.end_at,
+            "end_at": datetime.fromisoformat(design["timeline"]["evaluation_at"]),
             "design": design,
             "assignment": body.design.assignment,
         },
@@ -235,6 +248,31 @@ async def create_experiment(
         )
     await session.commit()
     return await get_experiment(session, experiment_id)
+
+
+def timeline(allocation_end_at: datetime, design: dict[str, Any]) -> dict[str, str]:
+    """Frozen timing: posts may go out until ``allocation_end_at``; the last one reaches
+    its measurement window by ``+ observation + tolerance``; its snapshot has
+    ``analytics_lag_hours`` more to arrive; evaluation happens at that cutoff, not before."""
+    window = timedelta(hours=design["observation_hours"] + design["age_tolerance_hours"])
+    cutoff = allocation_end_at + window + timedelta(hours=design["analytics_lag_hours"])
+    return {
+        "allocation_end_at": allocation_end_at.isoformat(),
+        "last_measurement_window_closes_at": (allocation_end_at + window).isoformat(),
+        "collection_cutoff_at": cutoff.isoformat(),
+        "evaluation_at": cutoff.isoformat(),
+    }
+
+
+def _allocation_end(experiment: Experiment) -> datetime:
+    """Frozen allocation end. Experiments created before the explicit timeline existed
+    fall back to their end_at (their only frozen endpoint), never to a crash."""
+    timeline_ = experiment.design.get("timeline") or {}
+    if "allocation_end_at" in timeline_:
+        return datetime.fromisoformat(timeline_["allocation_end_at"])
+    if experiment.end_at is None:
+        raise _conflict("experiment has no frozen timeline or end_at", "has_timeline")
+    return experiment.end_at
 
 
 # ------------------------------------------------------------------ reads
@@ -374,6 +412,11 @@ async def register_units(
             "units can only be added while DRAFT or RUNNING",
             "accepting_units",
             status=experiment.status.value,
+        )
+    if datetime.now(UTC) >= _allocation_end(experiment):
+        raise _conflict(
+            "the allocation period has ended; no more units can be added",
+            "before_allocation_end",
         )
     requested = [u.content_asset_id for u in body.units]
     if len(set(requested)) != len(requested):
@@ -533,12 +576,22 @@ async def start_experiment(
             "a human must attest that variants differ only in the declared variable",
             "single_variable_attested",
         )
-    window = timedelta(hours=design["observation_hours"] + design["age_tolerance_hours"])
-    if experiment.end_at is None or experiment.end_at < now + window:
+    if _allocation_end(experiment) <= now:
+        raise _conflict("allocation_end_at has passed; create a new experiment", "allocation_open")
+    pull = cached_publishing_config(get_settings().config_dir).analytics
+    if not pull.enabled or 2 * design["age_tolerance_hours"] * 60 < pull.interval_minutes:
         raise _conflict(
-            "end_at must leave observation_hours + age_tolerance_hours for posts to reach "
-            "their measurement age",
-            "end_after_observation_window",
+            "scheduled analytics pulls are too sparse for the measurement window: a pull must "
+            "fall inside every post's observation window (2 x tolerance >= pull interval)",
+            "pulls_cover_measurement_window",
+            pull_interval_minutes=pull.interval_minutes,
+            enabled=pull.enabled,
+        )
+    if design["analytics_lag_hours"] * 60 < pull.interval_minutes:
+        raise _conflict(
+            "analytics_lag_hours is shorter than the analytics pull interval",
+            "lag_covers_pull_interval",
+            pull_interval_minutes=pull.interval_minutes,
         )
     variants = await _variants(session, experiment_id)
     per_variant = await _unit_counts(session, experiment_id)
@@ -558,6 +611,7 @@ async def start_experiment(
         power=float(design["power"]),
         comparisons=len(variants) - 1,
         floor=int(design["min_units_per_variant"]),
+        inflation=float(design.get("power_inflation", 1.0)),
     )
     design["sample_plan"] = {
         "required_units_per_variant": plan.required_per_variant,
@@ -567,6 +621,7 @@ async def start_experiment(
         "alpha": alpha,
         "alpha_per_comparison": plan.alpha_per_comparison,
         "power": float(design["power"]),
+        "power_inflation": float(design.get("power_inflation", 1.0)),
         "baseline_sd": sigma,
         "baseline_mean": baseline_mean,
         "baseline_posts": baseline_n,
@@ -620,7 +675,8 @@ async def cancel_experiment(
 @dataclass(frozen=True, slots=True)
 class UnitValue:
     variant_id: uuid.UUID
-    block: str
+    block: str  # platform account (stratum)
+    run: int  # randomization run within the account (the re-draw block)
     value: float | None
     snapshot_id: uuid.UUID | None
     source: MetricSource | None
@@ -701,8 +757,23 @@ async def _unit_values(
     snaps = await _snapshots_by_publication(session, [p.id for p in publications.values()])
     values: list[UnitValue] = []
 
+    seed = int(design.get("randomization_seed") or 0)
+    n_variants = len(design.get("variant_order") or []) or int(
+        await session.scalar(
+            select(func.count()).where(ExperimentVariant.experiment_id == experiment.id)
+        )
+        or 2
+    )
+    randomized = experiment.assignment == "RANDOMIZED"
+    allocation_end = _allocation_end(experiment)
+    start_at = experiment.start_at
+
+    def run_of(unit: ExperimentUnit) -> int:
+        # Observational units have no allocation runs: one block per account.
+        return run_index(seed, unit.block_key, n_variants, unit.block_seq) if randomized else 0
+
     def excluded(unit: ExperimentUnit, status: str) -> UnitValue:
-        return UnitValue(unit.variant_id, unit.block_key, None, None, None, status)
+        return UnitValue(unit.variant_id, unit.block_key, run_of(unit), None, None, None, status)
 
     for unit in units:
         pub = publications.get(unit.content_asset_id)
@@ -714,6 +785,13 @@ async def _unit_values(
             continue
         if real and pub.publish_mode is PublishMode.MOCK:
             values.append(excluded(unit, "MOCK_PUBLICATION"))
+            continue
+        if pub.published_at > allocation_end:
+            values.append(excluded(unit, "PUBLISHED_AFTER_ALLOCATION_END"))
+            continue
+        if randomized and start_at is not None and pub.published_at < start_at:
+            # Exposure before the experiment started cannot follow the allocation.
+            values.append(excluded(unit, "PUBLISHED_BEFORE_START"))
             continue
         target = pub.published_at + observation
         if target + tolerance > now:
@@ -729,6 +807,7 @@ async def _unit_values(
             UnitValue(
                 unit.variant_id,
                 unit.block_key,
+                run_of(unit),
                 value,
                 snapshot.id,
                 snapshot.source,
@@ -782,6 +861,16 @@ async def _unit_values_for_publications(
 
 
 # ------------------------------------------------------------------ analysis
+def run_index(seed: int, block_key: str, variants: int, block_seq: int) -> int:
+    """Which randomization run (V or 2V units) of the account a unit belongs to."""
+    start = 0
+    for run, size in enumerate(_run_sizes(seed, block_key, variants)):
+        if block_seq < start + size:
+            return run
+        start += size
+    raise AssertionError("unreachable")  # pragma: no cover
+
+
 def _analyse(
     variants: Sequence[ExperimentVariant],
     values: Sequence[UnitValue],
@@ -789,36 +878,37 @@ def _analyse(
     confidence: float,
     required: int,
     direction: str,
+    seed: int,
+    design_based: bool,
 ) -> dict[str, Any]:
     """Per-variant summaries and treatment-vs-control comparisons on ONE set of units.
 
-    Only accounts (blocks) in which EVERY variant has at least 2 measured units are
-    analysed; the others are reported as ``BLOCK_INCOMPLETE``. So the n checked against the
-    requirement, the n of the tests and the evidence ids are always the same units.
+    Only accounts in which EVERY variant has at least 2 measured units are analysed; the
+    others are reported as ``BLOCK_INCOMPLETE``. So the n checked against the requirement,
+    the n of the tests and the evidence ids are always the same units.
     """
     control = variants[0]
-    by_block: dict[str, dict[uuid.UUID, list[UnitValue]]] = defaultdict(lambda: defaultdict(list))
+    by_account: dict[str, dict[uuid.UUID, list[UnitValue]]] = defaultdict(lambda: defaultdict(list))
     for unit in values:
         if unit.status == "OK" and unit.value is not None:
-            by_block[unit.block][unit.variant_id].append(unit)
+            by_account[unit.block][unit.variant_id].append(unit)
     eligible = {
-        block
-        for block, arms in by_block.items()
+        account
+        for account, arms in by_account.items()
         if all(len(arms.get(v.id, [])) >= 2 for v in variants)
     }
-    blocks: dict[uuid.UUID, dict[str, list[float]]] = {v.id: {} for v in variants}
-    evidence: dict[uuid.UUID, list[str]] = {v.id: [] for v in variants}
+    analysed = [
+        u for account in sorted(eligible) for arm in by_account[account].values() for u in arm
+    ]
     incomplete: dict[uuid.UUID, int] = defaultdict(int)
-    for block, arms in by_block.items():
-        for variant_id, units in arms.items():
-            if block in eligible:
-                blocks[variant_id][block] = [cast(float, u.value) for u in units]
-                evidence[variant_id].extend(str(u.snapshot_id) for u in units)
-            else:
+    for account, arms in by_account.items():
+        if account not in eligible:
+            for variant_id, units in arms.items():
                 incomplete[variant_id] += len(units)
     per_variant: list[dict[str, Any]] = []
     for i, v in enumerate(variants):
-        flat = [x for block in blocks[v.id].values() for x in block]
+        mine = [u for u in analysed if u.variant_id == v.id]
+        flat = [cast(float, u.value) for u in mine]
         statuses: dict[str, int] = defaultdict(int)
         for unit in values:
             if unit.variant_id == v.id and unit.status != "OK":
@@ -835,70 +925,122 @@ def _analyse(
                 "sd": statistics.stdev(flat) if len(flat) > 1 else None,
                 "excluded": dict(statuses),
                 "meets_requirement": len(flat) >= required,
-                "snapshot_ids": sorted(evidence[v.id]),
+                "snapshot_ids": sorted(str(u.snapshot_id) for u in mine),
             }
         )
-    alpha = 1.0 - confidence
     comparisons = _comparisons(
-        control, list(variants[1:]), blocks, alpha=alpha, direction=direction
+        control,
+        list(variants[1:]),
+        analysed,
+        alpha=1.0 - confidence,
+        direction=direction,
+        seed=seed,
+        design_based=design_based,
     )
     return {
         "per_variant": per_variant,
         "comparisons": comparisons,
         "accounts_analysed": sorted(eligible),
+        "analysed_units": analysed,  # internal: removed before storing
     }
 
 
 def _comparisons(
     reference: ExperimentVariant,
     others: Sequence[ExperimentVariant],
-    blocks: dict[uuid.UUID, dict[str, list[float]]],
+    units: Sequence[UnitValue],
     *,
     alpha: float,
     direction: str,
+    seed: int,
+    design_based: bool,
 ) -> list[dict[str, Any]]:
-    """Each ``other`` minus ``reference``, Bonferroni-adjusted over the family, with
-    Bonferroni-simultaneous intervals (significant <=> interval excludes 0)."""
+    """Each ``other`` minus ``reference``.
+
+    Decision and interval: randomization test (re-draws of the actual blocked allocation)
+    at alpha/m (Bonferroni over the m comparisons), interval by test inversion, so
+    significant <=> interval excludes 0; valid whatever the dependence between posts of an
+    account. Welch figures are attached as DESCRIPTIVE only (they assume independence).
+    """
     m = max(len(others), 1)
-    level = 1.0 - alpha / m
-    raw = [(v, compare(blocks[reference.id], blocks[v.id], ci_level=level)) for v in others]
-    usable = [(v, c) for v, c in raw if c is not None]
-    adjusted = bonferroni([c.p_value for _, c in usable])
+    alpha_each = alpha / m
+    accounts = {a: i for i, a in enumerate(sorted({u.block for u in units}))}
     out: list[dict[str, Any]] = []
-    for (variant, c), p_adj in zip(usable, adjusted, strict=True):
-        favourable = c.difference > 0 if direction == "HIGHER_IS_BETTER" else c.difference < 0
+    for position, variant in enumerate(others):
+        pair = [u for u in units if u.variant_id in (reference.id, variant.id)]
+        result = randomization_test(
+            [cast(float, u.value) for u in pair],
+            [int(u.variant_id == variant.id) for u in pair],
+            [accounts[u.block] for u in pair],
+            [accounts[u.block] * 1_000_000 + u.run for u in pair],
+            alpha=alpha_each,
+            seed=seed + position,
+        )
+        welch = compare(
+            {
+                a: [
+                    cast(float, u.value)
+                    for u in pair
+                    if u.block == a and u.variant_id == reference.id
+                ]
+                for a in accounts
+            },
+            {
+                a: [
+                    cast(float, u.value)
+                    for u in pair
+                    if u.block == a and u.variant_id == variant.id
+                ]
+                for a in accounts
+            },
+            ci_level=1.0 - alpha_each,
+        )
+        if result is None or welch is None:
+            out.append(
+                {
+                    "variant_id": str(variant.id),
+                    "label": variant.label,
+                    "versus": reference.label,
+                    "not_estimable": "no account has at least 2 measured units in both arms",
+                }
+            )
+            continue
+        favourable = result.estimate > 0 if direction == "HIGHER_IS_BETTER" else result.estimate < 0
         out.append(
             {
                 "variant_id": str(variant.id),
                 "label": variant.label,
                 "versus": reference.label,
-                "difference": c.difference,
-                "relative_lift": c.relative_lift,
-                "hedges_g": c.hedges_g,
-                "std_error": c.std_error,
-                "df": c.df,
-                "ci_low": c.ci_low,
-                "ci_high": c.ci_high,
-                "ci_level": c.ci_level,
-                "p_value": c.p_value,
-                "p_value_adjusted": p_adj,
+                "difference": result.estimate,
+                "relative_lift": welch.relative_lift,
+                "hedges_g": welch.hedges_g,
+                "ci_low": result.ci_low,
+                "ci_high": result.ci_high,
+                "ci_level": result.ci_level,
+                "p_value": result.p_value,
+                "p_value_adjusted": min(1.0, m * result.p_value),
                 "adjustment": f"Bonferroni x{m}" if m > 1 else "none",
-                "significant": p_adj < alpha,
+                "significant": result.p_value <= alpha_each,
                 "favourable": favourable,
-                "blocks_used": c.blocks_used,
-                "degenerate": c.degenerate,
+                "method": (
+                    f"randomization test, {result.permutations} re-draws of the blocked "
+                    f"allocation over {result.blocks} blocks in {result.accounts} account(s); "
+                    "interval by test inversion (constant-shift model)"
+                    if design_based
+                    else "permutation within accounts; NOT design-based (observational "
+                    "labels), descriptive only"
+                ),
+                "welch_descriptive": {
+                    "note": "assumes posts are independent within an account; not used for "
+                    "the decision",
+                    "std_error": welch.std_error,
+                    "df": welch.df,
+                    "p_value": welch.p_value,
+                    "ci_low": welch.ci_low,
+                    "ci_high": welch.ci_high,
+                },
             }
         )
-    out.extend(
-        {
-            "variant_id": str(variant.id),
-            "label": variant.label,
-            "versus": reference.label,
-            "not_estimable": "no account has at least 2 measured units in both arms",
-        }
-        for variant, c in raw
-        if c is None
-    )
     return out
 
 
@@ -910,13 +1052,13 @@ def _decide(
     required: int,
     alpha: float,
     direction: str,
-    blocks: dict[uuid.UUID, dict[str, list[float]]],
+    seed: int,
 ) -> tuple[str, uuid.UUID | None, str | None, list[dict[str, Any]]]:
     """(verdict, winner, failed_guard, pairwise). Winners only for randomized real data.
 
     One treatment significantly better than control -> it wins. Several -> the best must
-    also be significantly better than each other such treatment (pairwise Welch,
-    Bonferroni over those pairs); otherwise "beat control, not distinguished".
+    also be significantly better than each other such treatment (pairwise randomization
+    tests, Bonferroni over those pairs); otherwise "beat control, not distinguished".
     """
     if all(v["n"] == 0 for v in real["per_variant"]):
         return "NO_REAL_DATA", None, "no_real_data", []
@@ -936,9 +1078,16 @@ def _decide(
         best_id = max(better, key=lambda c: sign * means[c["variant_id"]])["variant_id"]
         by_id = {str(v.id): v for v in variants}
         rivals = [by_id[c["variant_id"]] for c in better if c["variant_id"] != best_id]
-        pairwise = _comparisons(by_id[best_id], rivals, blocks, alpha=alpha, direction=direction)
-        # Here "favourable" for rival - best means the rival is better; the best must beat
-        # every rival: rival - best significantly unfavourable.
+        pairwise = _comparisons(
+            by_id[best_id],
+            rivals,
+            real["analysed_units"],
+            alpha=alpha,
+            direction=direction,
+            seed=seed + 101,
+            design_based=True,
+        )
+        # rival - best must be significantly unfavourable for the best to win.
         if all(
             "not_estimable" not in c and c["significant"] and not c["favourable"] for c in pairwise
         ):
@@ -973,37 +1122,46 @@ async def evaluate_experiment(
     ]
     confidence = float(experiment.confidence_threshold)
     required = experiment.min_sample_size
-    real = _analyse(
+    seed = int(design.get("randomization_seed") or 0)
+    randomized = experiment.assignment == "RANDOMIZED"
+    real = await asyncio.to_thread(
+        _analyse,
         variants,
         real_values,
         confidence=confidence,
         required=required,
         direction=design["direction"],
+        seed=seed,
+        design_based=randomized,
     )
     simulated = None
     if simulated_values:
-        simulated = _analyse(
+        simulated = await asyncio.to_thread(
+            _analyse,
             variants,
             simulated_values,
             confidence=confidence,
             required=required,
             direction=design["direction"],
+            seed=seed,
+            design_based=randomized,
         )
+        simulated.pop("analysed_units")
         simulated["note"] = (
             "SIMULATED evidence (MOCK/FIXTURE snapshots): shown for pipeline checks only. It "
             "never selects a winner and must not change production strategy."
         )
-    randomized = experiment.assignment == "RANDOMIZED"
-    real_blocks = _blocks_of(variants, real_values, set(real["accounts_analysed"]))
-    verdict, winner, failed_guard, pairwise = _decide(
+    verdict, winner, failed_guard, pairwise = await asyncio.to_thread(
+        _decide,
         variants,
         real,
         randomized=randomized,
         required=required,
         alpha=1.0 - confidence,
         direction=design["direction"],
-        blocks=real_blocks,
+        seed=seed,
     )
+    real.pop("analysed_units")
     if pairwise:
         real["pairwise_between_winners"] = pairwise
     evidence = sorted({sid for v in real["per_variant"] for sid in v["snapshot_ids"]})
@@ -1050,16 +1208,6 @@ async def evaluate_experiment(
     return {"experiment_id": str(experiment_id), "verdict": verdict, "failed_guard": failed_guard}
 
 
-def _blocks_of(
-    variants: Sequence[ExperimentVariant], values: Sequence[UnitValue], eligible: set[str]
-) -> dict[uuid.UUID, dict[str, list[float]]]:
-    blocks: dict[uuid.UUID, dict[str, list[float]]] = {v.id: defaultdict(list) for v in variants}
-    for unit in values:
-        if unit.status == "OK" and unit.value is not None and unit.block in eligible:
-            blocks[unit.variant_id][unit.block].append(unit.value)
-    return {k: dict(v) for k, v in blocks.items()}
-
-
 def _method(design: dict[str, Any], confidence: float, comparisons: int) -> dict[str, Any]:
     return {
         "unit": design.get("unit"),
@@ -1067,7 +1215,12 @@ def _method(design: dict[str, Any], confidence: float, comparisons: int) -> dict
             f"primary metric from one snapshot at {design['observation_hours']} h "
             f"+/- {design['age_tolerance_hours']} h after publication"
         ),
-        "test": "two-sided Welch t-test per treatment vs control, blocked by platform account",
+        "test": (
+            "two-sided randomization test per treatment vs control: re-draws of the actual "
+            "blocked allocation (account x run), statistic = account-stratified difference in "
+            "means (weights n_c n_t / (n_c + n_t)); valid whatever the dependence between "
+            "posts of an account. Welch figures are reported as descriptive only"
+        ),
         "multiplicity": (
             f"Bonferroni over {comparisons} treatment-vs-control comparisons (decisions and "
             "intervals agree); a winner among several significant treatments must also beat "
@@ -1198,7 +1351,7 @@ async def _sync_one(
             brand_id=experiment.brand_id,
         )
         counts["collecting"] += 1
-    elif experiment.end_at is not None and now >= experiment.end_at:
+    elif now >= _allocation_end(experiment):
         await apply_transition(
             session,
             machine=EXPERIMENT,

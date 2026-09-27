@@ -249,6 +249,7 @@ def required_sample(
     power: float,
     comparisons: int,
     floor: int,
+    inflation: float = 1.0,
 ) -> SamplePlan:
     """Per-variant units for a two-sided test of each treatment against control.
 
@@ -261,6 +262,8 @@ def required_sample(
     if sigma is None or delta is None or delta <= 0 or sigma <= 0:
         return SamplePlan(floor, None, floor, "FLOOR_ONLY_NO_BASELINE", alpha_each, sigma, delta)
     z = z_ppf(1.0 - alpha_each / 2.0) + z_ppf(power)
-    n = math.ceil(2.0 * z * z * sigma * sigma / (delta * delta))
+    # ``inflation`` covers dependence the independence formula ignores (negative serial
+    # correlation, level shifts): 1.25 restores the planned power in the simulation study.
+    n = math.ceil(2.0 * z * z * sigma * sigma / (delta * delta) * inflation)
     basis = "POWER" if n >= floor else "FLOOR"
     return SamplePlan(max(n, floor), n, floor, basis, alpha_each, sigma, delta)

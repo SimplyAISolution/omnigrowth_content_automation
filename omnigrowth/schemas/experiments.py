@@ -13,6 +13,7 @@ from omnigrowth.core.enums import ExperimentStatus, ExperimentVariable, Platform
 FLOOR_UNITS_PER_VARIANT = 30
 # Fixed by the human (A14): intervals and decisions at 0.95. Not configurable per experiment.
 CONFIDENCE_LEVEL = 0.95
+MAX_UNITS_PER_VARIANT = 2_000
 
 
 class MinimumEffect(BaseModel):
@@ -38,7 +39,14 @@ class ExperimentDesignIn(BaseModel):
     direction: Literal["HIGHER_IS_BETTER", "LOWER_IS_BETTER"] = "HIGHER_IS_BETTER"
     minimum_effect: MinimumEffect
     power: float = Field(default=0.8, ge=0.5, le=0.99)
-    min_units_per_variant: int = Field(default=FLOOR_UNITS_PER_VARIANT, le=100_000)
+    # Sample inflation over the independence-based formula for within-account dependence.
+    # 1.25 is the smallest factor that met 80 % power in every simulated dependence scenario
+    # (docs/audit/experiment_power_simulation_*.json).
+    power_inflation: float = Field(default=1.25, ge=1.0, le=3.0)
+    # Capped so the randomization analysis stays bounded (units x 9,999 re-draws).
+    min_units_per_variant: int = Field(default=FLOOR_UNITS_PER_VARIANT, le=MAX_UNITS_PER_VARIANT)
+    # Time allowed after the last measurement window for its snapshot to be pulled/ingested.
+    analytics_lag_hours: int = Field(default=24, ge=1, le=168)
     allocation: Literal["BLOCKED_BY_ACCOUNT_EQUAL"] = "BLOCKED_BY_ACCOUNT_EQUAL"
     stopping_rule: Literal["FIXED_ENDPOINT"] = "FIXED_ENDPOINT"
     # A human attests that variants differ only in the declared variable (E2 guard).
@@ -86,16 +94,18 @@ class ExperimentCreate(BaseModel):
     variable: ExperimentVariable
     # A derived-metric key (active definition for the brand) or a raw snapshot count.
     metric: str = Field(min_length=1, max_length=64)
-    end_at: datetime
+    # Last moment a unit may be registered or published. The evaluation time (end_at) is
+    # derived: allocation_end_at + observation + tolerance + analytics lag (frozen).
+    allocation_end_at: datetime
     design: ExperimentDesignIn
     # The first variant is the control.
     variants: list[VariantIn] = Field(min_length=2, max_length=5)
 
-    @field_validator("end_at")
+    @field_validator("allocation_end_at")
     @classmethod
     def _aware(cls, value: datetime) -> datetime:
         if value.tzinfo is None:
-            raise ValueError("end_at must include a timezone offset")
+            raise ValueError("allocation_end_at must include a timezone offset")
         return value
 
     @model_validator(mode="after")
