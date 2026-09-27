@@ -13,6 +13,7 @@ from omnigrowth.api.routes import (
     calendar,
     campaigns,
     content,
+    experiments,
     health,
     jobs,
     platform_accounts,
@@ -35,6 +36,7 @@ api_router.include_router(platform_accounts.router)
 api_router.include_router(analytics.router)
 api_router.include_router(analytics.recommendations_router)
 api_router.include_router(calendar.router)
+api_router.include_router(experiments.router)
 api_router.include_router(audit.router)
 api_router.include_router(jobs.router)
 

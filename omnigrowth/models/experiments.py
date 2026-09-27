@@ -22,7 +22,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from omnigrowth.core.enums import ExperimentStatus, ExperimentVariable
-from omnigrowth.models._columns import TZ, fk
+from omnigrowth.models._columns import TZ, CreatedAtMixin, fk
 from omnigrowth.models.base import ArchivableMixin, Base, TimestampMixin, UUIDPkMixin, pg_enum
 
 
@@ -43,6 +43,12 @@ class Experiment(UUIDPkMixin, TimestampMixin, ArchivableMixin, Base):
         ),
         CheckConstraint(
             "winner_variant_id IS NULL OR status = 'CONCLUDED'", name="winner_only_concluded"
+        ),
+        CheckConstraint("assignment IN ('RANDOMIZED', 'OBSERVATIONAL')", name="assignment_known"),
+        # A nonrandomized comparison can never declare a winner (A14).
+        CheckConstraint(
+            "assignment = 'RANDOMIZED' OR winner_variant_id IS NULL",
+            name="observational_has_no_winner",
         ),
         Index("experiments_brand_status_idx", "brand_id", "status"),
     )
@@ -72,6 +78,14 @@ class Experiment(UUIDPkMixin, TimestampMixin, ArchivableMixin, Base):
     confidence: Mapped[Decimal | None] = mapped_column(Numeric(4, 3), nullable=True)
     winner_variant_id: Mapped[uuid.UUID | None] = mapped_column(nullable=True)
     concluded_at: Mapped[datetime | None] = mapped_column(TZ, nullable=True)
+    # Pre-registered design (A14): unit, platform/accounts, observation age, allocation,
+    # stopping rule, MDE, power, alpha, seed; the sample plan is added at start and frozen.
+    design: Mapped[dict[str, Any]] = mapped_column(
+        JSONB, nullable=False, server_default=text("'{}'::jsonb")
+    )
+    assignment: Mapped[str] = mapped_column(
+        Text, nullable=False, server_default=text("'RANDOMIZED'")
+    )
 
 
 class ExperimentVariant(UUIDPkMixin, TimestampMixin, Base):
@@ -90,3 +104,35 @@ class ExperimentVariant(UUIDPkMixin, TimestampMixin, Base):
     )
     sample_size: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     observed_value: Mapped[Decimal | None] = mapped_column(Numeric, nullable=True)
+
+
+class ExperimentUnit(UUIDPkMixin, CreatedAtMixin, Base):
+    """One independent experimental unit = one post (content asset) assigned to one variant.
+
+    Assignment is immutable (no updated_at): randomized units are allocated by the server
+    (blocked by platform account), observational units are labelled by a human.
+    """
+
+    __tablename__ = "experiment_units"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["experiment_id", "variant_id"],
+            ["experiment_variants.experiment_id", "experiment_variants.id"],
+            name="fk_experiment_units_variant",
+            ondelete="RESTRICT",
+        ),
+        UniqueConstraint("experiment_id", "content_asset_id"),
+        UniqueConstraint("experiment_id", "block_key", "block_seq"),
+        CheckConstraint("assigned_by IN ('RANDOMIZATION', 'MANUAL')", name="assigned_by_known"),
+        Index("experiment_units_asset_idx", "content_asset_id"),
+    )
+
+    experiment_id: Mapped[uuid.UUID] = mapped_column(fk("experiments.id"), nullable=False)
+    variant_id: Mapped[uuid.UUID] = mapped_column(nullable=False)
+    content_asset_id: Mapped[uuid.UUID] = mapped_column(fk("content_assets.id"), nullable=False)
+    platform_account_id: Mapped[uuid.UUID] = mapped_column(
+        fk("platform_accounts.id"), nullable=False
+    )
+    block_key: Mapped[str] = mapped_column(Text, nullable=False)
+    block_seq: Mapped[int] = mapped_column(Integer, nullable=False)
+    assigned_by: Mapped[str] = mapped_column(Text, nullable=False)

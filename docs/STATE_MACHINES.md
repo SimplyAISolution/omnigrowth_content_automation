@@ -427,6 +427,15 @@ Meaning: `RUNNING` = variants are being approved/scheduled/published (exposure p
 
 Tracked per §18: `hypothesis`, variants (`experiment_variants`, ≥2), `metric`, `start`, `end`, `sample_size`, `result`, `confidence`. Thresholds: `min_sample_size` (per variant, in the metric's denominator unit, e.g. impressions for CTR) and `confidence_threshold`, defaulted from config and frozen on the experiment at start.
 
+> **Superseded by SPEC_AMENDMENTS A14 (2026-09-26).**
+> - `min_sample_size` counts **independent posts per variant** (never impressions or repeated pulls). It is the frozen max(power requirement at 80%, floor 30).
+> - `confidence_threshold` / `confidence` are the **interval level** (1 − α).
+> - The E4 guard "computed confidence ≥ threshold" means: randomized design, REAL (non-simulated) data, every variant n ≥ `min_sample_size`, and a Bonferroni-adjusted two-sided Welch p-value < α in the favourable direction. With several such treatments, the best one must also beat the others pairwise.
+> - E2 additionally requires a human attestation that variants differ only in the declared variable (`design.single_variable_attested`), and an `end_at` that leaves at least `observation_hours`.
+> - Units are recorded in `experiment_units`. E3 fires when every variant has at least one PUBLISHED unit.
+> - Observational experiments always end INCONCLUSIVE (`observational_design`).
+> - Method: docs/EXPERIMENTS.md.
+
 ```mermaid
 stateDiagram-v2
     [*] --> DRAFT

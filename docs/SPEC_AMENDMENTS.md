@@ -77,3 +77,27 @@ A component may be labeled production-ready only if: gates pass, failure tests e
   (`omnigrowth/ingestion/limits.py`).
 - Reason: ordinary text-heavy DOCX files compress 15-30x, so a 10x overall cap rejects real uploads,
   while the per-member ratio plus absolute caps still stop decompression bombs.
+
+## A14 — Experiment statistics (amends §18, STATE_MACHINES §4; human defaults 2026-09-26, revised after the Phase 9 review)
+- **Unit.** One published post: a content asset on one of the design's platform accounts. Its value is the primary metric, read from ONE snapshot captured closest to `observation_hours` after the post's first publication, within `± age_tolerance_hours`. The tolerance may be at most observation/4, so ages are equivalent. Impressions and repeated pulls are never extra samples. Posts are blocked by account. Only accounts where every variant has ≥ 2 measured posts are analysed, so the n that is checked, the n that is tested and the evidence ids are always the same posts.
+- **Real vs simulated.** Evidence is REAL only if the snapshot source is API or MANUAL **and** the post actually went out (publish mode LIVE or MANUAL). A MOCK publication never reached an audience, so its numbers are simulated whatever their label. The ingest API refuses MANUAL metrics on a MOCK publication.
+- **Sample floor.** At least 30 independent units **per variant**. `min_sample_size` counts posts per variant.
+- **Power.** The target is 80%. At start, n per variant = ⌈2(z₁₋α/(2m) + z_power)² σ² / δ²⌉, where:
+  - σ is the SD of the metric per post at the design age, from ≥ 10 REAL posts on the same accounts that were published in the 180 days **before the experiment was created**, excluding the experiment's own units;
+  - δ is the pre-registered minimum meaningful effect;
+  - m is the number of treatments.
+
+  The requirement is max(n, 30). Without a baseline, the plan says `FLOOR_ONLY_NO_BASELINE`. The plan is frozen at E2.
+- **Confidence.** Fixed at 0.95; it is not configurable per experiment. Each treatment is compared with the control by a two-sided Welch t-test, blocked by account. With m treatments, both the **decisions and the intervals use Bonferroni** (p·m < α ⇔ the 1 − α/m interval excludes 0), so a significant result never shows an interval containing 0. `confidence` stores the level (1 − α); it is never described as the probability that a variant is better.
+- **Several significant treatments.** If more than one treatment beats the control, the best one wins only if it is also significantly better than each of the others in pairwise Welch tests (Bonferroni over those pairs). Otherwise the verdict is `TREATMENTS_BEAT_CONTROL_UNRANKED`, with no winner.
+- **Pre-registration.** The following are fixed at E1 and frozen at E2: primary metric, direction, allocation, observation window, stopping rule, platform, accounts, and variant order (the first is the control).
+  - Allocation is blocked by account, with random block sizes of V or 2V and seeded order, so it is re-derivable.
+  - The stopping rule is `FIXED_ENDPOINT`: one evaluation after `end_at`, never before, never repeated.
+  - `end_at` must leave `observation_hours + age_tolerance_hours`. Posts not yet at their age by then are counted as `NOT_YET_AT_AGE`.
+  - A post can be a unit of only one active experiment.
+- **Verdicts.**
+  - `WINNER` (CONCLUDED) requires a randomized design, REAL data, and every variant ≥ the frozen requirement.
+  - `INSUFFICIENT_EVIDENCE`, `NO_DETECTABLE_DIFFERENCE`, `TREATMENTS_BEAT_CONTROL_UNRANKED`, `NO_REAL_DATA` and `OBSERVATIONAL_ASSOCIATION` are all INCONCLUSIVE, with no winner.
+  - Effect sizes (difference, relative lift against the block-weighted control mean, Hedges' g), intervals and n are always reported.
+- **Observational.** Nonrandomized experiments are always labelled observational. The database forbids a winner on them.
+- **Simulated evidence.** Analysed separately (`result.simulated`) and never used for the verdict. Nothing changes production strategy automatically.

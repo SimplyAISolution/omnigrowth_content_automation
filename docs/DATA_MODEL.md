@@ -1063,6 +1063,32 @@ Indexes: `experiments_brand_status_idx (brand_id, status)` — running-experimen
 
 Constraints: `UNIQUE (experiment_id, label)`; `UNIQUE (experiment_id, id)` (winner FK target).
 Indexes: UNIQUE — variants of an experiment; `experiment_variants_asset_idx (content_asset_id)` — "is this asset part of an experiment" (scheduler must not reschedule variants independently).
+Since A14, `content_asset_id` is unused: a variant is realized by many posts, recorded in `experiment_units` (§5.6a). `sample_size` / `observed_value` hold the REAL-data n and mean at evaluation.
+
+**Experiment columns added by A14** (migration `a14e0f9b2c31`):
+
+| Column | Type | N | Default | Notes |
+|---|---|---|---|---|
+| `design` | jsonb | N | `'{}'` | Pre-registered design: unit, platform, accounts, observation age, tolerance, direction, minimum effect, power, floor, allocation, stopping rule, `variant_order` (first = control), `randomization_seed`, metric citation. `sample_plan` is added at E2 and frozen. |
+| `assignment` | text | N | `'RANDOMIZED'` | `CHECK IN ('RANDOMIZED','OBSERVATIONAL')`; `CHECK (assignment = 'RANDOMIZED' OR winner_variant_id IS NULL)`. |
+
+A14 also changes the meaning of two existing columns:
+- `min_sample_size` holds independent **posts per variant**: the frozen max(power requirement, floor 30).
+- `confidence_threshold` / `confidence` hold the **confidence level** of the intervals (1 − α), not a probability that a variant is better.
+
+### 5.6a `experiment_units` (A14)
+| Column | Type | N | Def | Notes |
+|---|---|---|---|---|
+| id | uuid | N | — | PK |
+| experiment_id | uuid | N | — | FK |
+| variant_id | uuid | N | — | FK `(experiment_id, variant_id) → experiment_variants(experiment_id, id)` |
+| content_asset_id | uuid | N | — | FK. The unit: one post. `UNIQUE (experiment_id, content_asset_id)` |
+| platform_account_id | uuid | N | — | FK. The account it is published on; the randomization block |
+| block_key / block_seq | text / integer | N | — | Block = account; sequence within the block. `UNIQUE (experiment_id, block_key, block_seq)` |
+| assigned_by | text | N | — | `RANDOMIZATION` (server, blocked equal allocation from `design.randomization_seed`) or `MANUAL` (observational label) |
+| created_at | timestamptz | N | now() | Assignments are immutable (no `updated_at`) |
+
+Index: `experiment_units_asset_idx (content_asset_id)`.
 
 ### 5.7 `recommendations`
 | Column | Type | N | Def | Notes |

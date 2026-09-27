@@ -583,3 +583,64 @@ KNOWN ISSUES (MINOR, open): slot TTL not renewed / httpx timeout is per-phase (m
   metric normalisation by post age; PDF time budget checked between pages only.
 NEXT: Phase 9 — experiments + optimization (needs human: default min_sample_size / confidence).
 ```
+
+## 2026-09-26 — Phase 9 (experiments) + pre-gate safeguard fixes — gate BLOCKED (live re-run pending)
+Commits 85729f2 (decisions) and a3011dd (Phase 8) were made by the human with SSH signatures
+(verified: each object carries an SSH SIGNATURE block; local verification only lacks
+gpg.ssh.allowedSignersFile). Signing configuration untouched.
+
+Pre-gate fixes (human request):
+- GPU lease (providers/slots.py): renewable lease, self-fencing before expiry (deadlines from
+  the SENT time of ACQUIRE/RENEW), settle one lease after any unclean predecessor, clean marker,
+  compare-and-delete, orphan-free acquisition (try/finally). Total call deadline in the router.
+  9 unit + 4 real-Redis tests incl. "lost ownership never overlaps".
+- Backlog cap: pg_advisory_xact_lock per queue; 8 racing requests / 3 places -> exactly 3;
+  negative control without the lock -> 8 created (test fails as it should).
+- Parsing: worker parses in a spawned child killed at max_parse_seconds + 15 s (was cooperative
+  only; Windows RQ TimerDeathPenalty cannot interrupt C code); child watchdog exits with its
+  parent (negative control: orphan survives without it); POSIX RLIMIT_AS 2 GiB. Benchmarks
+  (scripts/bench_parse.py): 500-page PDF 0.66 s, 6.3 M-char DOCX 5.75 s — 120 s kept as margin
+  for real-world PDFs (not measured: no corpus), documented with the p99x3 recommendation.
+- Context budget: ceil(chars/3) + output allowance <= context_tokens (32,768 chat; nomic 2,048
+  per text) on the request as built (+ response_format schema); unset max_tokens counts 4,096;
+  QA embeddings clip explicitly. LM Studio loaded_context_length verified 70,144.
+
+Phase 9 (docs/EXPERIMENTS.md, SPEC_AMENDMENTS A14): unit = one post read from one snapshot at a
+fixed age (tolerance <= age/4); floor 30 per variant; power 80 % from REAL baseline sigma and a
+pre-registered minimum effect; confidence fixed 0.95; blocked Welch by account; Bonferroni
+decisions == simultaneous intervals; pairwise rule among several significant treatments;
+fixed endpoint (WINDOW_OPEN before end_at, single terminal evaluation); observational never wins
+(DB CHECK); REAL evidence = API/MANUAL on a post that actually went out (MOCK publications are
+simulated; ingest refuses MANUAL on MOCK); simulated analysed separately, never selects a winner;
+no automatic strategy change. Migration a14e0f9b2c31 (experiment_units, design, assignment),
+round-tripped, alembic check clean.
+
+Debug-loop entries:
+1. test_scheduler_process timed out -> new tick step not stubbed (earlier pattern) -> stubbed.
+2. Control/treatment swapped -> variants ordered by created_at/id (same txn, same-ms UUIDv7) ->
+   variant_order frozen in design. Real bug.
+3. Start response showed stale design -> Core UPDATE vs identity map -> populate_existing.
+4. Reviewer M1-M4 + m5-m16 fixed (see above); m12 (server must stop on disconnect) documented.
+5. sync_experiments MissingGreenlet -> read end_at after rollback expired it -> read before.
+6. Live §55 FAILED at planning (research MODEL_TIMEOUT after 210 s). Classified ENVIRONMENT:
+   LM Studio had qwen3.5-4b-uncensored (not OmniGrowth config) resident next to qwen3.5-9b
+   (70,144 ctx); measured 23.1 tok/s vs 91 tok/s in the Phase 5 live run; research output
+   3-6 k tokens -> > 180 s. Not patched (debug-loop rule). Evidence:
+   docs/audit/phase9_live_e2e_env_failure.json; phase7_live_e2e.json restored to the last pass.
+
+```
+PHASE 9 GATE — BLOCKED (live re-run pending; everything else run this session, 2026-09-26)
+  uv run poe check -> 210 files already formatted / All checks passed! / Success: no issues found in 149 source files / Contracts: 4 kept, 0 broken. / ==================== 647 passed, 114 deselected in 20.53s =====================
+  uv run poe test-int -> =============== 110 passed, 651 deselected in 92.22s (0:01:32) ================
+  uv run alembic heads -> a14e0f9b2c31 (head);  uv run alembic check -> No new upgrade operations detected.
+  Gate tests: test_no_winner_below_the_sample_threshold_even_with_a_huge_effect,
+              test_recommendation_without_evidence_ids_is_rejected -> passed
+  LIVE §55: tests/integration/test_live_e2e.py -> 1 failed in 212.70s (MODEL_TIMEOUT, environment)
+  Previous live pass (Phase 8, 2026-09-26): 10 posts published by the MockPublisher
+    (PUBLISH_MODE=MOCK, external ids mock_*; no platform network call, nothing reached a real
+    audience); INSTAGRAM and YOUTUBE skipped (writers NOT_IMPLEMENTED, decision D2).
+KNOWN ISSUES: GPU exclusivity after a client-side cancel assumes the server stops generating
+  (UNVERIFIED per LM Studio version; 30 s settle mitigates); parser memory cap POSIX-only;
+  3 chars/token heuristic; allocation within a block partly predictable (random sizes V/2V).
+NEXT: human frees VRAM, re-run the live test; then Phase 10.
+```

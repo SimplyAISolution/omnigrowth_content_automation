@@ -31,6 +31,7 @@ from omnigrowth.providers.factory import build_router
 from omnigrowth.services import analytics as analytics_service
 from omnigrowth.services import campaigns as campaign_service
 from omnigrowth.services import content as content_service
+from omnigrowth.services import experiments as experiment_service
 from omnigrowth.services import jobs as job_service
 from omnigrowth.services import recommendations as recommendation_service
 from omnigrowth.services import sources as source_service
@@ -151,8 +152,18 @@ def _handlers(
             )
         )
 
+    async def experiment_evaluation(
+        session: AsyncSession, job: job_service.JobView
+    ) -> dict[str, Any]:
+        if job.subject_id is None:
+            raise OmniGrowthError(ErrorCode.VALIDATION_FAILURE, "job has no subject")
+        return await experiment_service.evaluate_experiment(
+            session, experiment_service.SYSTEM_EXPERIMENTS, job.subject_id, now=datetime.now(UTC)
+        )
+
     return {
         JobKind.ANALYTICS_PULL: analytics_pull,
+        JobKind.EXPERIMENT_EVALUATION: experiment_evaluation,
         JobKind.RECOMMENDATION_GENERATION: recommendation_generation,
         JobKind.SOURCE_INGEST: source_ingest,
         JobKind.CAMPAIGN_PLANNING: campaign_planning,

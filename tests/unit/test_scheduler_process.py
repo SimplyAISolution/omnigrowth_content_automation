@@ -36,6 +36,11 @@ def _heartbeat(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
         return 0
 
     monkeypatch.setattr(sched, "enqueue_analytics_pulls", no_pulls)
+
+    async def no_experiments(now: object) -> dict[str, int]:
+        return {}
+
+    monkeypatch.setattr(sched, "sync_experiment_states", no_experiments)
     return path
 
 

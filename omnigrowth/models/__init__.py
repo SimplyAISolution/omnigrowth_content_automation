@@ -24,7 +24,7 @@ from omnigrowth.models.content import (
     ContentVersion,
     QaResult,
 )
-from omnigrowth.models.experiments import Experiment, ExperimentVariant
+from omnigrowth.models.experiments import Experiment, ExperimentUnit, ExperimentVariant
 from omnigrowth.models.identity import ApiToken, AuditEvent, User
 from omnigrowth.models.jobs import IdempotencyKey, Job
 from omnigrowth.models.publishing import Publication, PublicationJob
@@ -50,6 +50,7 @@ __all__ = [
     "DerivedMetricDefinition",
     "Embedding",
     "Experiment",
+    "ExperimentUnit",
     "ExperimentVariant",
     "IdempotencyKey",
     "Job",

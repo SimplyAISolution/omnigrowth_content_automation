@@ -233,6 +233,15 @@ async def ingest_snapshots(
         pub = await session.get(Publication, item.publication_id)
         if pub is None:
             raise _not_found("publication")
+        if item.source is MetricSource.MANUAL and pub.publish_mode is PublishMode.MOCK:
+            # A mock post never reached an audience: numbers for it are simulated by
+            # definition and must not be labelled as real (A14, docs/METRICS.md §2).
+            raise OmniGrowthError(
+                ErrorCode.VALIDATION_FAILURE,
+                "MANUAL metrics need a post that actually went out; use FIXTURE for a "
+                "mock publication",
+                details={"field": "source", "publication_id": str(pub.id)},
+            )
         snapshot_id = uuid7()
         inserted = await session.execute(
             pg_insert(AnalyticsSnapshot)

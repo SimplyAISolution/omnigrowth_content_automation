@@ -29,6 +29,7 @@ from omnigrowth.publishing.config import cached_publishing_config
 from omnigrowth.publishing.mock import MockPublisher
 from omnigrowth.publishing.scheduler import run_once
 from omnigrowth.services.analytics import schedule_due_pulls
+from omnigrowth.services.experiments import sync_experiments
 from omnigrowth.services.idempotency import purge_expired as purge_idempotency_keys
 from omnigrowth.services.jobs import RqJobQueue
 from omnigrowth.storage.db import get_engine, get_sessionmaker, ping_database
@@ -103,8 +104,21 @@ async def tick() -> bool:
     else:
         if pulls:
             log.info("scheduler tick: analytics pulls queued", extra={"count": pulls})
+    try:
+        experiments = await sync_experiment_states(datetime.now(UTC))
+    except (OmniGrowthError, SQLAlchemyError) as exc:
+        log.error("scheduler tick: experiment sync failed", extra={"error": type(exc).__name__})
+    else:
+        if any(experiments.values()):
+            log.info("scheduler tick: experiments", extra=experiments)
     HEARTBEAT_FILE.touch()
     return True
+
+
+async def sync_experiment_states(now: datetime) -> dict[str, int]:
+    """Phase 9: E3/E6 transitions and the single fixed-endpoint evaluation (E4/E5)."""
+    async with get_sessionmaker()() as session:
+        return await sync_experiments(session, now=now)
 
 
 async def enqueue_analytics_pulls(now: datetime) -> int:

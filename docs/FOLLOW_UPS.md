@@ -12,15 +12,15 @@ Each step lists what it needs from a human, if anything.
 Left open from Phase 8:
 - `POST /calendar/items/{id}/reschedule` and `/calendar/plan-items/{id}/move`. Rescheduling works today through `/approvals/{id}/actions` (CA12). Plan-item move is not implemented.
 - Metric normalisation by post age is not done. Reports use the latest snapshot as-is (METRICS.md §5).
-- The inference slot TTL is not renewed, and the backlog cap is best-effort (safeguards_post_mvp.md §3).
+- ~~The inference slot TTL is not renewed, and the backlog cap is best-effort.~~ Fixed in the Phase 9 pre-gate: a renewable lease with self-fencing, and an advisory-locked cap (safeguards_post_mvp.md §2–§3).
 
-### 2. Phase 9 — Experiments + optimization
-- Experiment framework (§18): variants differing in one declared variable, min sample and
-  confidence frozen at start, E-machine transitions, "no winner below threshold" test.
-- Optimization Agent consumes attribute comparisons (not only the campaign report); its
-  recommendations can target experiments. Recommendation → accepted → drives the next
-  campaign's planning brief.
-- Human: pick default `min_sample_size` / `confidence_threshold` (proposed: 30 / 0.95).
+### 2. Phase 9 — Experiments — DONE (2026-09-26; see docs/EXPERIMENTS.md, SPEC_AMENDMENTS A14)
+
+Left open from Phase 9, deliberately:
+- **Accepted recommendations feeding the next campaign's planning brief.** Not done: the human asked that nothing change production strategy automatically. A future feed must exclude simulated evidence (`evidence_query.simulated_evidence`) and stay opt-in per campaign.
+- **Optimization Agent consuming attribute comparisons and CONCLUDED experiments.** It still reads the campaign report only.
+- **`PATCH /experiments` and the variant PATCH/POST from API_PLAN §2.11.** Not implemented, because designs are fixed at creation.
+- **Real experiment data.** It needs real posts (MANUAL export or Phase 13 LIVE). Until then, every mock-published experiment ends `NO_REAL_DATA`.
 
 ### 3. Phase 10 — Breadth: platforms + repurposing
 - YouTube and Instagram writers first (removes the D2 `skipped: NOT_IMPLEMENTED` items from the

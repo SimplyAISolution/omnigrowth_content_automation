@@ -29,6 +29,7 @@ EXPECTED_TABLES = frozenset(
         "analytics_snapshots",
         "experiments",
         "experiment_variants",
+        "experiment_units",  # SPEC_AMENDMENTS A14
         "agent_runs",
         "model_runs",
         "prompt_versions",

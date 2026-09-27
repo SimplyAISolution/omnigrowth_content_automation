@@ -1,11 +1,11 @@
 ```
-phase: 8
-task: phase-8 gate (analytics depth + safeguards)
-gate: GATE_PASSED
-last_green_commit: d3db1ec
-next_phase: 9 — Experiments + optimization
+phase: 9
+task: phase-9 gate (experiments + safeguard fixes)
+gate: BLOCKED (live §55 re-run pending: VRAM contention in LM Studio)
+last_green_commit: a3011dd
+next_phase: 10 — Platforms + repurposing
 shell: PowerShell Core 7.6.6 (Git Bash also available)
-blockers: phase 8 commit pending (signing)
+blockers: live re-run after VRAM is freed; phase 9 commits pending (human signs)
 ```
 
 ## Notes
@@ -20,3 +20,4 @@ blockers: phase 8 commit pending (signing)
 - Phase 7 (MVP): approvals, outbox scheduler (SKIP LOCKED, leases, UNCERTAIN handling), MockPublisher, mock/fixture analytics + NULL-safe rates, Optimization Agent with evidence, audit timeline. §55 E2E green on fixtures and live (docs/audit/phase7_live_e2e.json).
 - Post-MVP: known issues resolved (Idempotency-Key, full §37, CA12/CA17, auto-approve, QA re-run, per-model similarity thresholds, DB-clock leases, recommendation machine). Follow-up plan: docs/FOLLOW_UPS.md.
 - Phase 8: derived metrics as data (formula grammar, revisions), attribute comparisons, publication metrics, calendar, scheduled pulls, simulated-vs-real provenance (docs/METRICS.md). Upload/inference safeguards hardened (docs/audit/safeguards_post_mvp.md). Live §55 green (17 min).
+- Phase 9: experiments (A14: unit = post at fixed age, floor 30/variant, power 80 %, fixed 0.95, Bonferroni, fixed endpoint, simulated evidence separated) + GPU lease, backlog lock, killable parsing, context budget. Unit/integration green; live blocked by environment.
