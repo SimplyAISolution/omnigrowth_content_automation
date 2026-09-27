@@ -24,6 +24,8 @@ class Embeddings:
     provider: str
     model: str
     vectors: list[list[float]]
+    # Indexes of inputs that were clipped to the model's context budget (clip=True only).
+    clipped: tuple[int, ...] = ()
 
     @property
     def dim(self) -> int:
@@ -36,7 +38,12 @@ async def embed_texts(
     *,
     privacy: PrivacyClass = PrivacyClass.PRIVATE,
     profile: RoutingProfile = RoutingProfile.LOCAL_ONLY,
+    clip: bool = False,
 ) -> Embeddings:
+    """Embed each text. The context budget applies per text. With ``clip=True`` a text
+    longer than the budget is cut to its first ``context_tokens * chars_per_token``
+    characters here, explicitly and reported in ``clipped``, instead of being refused (or
+    silently truncated by the server)."""
     if not texts:
         raise OmniGrowthError(ErrorCode.VALIDATION_FAILURE, "nothing to embed")
     last_error: OmniGrowthError | None = None
@@ -44,14 +51,22 @@ async def embed_texts(
         provider = router.provider(model)
         if not isinstance(provider, EmbeddingProvider):
             continue
+        inputs: list[str] = list(texts)
+        clipped: tuple[int, ...] = ()
+        if clip:
+            context, chars_per_token = router.context_budget(model)
+            budget = int(context * chars_per_token)
+            clipped = tuple(i for i, t in enumerate(texts) if len(t) > budget)
+            inputs = [t[:budget] for t in texts]
         try:
-            router.check_input_size(model, texts)
+            for text in inputs:
+                router.check_input_size(model, [text])
         except OmniGrowthError as exc:  # too large for this model: a later one may accept it
             last_error = exc
             continue
         try:
             async with router.slot(model):
-                vectors = await provider.embed(model.model, texts)
+                vectors = await provider.embed(model.model, inputs)
         except OmniGrowthError as exc:
             if exc.code not in FALLBACK_CODES:
                 raise
@@ -61,7 +76,9 @@ async def embed_texts(
             )
             last_error = exc
             continue
-        return Embeddings(provider=model.provider_name, model=model.model, vectors=vectors)
+        return Embeddings(
+            provider=model.provider_name, model=model.model, vectors=vectors, clipped=clipped
+        )
     raise last_error or OmniGrowthError(
         ErrorCode.MODEL_UNAVAILABLE, "no embedding-capable provider configured"
     )

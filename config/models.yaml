@@ -24,6 +24,10 @@ providers:
     max_concurrency: 1          # A2: single 12 GB GPU; a second request waits
     concurrency_group: local_gpu # one local call at a time on the GPU
     timeout_s: 180
+    # LM Studio must load chat models with a context length >= this value (Developer tab ->
+    # model -> Context Length); check with GET /api/v0/models (loaded_context_length).
+    context_tokens: 32768
+    slot_lease_s: 30
   cloud:
     # Enabled only when OMNIGROWTH_CLOUD_API_KEY is set AND base_url is filled in.
     locality: REMOTE
@@ -45,7 +49,7 @@ roles:
   CODING_LOCAL:
     - {provider: lmstudio, model: "qwen/qwen3.5-9b"}
   EMBEDDING_LOCAL:
-    - {provider: lmstudio, model: "text-embedding-nomic-embed-text-v1.5"}
+    - {provider: lmstudio, model: "text-embedding-nomic-embed-text-v1.5", context_tokens: 2048}
   # Frontier roles: local fallbacks first so LOCAL_ONLY still works; add cloud candidates
   # (provider: cloud, with per-million-token costs) when a cloud key is configured.
   FRONTIER_FAST:

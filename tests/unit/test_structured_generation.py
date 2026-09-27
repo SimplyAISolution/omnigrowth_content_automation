@@ -546,22 +546,70 @@ async def test_providers_in_one_concurrency_group_share_a_slot() -> None:
 
 
 # ------------------------------------------------------------------ inference guards (post-MVP)
-async def test_oversized_prompt_is_refused_before_any_model_call() -> None:
+async def _run_prompt(chars: int, max_tokens: int | None) -> FakeProvider:
     primary = FakeProvider("primary", script=[ok()])
-    huge = StubPrompt(messages=[{"role": "user", "content": "x" * 70_000}])
+    prompt = StubPrompt(messages=[{"role": "user", "content": "x" * chars}], max_tokens=max_tokens)
     router = ModelRouter(config(two_local=False), {"primary": primary})
+    await generate_structured(
+        Answer,
+        prompt,
+        router=router,
+        context=context(),
+        recorder=InMemoryRecorder(),
+        capabilities=CapabilityCache(),
+    )
+    return primary
+
+
+async def test_oversized_prompt_is_refused_before_any_model_call() -> None:
+    # Default budget: 32768 tokens at a pessimistic 3 chars/token.
+    with pytest.raises(OmniGrowthError) as info:
+        await _run_prompt(100_000, None)  # ceil(100000/3) = 33334 > 32768
+    assert info.value.code is ErrorCode.VALIDATION_FAILURE
+    assert info.value.details["limit"] == "context_tokens"
+    # 33,334 for the message text plus the response_format schema, which the server also
+    # tokenizes (counted since the Phase 9 review); max_tokens unset -> default 4,096 output.
+    assert info.value.details["estimated_input_tokens"] > 33_334
+    assert info.value.details["max_output_tokens"] == 4_096
+
+
+async def test_context_budget_counts_the_output_allowance() -> None:
+    # 60000 chars -> 20000 tokens; + 8192 output = 28192 fits; + 16000 = 36000 does not.
+    assert len((await _run_prompt(60_000, 8_192)).requests) == 1
+    with pytest.raises(OmniGrowthError) as info:
+        await _run_prompt(60_000, 16_000)
+    assert info.value.details["max_output_tokens"] == 16_000
+    assert info.value.details["max"] == 32_768
+
+
+async def test_a_call_past_its_total_deadline_is_cut(monkeypatch: pytest.MonkeyPatch) -> None:
+    from omnigrowth.providers import router as router_module
+
+    monkeypatch.setattr(router_module, "CALL_DEADLINE_MARGIN_S", 0.0)
+
+    class Trickle(FakeProvider):
+        async def chat(self, request: ChatRequest) -> ChatResult:
+            await asyncio.sleep(5)  # e.g. a server trickling bytes under the read timeout
+            return ok()  # pragma: no cover
+
+    cfg = ModelsConfig.model_validate(
+        {
+            "presets": {"p": {"base_url_host": "http://h/v1", "base_url_docker": "http://d/v1"}},
+            "providers": {"primary": {"locality": "LOCAL", "preset": "p", "timeout_s": 0.05}},
+            "roles": {"CHEAP_LOCAL": [{"provider": "primary", "model": "m"}]},
+        }
+    )
+    router = ModelRouter(cfg, {"primary": Trickle("primary", script=[])})
     with pytest.raises(OmniGrowthError) as info:
         await generate_structured(
             Answer,
-            huge,
+            StubPrompt(),
             router=router,
             context=context(),
             recorder=InMemoryRecorder(),
             capabilities=CapabilityCache(),
         )
-    assert info.value.code is ErrorCode.VALIDATION_FAILURE
-    assert info.value.details["limit"] == "max_prompt_chars"
-    assert primary.requests == []
+    assert info.value.code is ErrorCode.MODEL_TIMEOUT
 
 
 class RecordingSlots:
@@ -572,9 +620,9 @@ class RecordingSlots:
 
     @asynccontextmanager
     async def slot(
-        self, key: str, limit: int, *, ttl_s: float, max_wait_s: float
+        self, key: str, limit: int, *, lease_s: float, max_wait_s: float
     ) -> AsyncIterator[str]:
-        self.calls.append((key, limit, ttl_s, max_wait_s))
+        self.calls.append((key, limit, lease_s, max_wait_s))
         self.held += 1
         try:
             yield key
@@ -604,6 +652,7 @@ async def test_every_model_call_holds_a_cross_process_slot() -> None:
                     "concurrency_group": "gpu",
                     "timeout_s": 50,
                     "slot_wait_s": 7,
+                    "slot_lease_s": 12,
                 }
             },
             "roles": {"CHEAP_LOCAL": [{"provider": "primary", "model": "m"}]},
@@ -619,6 +668,40 @@ async def test_every_model_call_holds_a_cross_process_slot() -> None:
         capabilities=CapabilityCache(),
     )
     assert held_during_call == [1]
-    assert slots.calls == [("group:gpu", 1, 80.0, 7.0)]
+    assert slots.calls == [("group:gpu", 1, 12.0, 7.0)]
     await router.aclose()
     assert slots.closed
+
+
+async def test_embedding_budget_is_per_text_and_clipping_is_explicit() -> None:
+    from omnigrowth.providers.embeddings import embed_texts
+
+    class Embedder(FakeProvider):
+        def __init__(self) -> None:
+            super().__init__("primary", script=[])
+            self.inputs: list[list[str]] = []
+
+        async def embed(self, model: str, texts: list[str]) -> list[list[float]]:
+            self.inputs.append(texts)
+            return [[1.0, 0.0] for _ in texts]
+
+    cfg = ModelsConfig.model_validate(
+        {
+            "presets": {"p": {"base_url_host": "http://h/v1", "base_url_docker": "http://d/v1"}},
+            "providers": {"primary": {"locality": "LOCAL", "preset": "p"}},
+            "roles": {
+                "EMBEDDING_LOCAL": [{"provider": "primary", "model": "e", "context_tokens": 2048}]
+            },
+        }
+    )
+    embedder = Embedder()
+    router = ModelRouter(cfg, {"primary": embedder})
+    short, long_text = "a" * 6_000, "b" * 7_000  # budget: 2048 tokens * 3 chars = 6144 chars
+    # Two short texts fit individually although their sum exceeds the budget.
+    await embed_texts(router, [short, short])
+    with pytest.raises(OmniGrowthError) as info:
+        await embed_texts(router, [short, long_text])
+    assert info.value.details["limit"] == "context_tokens"
+    clipped = await embed_texts(router, [short, long_text], clip=True)
+    assert clipped.clipped == (1,)
+    assert [len(t) for t in embedder.inputs[-1]] == [6_000, 6_144]

@@ -3,6 +3,7 @@ RQ only carries the job id. Status changes go through the JOB state machine."""
 
 from __future__ import annotations
 
+import hashlib
 import logging
 import uuid
 from collections.abc import Mapping
@@ -40,6 +41,7 @@ QUEUE_FOR_KIND: dict[JobKind, str] = {
     JobKind.CONTENT_REGENERATION: "generate",
     JobKind.QA_RUN: "qa",
     JobKind.ANALYTICS_PULL: "analytics",
+    JobKind.EXPERIMENT_EVALUATION: "analytics",  # pure DB math, no model
 }
 JOB_ENTRYPOINT = "omnigrowth.workflows.tasks.run_job"
 
@@ -173,12 +175,22 @@ async def create_job(
     return job_id
 
 
+def _queue_lock_id(queue_name: str) -> int:
+    """Stable signed 64-bit advisory-lock id for one queue's backlog check."""
+    digest = hashlib.sha256(f"omnigrowth:backlog:{queue_name}".encode()).digest()
+    return int.from_bytes(digest[:8], "big", signed=True)
+
+
 async def _check_backlog(session: AsyncSession, kind: JobKind, limit: int | None) -> None:
     queue_name = queue_for(kind)
     if queue_name not in MODEL_QUEUES:
         return
     if limit is None:
         limit = get_settings().max_open_model_jobs
+    # Serialise count-then-insert per queue: the transaction-scoped advisory lock is held
+    # until this request commits its job row, so concurrent requests see each other's rows
+    # and the cap cannot be overshot (reviewer MINOR m8).
+    await session.execute(select(func.pg_advisory_xact_lock(_queue_lock_id(queue_name))))
     kinds = [k for k in JobKind if queue_for(k) == queue_name]
     open_jobs = await session.scalar(
         select(func.count())

@@ -43,10 +43,17 @@ class ProviderConfig(_Strict):
     # Bounded wait for a cross-process inference slot (providers/slots.py) before the call
     # fails with MODEL_UNAVAILABLE instead of queueing forever.
     slot_wait_s: float = Field(default=300.0, gt=0)
-    # Hard cap on the characters sent in one request (all messages, or all embedding inputs).
-    # Keeps prompts inside the served context window instead of relying on silent server-side
-    # truncation. ~4 characters per token.
-    max_prompt_chars: int = Field(default=64_000, ge=1_000)
+    # Lease of that slot; renewed every lease/3 while the call runs (providers/slots.py).
+    slot_lease_s: float = Field(default=30.0, ge=0.05)
+    # Context budget (docs/audit/safeguards_post_mvp.md §4): a request is refused unless
+    # ceil(input_chars / chars_per_token) + max_tokens <= context_tokens. 3 characters per
+    # token is deliberately pessimistic (English BPE averages ~4). ``context_tokens`` must not
+    # exceed what the server actually loads the model with; a candidate may override it.
+    context_tokens: int = Field(default=32_768, ge=512)
+    chars_per_token: float = Field(default=3.0, gt=0.5, le=8.0)
+    # Output allowance assumed when a request sets no max_tokens (servers then generate up
+    # to their own limit, so 0 would under-count).
+    default_output_tokens: int = Field(default=4_096, ge=0)
 
     @model_validator(mode="after")
     def _one_url_source(self) -> ProviderConfig:
@@ -63,6 +70,8 @@ class ModelCandidate(_Strict):
     # USD per million tokens; local models cost 0.
     input_cost_per_mtok: Decimal = Decimal(0)
     output_cost_per_mtok: Decimal = Decimal(0)
+    # Served context length for this model when it differs from the provider default.
+    context_tokens: int | None = Field(default=None, ge=512)
 
 
 class ModelsConfig(_Strict):

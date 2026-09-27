@@ -28,6 +28,9 @@ class IngestionLimits:
     # Wall-clock budget for one parse (checked between ZIP chunks and PDF pages). The RQ job
     # timeout of the ingest queue is the outer, hard limit.
     max_parse_seconds: float = 120.0
+    # Hard stop: the worker parses in a child process that is killed after
+    # max_parse_seconds + this allowance for process start-up (ingestion/isolation.py).
+    isolation_startup_seconds: float = 15.0
 
 
 DEFAULT_LIMITS = IngestionLimits()

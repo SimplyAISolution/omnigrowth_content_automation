@@ -681,13 +681,20 @@ async def _similarity(
     full_text = "\n\n".join(segments)
     hook = version.hook or full_text.split("\n", 1)[0]
     try:
-        embedded = await embed_texts(deps.agent.router, [full_text, hook])
+        # Long posts are compared on their first ~context-budget characters (clipped here,
+        # recorded below) rather than skipping the duplicate check.
+        embedded = await embed_texts(deps.agent.router, [full_text, hook], clip=True)
     except OmniGrowthError as exc:
         log.warning(
             "duplicate check skipped: embeddings unavailable",
             extra={"content_asset_id": str(asset.id), "error_code": str(exc.code)},
         )
         return (), False, None
+    if embedded.clipped:
+        log.info(
+            "duplicate check compared a clipped prefix of a long text",
+            extra={"content_asset_id": str(asset.id), "clipped_inputs": list(embedded.clipped)},
+        )
     rules = deps.qa.similarity
     hits: list[SimilarHit] = []
     for field, vector, text in (

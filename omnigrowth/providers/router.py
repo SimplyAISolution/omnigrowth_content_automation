@@ -12,6 +12,7 @@ and in workers a cross-process Redis slot per concurrency group (providers/slots
 from __future__ import annotations
 
 import asyncio
+import math
 import weakref
 from collections.abc import AsyncIterator, Iterable
 from contextlib import asynccontextmanager
@@ -24,8 +25,10 @@ from omnigrowth.providers.base import ChatProvider
 from omnigrowth.providers.config import ModelCandidate, ModelsConfig
 from omnigrowth.providers.slots import SlotLimiter
 
-# A slot outlives the provider timeout by this margin, then expires if its holder crashed.
-SLOT_TTL_MARGIN_S = 30.0
+# The total deadline of one call: the provider timeout plus this margin. httpx timeouts are
+# per phase (connect/read/write), so without a total deadline a trickling response could hold
+# the GPU indefinitely.
+CALL_DEADLINE_MARGIN_S = 5.0
 
 
 @dataclass(frozen=True, slots=True)
@@ -36,6 +39,7 @@ class ResolvedModel:
     locality: ModelLocality
     input_cost_per_mtok: Decimal
     output_cost_per_mtok: Decimal
+    context_tokens: int | None = None
 
     def estimate_cost(self, input_tokens: int | None, output_tokens: int | None) -> Decimal | None:
         if self.locality is ModelLocality.LOCAL:
@@ -77,6 +81,7 @@ class ModelRouter:
             locality=self.config.locality_of(candidate),
             input_cost_per_mtok=candidate.input_cost_per_mtok,
             output_cost_per_mtok=candidate.output_cost_per_mtok,
+            context_tokens=candidate.context_tokens,
         )
 
     def candidates(
@@ -136,29 +141,49 @@ class ModelRouter:
 
     @asynccontextmanager
     async def slot(self, model: ResolvedModel) -> AsyncIterator[None]:
-        """In-process semaphore, then (when configured) the cross-process slot."""
+        """In-process semaphore, then (when configured) the cross-process lease, then a total
+        deadline on the call itself."""
+        provider = self.config.providers[model.provider_name]
         async with self.semaphore(model):
             if self.slots is None:
-                yield
+                async with _deadline(provider.timeout_s, model):
+                    yield
                 return
             key, limit = self._concurrency_key(model.provider_name)
-            provider = self.config.providers[model.provider_name]
-            async with self.slots.slot(
-                key,
-                limit,
-                ttl_s=provider.timeout_s + SLOT_TTL_MARGIN_S,
-                max_wait_s=provider.slot_wait_s,
+            async with (
+                self.slots.slot(
+                    key, limit, lease_s=provider.slot_lease_s, max_wait_s=provider.slot_wait_s
+                ),
+                _deadline(provider.timeout_s, model),
             ):
                 yield
 
-    def check_input_size(self, model: ResolvedModel, texts: Iterable[str]) -> None:
-        limit = self.config.providers[model.provider_name].max_prompt_chars
-        size = sum(len(t) for t in texts)
-        if size > limit:
+    def context_budget(self, model: ResolvedModel) -> tuple[int, float]:
+        provider = self.config.providers[model.provider_name]
+        return model.context_tokens or provider.context_tokens, provider.chars_per_token
+
+    def check_input_size(
+        self, model: ResolvedModel, texts: Iterable[str], *, max_output_tokens: int | None = None
+    ) -> None:
+        """Refuse a request whose pessimistic token estimate plus its output allowance does not
+        fit the served context window (instead of silent server-side truncation)."""
+        context, chars_per_token = self.context_budget(model)
+        chars = sum(len(t) for t in texts)
+        input_tokens = math.ceil(chars / chars_per_token)
+        if max_output_tokens is None and model.role is not ModelRole.EMBEDDING_LOCAL:
+            max_output_tokens = self.config.providers[model.provider_name].default_output_tokens
+        needed = input_tokens + (max_output_tokens or 0)
+        if needed > context:
             raise OmniGrowthError(
                 ErrorCode.VALIDATION_FAILURE,
-                "model input too large",
-                details={"limit": "max_prompt_chars", "max": limit, "actual": size},
+                "model input does not fit the context budget",
+                details={
+                    "limit": "context_tokens",
+                    "max": context,
+                    "estimated_input_tokens": input_tokens,
+                    "max_output_tokens": max_output_tokens or 0,
+                    "input_chars": chars,
+                },
             )
 
     async def aclose(self) -> None:
@@ -166,3 +191,17 @@ class ModelRouter:
             await provider.aclose()
         if self.slots is not None:
             await self.slots.aclose()
+
+
+@asynccontextmanager
+async def _deadline(timeout_s: float, model: ResolvedModel) -> AsyncIterator[None]:
+    try:
+        async with asyncio.timeout(timeout_s + CALL_DEADLINE_MARGIN_S):
+            yield
+    except TimeoutError as exc:
+        raise OmniGrowthError(
+            ErrorCode.MODEL_TIMEOUT,
+            f"{model.provider_name}: call exceeded its total deadline",
+            details={"provider": model.provider_name, "deadline_s": timeout_s},
+            retryable=True,
+        ) from exc

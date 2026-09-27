@@ -9,6 +9,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import logging
 import re
@@ -26,7 +27,8 @@ from omnigrowth.core.errors import ErrorCode, OmniGrowthError
 from omnigrowth.core.ids import uuid7
 from omnigrowth.core.logging import get_context
 from omnigrowth.core.state_machines import SOURCE_ASSET, Actor, apply_transition, create_with_state
-from omnigrowth.ingestion import DEFAULT_LIMITS, NormalizedDocument, parse, parse_html, sniff_type
+from omnigrowth.ingestion import DEFAULT_LIMITS, NormalizedDocument, parse, sniff_type
+from omnigrowth.ingestion.isolation import parse_isolated
 from omnigrowth.models import AuditEvent, Brand, SourceAsset
 from omnigrowth.observability.audit import record_audit
 from omnigrowth.security.http import FetchResult, precheck_url, safe_fetch
@@ -404,6 +406,12 @@ async def accept_url(
 
 
 # ------------------------------------------------------------------ job processing
+async def _parse_isolated(entry: str, data: bytes, **kwargs: Any) -> NormalizedDocument:
+    """Worker-side parse in a killable child process (hard stop at the parse budget)."""
+    timeout = DEFAULT_LIMITS.max_parse_seconds + DEFAULT_LIMITS.isolation_startup_seconds
+    return await asyncio.to_thread(parse_isolated, entry, data, timeout_s=timeout, **kwargs)
+
+
 async def process_source(
     session: AsyncSession,
     source_id: uuid.UUID,
@@ -418,7 +426,8 @@ async def process_source(
     values: dict[str, Any]
     if row.storage_uri is not None:
         data = store.get(row.storage_uri)
-        doc = parse(
+        doc = await _parse_isolated(
+            "parse",
             data,
             filename=(row.metadata_ or {}).get("filename"),
             declared_content_type=row.mime_type,
@@ -434,9 +443,11 @@ async def process_source(
     elif row.source_url is not None:
         fetched = await fetcher(row.source_url)
         if fetched.content_type in {"text/html", "application/xhtml+xml"}:
-            doc = parse_html(fetched.body, base_url=fetched.final_url)
+            doc = await _parse_isolated("parse_html", fetched.body, base_url=fetched.final_url)
         else:
-            doc = parse(fetched.body, declared_content_type=fetched.content_type)
+            doc = await _parse_isolated(
+                "parse", fetched.body, declared_content_type=fetched.content_type
+            )
         values = _normalized_values(doc, row.title)
         values["mime_type"] = fetched.content_type
         values["byte_size"] = len(fetched.body)
