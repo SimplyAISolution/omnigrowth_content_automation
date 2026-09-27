@@ -1,0 +1,314 @@
+{
+  "ran_at": "20260927T022647Z",
+  "label": "real local inference (LM Studio) + real Redis lease",
+  "events_s": {
+    "a_start": 0.9816118000308052,
+    "lease_deleted": 3.0546844999771565,
+    "a_end": 10.052224799990654,
+    "a_reason": "SLOT_LOST",
+    "b_start": 33.98359309998341,
+    "b_end": 34.478311700047925
+  },
+  "server_idle_observed_between_a_cancel_and_b_start": [
+    10.55,
+    11.15,
+    11.73,
+    12.32,
+    12.89
+  ],
+  "busy_samples_between_a_cancel_and_b_start": [],
+  "server_log_has_disconnect_stop": true,
+  "timeline": [
+    {
+      "t_from": 0.03,
+      "t_to": 0.4,
+      "server": "idle"
+    },
+    {
+      "t_from": 0.65,
+      "t_to": 0.99,
+      "server": "idle"
+    },
+    {
+      "t_from": 1.24,
+      "t_to": 1.57,
+      "server": "busy"
+    },
+    {
+      "t_from": 1.82,
+      "t_to": 2.15,
+      "server": "busy"
+    },
+    {
+      "t_from": 2.41,
+      "t_to": 2.75,
+      "server": "busy"
+    },
+    {
+      "t_from": 3.01,
+      "t_to": 3.35,
+      "server": "busy"
+    },
+    {
+      "t_from": 3.61,
+      "t_to": 3.97,
+      "server": "busy"
+    },
+    {
+      "t_from": 4.22,
+      "t_to": 4.56,
+      "server": "busy"
+    },
+    {
+      "t_from": 4.81,
+      "t_to": 5.15,
+      "server": "busy"
+    },
+    {
+      "t_from": 5.41,
+      "t_to": 5.75,
+      "server": "busy"
+    },
+    {
+      "t_from": 6.01,
+      "t_to": 6.37,
+      "server": "busy"
+    },
+    {
+      "t_from": 6.63,
+      "t_to": 6.99,
+      "server": "busy"
+    },
+    {
+      "t_from": 7.25,
+      "t_to": 7.59,
+      "server": "busy"
+    },
+    {
+      "t_from": 7.85,
+      "t_to": 8.18,
+      "server": "busy"
+    },
+    {
+      "t_from": 8.44,
+      "t_to": 8.77,
+      "server": "busy"
+    },
+    {
+      "t_from": 9.03,
+      "t_to": 9.38,
+      "server": "busy"
+    },
+    {
+      "t_from": 9.64,
+      "t_to": 9.97,
+      "server": "busy"
+    },
+    {
+      "t_from": 10.22,
+      "t_to": 10.55,
+      "server": "idle"
+    },
+    {
+      "t_from": 10.82,
+      "t_to": 11.15,
+      "server": "idle"
+    },
+    {
+      "t_from": 11.41,
+      "t_to": 11.73,
+      "server": "idle"
+    },
+    {
+      "t_from": 11.99,
+      "t_to": 12.32,
+      "server": "idle"
+    },
+    {
+      "t_from": 12.57,
+      "t_to": 12.89,
+      "server": "idle"
+    },
+    {
+      "t_from": 13.15,
+      "t_to": 13.48,
+      "server": "idle"
+    },
+    {
+      "t_from": 13.74,
+      "t_to": 14.07,
+      "server": "idle"
+    },
+    {
+      "t_from": 14.33,
+      "t_to": 14.67,
+      "server": "idle"
+    },
+    {
+      "t_from": 14.93,
+      "t_to": 15.26,
+      "server": "idle"
+    },
+    {
+      "t_from": 15.52,
+      "t_to": 15.85,
+      "server": "idle"
+    },
+    {
+      "t_from": 16.11,
+      "t_to": 16.44,
+      "server": "idle"
+    },
+    {
+      "t_from": 16.69,
+      "t_to": 17.05,
+      "server": "idle"
+    },
+    {
+      "t_from": 17.31,
+      "t_to": 17.64,
+      "server": "idle"
+    },
+    {
+      "t_from": 17.9,
+      "t_to": 18.24,
+      "server": "idle"
+    },
+    {
+      "t_from": 18.5,
+      "t_to": 18.81,
+      "server": "idle"
+    },
+    {
+      "t_from": 19.07,
+      "t_to": 19.4,
+      "server": "idle"
+    },
+    {
+      "t_from": 19.65,
+      "t_to": 19.98,
+      "server": "idle"
+    },
+    {
+      "t_from": 20.23,
+      "t_to": 20.55,
+      "server": "idle"
+    },
+    {
+      "t_from": 20.81,
+      "t_to": 21.14,
+      "server": "idle"
+    },
+    {
+      "t_from": 21.4,
+      "t_to": 21.73,
+      "server": "idle"
+    },
+    {
+      "t_from": 21.98,
+      "t_to": 22.31,
+      "server": "idle"
+    },
+    {
+      "t_from": 22.57,
+      "t_to": 22.9,
+      "server": "idle"
+    },
+    {
+      "t_from": 23.15,
+      "t_to": 23.48,
+      "server": "idle"
+    },
+    {
+      "t_from": 23.74,
+      "t_to": 24.08,
+      "server": "idle"
+    },
+    {
+      "t_from": 24.34,
+      "t_to": 24.67,
+      "server": "idle"
+    },
+    {
+      "t_from": 24.92,
+      "t_to": 25.25,
+      "server": "idle"
+    },
+    {
+      "t_from": 25.5,
+      "t_to": 25.84,
+      "server": "idle"
+    },
+    {
+      "t_from": 26.1,
+      "t_to": 26.43,
+      "server": "idle"
+    },
+    {
+      "t_from": 26.68,
+      "t_to": 27.02,
+      "server": "idle"
+    },
+    {
+      "t_from": 27.29,
+      "t_to": 27.62,
+      "server": "idle"
+    },
+    {
+      "t_from": 27.88,
+      "t_to": 28.23,
+      "server": "idle"
+    },
+    {
+      "t_from": 28.49,
+      "t_to": 28.82,
+      "server": "idle"
+    },
+    {
+      "t_from": 29.08,
+      "t_to": 29.41,
+      "server": "idle"
+    },
+    {
+      "t_from": 29.67,
+      "t_to": 30.01,
+      "server": "idle"
+    },
+    {
+      "t_from": 30.26,
+      "t_to": 30.59,
+      "server": "idle"
+    },
+    {
+      "t_from": 30.85,
+      "t_to": 31.19,
+      "server": "idle"
+    },
+    {
+      "t_from": 31.44,
+      "t_to": 31.77,
+      "server": "idle"
+    },
+    {
+      "t_from": 32.02,
+      "t_to": 32.36,
+      "server": "idle"
+    },
+    {
+      "t_from": 32.62,
+      "t_to": 32.96,
+      "server": "idle"
+    },
+    {
+      "t_from": 33.22,
+      "t_to": 33.56,
+      "server": "idle"
+    },
+    {
+      "t_from": 33.82,
+      "t_to": 34.27,
+      "server": "busy"
+    }
+  ],
+  "server_log": "gpu_exclusivity_20260927T022647Z.log"
+}

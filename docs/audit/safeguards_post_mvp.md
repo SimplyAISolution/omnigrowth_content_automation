@@ -68,7 +68,23 @@ Each row below says what enforces the safeguard and which test proves it. "NEW" 
 
 **Assumptions:**
 - **(a)** No holder process is frozen (suspended VM, laptop sleep, stop-the-world pause) for longer than lease/3 = 10 s. A frozen process cannot cancel anything; that limit applies to any lease protocol without server-side fencing.
-- **(b)** Cancelling the HTTP request makes the model server stop generating. For LM Studio / llama.cpp this is **UNVERIFIED** per version. The settle period (30 s after any unclean release) is the mitigation. If a server keeps generating longer than that, VRAM contention is possible but the calls stay serialised on our side.
+- **(b) Server-side stop: now measured, and enforced by an idle check.**
+  - **Cancellation** (`scripts/probe_cancellation.py`, `docs/audit/live/cancellation_20260927T022219Z.*`): a long non-streaming generation (our production mode) was cancelled at 4.34 s.
+    - LM Studio logged "Client disconnected. Stopping generation…", then `cancel task` and `slot release … n_tokens = 386`.
+    - `lms ps` reported the model `idle` by 4.69 s.
+    - GPU utilization fell from 93% to 2% within ~1 s.
+    - The same log line warns that a prompt already being processed is finished first.
+  - **Lease loss on the real server** (`tests/live/test_gpu_exclusivity_live.py`, `docs/audit/live/gpu_exclusivity_*.json`): caller A generated through the production router with a real Redis lease; its lease was deleted mid-generation.
+    - A was cancelled with `SLOT_LOST` at 10.05 s, and the server logged the disconnect and stop.
+    - `lms ps` reported idle from 10.55 s, with **zero busy samples** between A's cancel and caller B's start.
+    - B started at 33.98 s, after the 30 s settle **and** a verified-idle check.
+  - **Enforcement.** Holding the lease is not enough to start a call. The router also requires `lms ps --json` to report every loaded model `idle` with `queued == 0` on two consecutive samples (`providers/idle.py`, config `idle_check: lmstudio_cli`, about 0.33 s per probe).
+    - If the server stays busy for longer than `slot_wait_s`, the call fails with MODEL_UNAVAILABLE `SERVER_BUSY`.
+    - If idleness cannot be verified (CLI missing, server unreachable), the call is **blocked** (`IDLENESS_UNVERIFIABLE`). It never starts on an assumption.
+  - **What is and is not claimed:**
+    - Among OmniGrowth callers, a call starts only after the previous one stopped **as reported by the server**.
+    - LM Studio serves `parallel` (4) requests and other applications may use it. A client outside OmniGrowth that starts between our idle check and our request can still overlap. **Non-overlap with non-OmniGrowth clients is not guaranteed.** Setting LM Studio's parallel slots to 1, or giving OmniGrowth a dedicated server, would remove that window.
+  - The idle check uses the host's `lms` CLI. A Docker worker without it is blocked (fail closed) until a host-side check is available. That is a known limitation (§5).
 
 ## 4. Why these budgets
 
@@ -97,27 +113,42 @@ Each row below says what enforces the safeguard and which test proves it. "NEW" 
   - Tested: a child stuck in a 600 s step is killed at the 5 s test budget, and its PID is verified gone.
   - Pasted text (≤ 1 MiB, plain-text parser) still parses in the API process.
 
-### Context budget: how the old 64,000-character cap relates to the model's context
+### Context budget: exact server tokenization (replaces characters ÷ 3)
 
-- The old cap was `max_prompt_chars = 64,000`, input only. At the English average of about 4 characters per token that is about 16k tokens; at a pessimistic 3 characters per token it is about 21k tokens.
-- A request needs room for **input plus output**. The largest output allowance in the prompts is `max_tokens = 12,288` (opportunity agent); the others are 6,144–8,192.
-- The fixed character cap ignored the output allowance, so it could not guarantee that a request fits.
-- **Replaced by:** refuse unless `ceil(input_chars / chars_per_token) + max_tokens <= context_tokens`.
-  - `chars_per_token = 3.0`, which overestimates tokens for English.
-  - `context_tokens = 32,768` for the chat models (`models.yaml`).
-  - The nomic embedding model has `context_tokens = 2,048`, checked per text.
-- **Worked example:** the opportunity prompt may use at most 32,768 − 12,288 = 20,480 input tokens, which is about 61,000 characters. The source excerpt in prompts is capped at 12,000 characters, so real prompts stay well inside the budget.
-- **Operator requirement:** LM Studio loads models with a per-model context length. The check is only truthful if that loaded length is at least `context_tokens` (32,768). Verify with `GET http://127.0.0.1:1234/api/v0/models` and read `loaded_context_length` while the model is loaded. The model advertises 262,144 as its maximum.
-  - **Verified 2026-09-26 (Phase 9 pre-gate):** `qwen/qwen3.5-9b` was loaded with `loaded_context_length` 70,144, which is at least 32,768, so the budget check is truthful for the current LM Studio setup. That larger context also costs VRAM (see the live-run note in ENGINEERING_LOG).
-  - If LM Studio loads a smaller context, lower `context_tokens` in `models.yaml` to match. The check will then refuse oversized prompts instead of letting the server truncate them.
-- **Embeddings for QA:** duplicate detection clips long texts to 2,048 × 3 = 6,144 characters, explicitly, and logs which inputs were clipped. It no longer silently relies on server-side truncation.
+- **Enforcement** (`providers/tokens.py`, `router.check_chat_budget`): LM Studio's own SDK renders the request with the loaded model's **chat template** (system/user markers, the `<think>` prefix) and **tokenizes** it with the model's vocabulary. It also reads the context length the model was **actually loaded with**.
+- A request is refused before it is sent unless:
+
+  prompt tokens (template included) + response-schema tokens + output allowance ≤ min(configured, loaded) context
+
+  - The output allowance is `max_tokens`, or 4,096 when unset.
+  - Schema tokens are counted conservatively: whether a server puts the schema into the prompt varies.
+- **Verified against the server** (`tests/live/test_token_budget_live.py`, `docs/audit/live/token_budget_*.json`). For each input, our count equals LM Studio's own `usage.prompt_tokens` for the same request:
+
+  | Input | Characters | Exact tokens (= server) | Old chars ÷ 3 |
+  |---|---|---|---|
+  | English | 53 | 20 | 18 (under) |
+  | Chinese | 116 | 66 | 39 (under) |
+  | Arabic | 240 | 79 | 80 |
+  | Emoji incl. ZWJ sequences and flags | 222 | 358 | 74 (under ~5×) |
+  | Long URLs | 652 | 359 | 218 (under) |
+  | System + user, mixed scripts, URL | 408 | 215 | 136 (under) |
+
+  The old estimate under-counted in 5 of 6 cases, which is why it no longer enforces anything.
+- **No loading on the counting path:** the counter uses only models that are **already loaded** (`list_loaded`). The SDK's `model()` call would load a missing model onto the GPU outside OmniGrowth's lease and idle check, so it is never used (review B1). If a configured model is not loaded, the call is refused with `MODEL_NOT_LOADED` and the fix is stated: `lms load <model> --context-length <context_tokens>`.
+  - **Operator requirement:** load the chat model with 32,768 context. The embedding model loads just-in-time with a 1-hour TTL in LM Studio. Once it unloads, embeddings are refused until it is loaded again; QA's duplicate check is then skipped and logged (warn-only). Verified 2026-09-27: counting an unloaded model is refused and nothing is loaded.
+- **Approximate counting** remains only for providers configured with `budget_counting: approximate`: unit tests, fixture replay and future remote APIs. Every such result is labelled `counted_by: approximate`, `exact: false`. A provider configured for exact counting **never** falls back to an estimate; if the counter is missing, the call is a configuration error, and if the counter is unreachable, the call is refused (`TOKEN_COUNT_UNAVAILABLE`).
+- **Embeddings:** checked per text with the embedding model's tokenizer (nomic loaded context 2,048). QA clips long texts by exact count: it takes an approximate prefix, then shrinks it until the exact count fits. It logs which inputs were clipped.
+- **Loaded context:** verified 32,768 for `qwen/qwen3.5-9b` after reloading it with `lms load … --context-length 32768` on 2026-09-27. The earlier run had it at 70,144 next to a second model. Because the server-reported loaded value is used whenever it is smaller than the configured one, a smaller load is now enforced automatically.
 
 ## 5. Remaining gaps (explicit)
 
 1. **The parser memory cap is POSIX-only.** Windows has no `RLIMIT_AS`. There, a parse child is bounded by the byte caps, the DTD ban and the hard-kill timeout, but not by a memory ceiling. A Job Object limit would add one; not done.
 2. **PDF decompression uses pypdf's 75 MB per-stream defaults.** Across streams it is bounded only by the page count, the time budget (now a hard kill) and the memory cap on POSIX.
-3. **Characters stand in for tokens.** No tokenizer is loaded; 3 characters per token is pessimistic for English, but could be optimistic for dense code or some scripts.
-4. **The GPU lease assumes no frozen holder and a server that stops generating on disconnect** (§3). Both are documented but not enforceable from the client.
+3. **Exact counting depends on LM Studio's SDK** (a websocket on the same server). Other servers would need their own counter; until then they use the labelled approximate estimate, which under-counts for emoji, CJK and URLs (§4).
+4. **GPU exclusivity has limits** (§3):
+   - A holder frozen for longer than lease/3 cannot self-cancel.
+   - Non-OmniGrowth clients of LM Studio are outside the lease; only the idle check sees them, and that check has a small race window.
+   - A Docker worker without the `lms` CLI is blocked until a host-side idle check exists.
 5. **BALANCED / QUALITY_FIRST campaigns may use a remote model once a cloud provider is configured.** This is an explicit opt-in and is logged, but no audit event is written. It is owned by Phase 13.
 6. **The backlog limit counts jobs, not GPU minutes.**
 7. **Redis is a dependency of every model call in workers.** Redis down means QUEUE_FAILURE before the call, or SLOT_LOST during it.

@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from omnigrowth.core.enums import ModelRole, PrivacyClass, RoutingProfile
 from omnigrowth.core.errors import ErrorCode, OmniGrowthError
 from omnigrowth.providers.base import EmbeddingProvider
-from omnigrowth.providers.router import ModelRouter
+from omnigrowth.providers.router import ModelRouter, ResolvedModel
 from omnigrowth.providers.structured import FALLBACK_CODES
 
 log = logging.getLogger(__name__)
@@ -52,16 +52,15 @@ async def embed_texts(
         if not isinstance(provider, EmbeddingProvider):
             continue
         inputs: list[str] = list(texts)
-        clipped: tuple[int, ...] = ()
-        if clip:
-            context, chars_per_token = router.context_budget(model)
-            budget = int(context * chars_per_token)
-            clipped = tuple(i for i, t in enumerate(texts) if len(t) > budget)
-            inputs = [t[:budget] for t in texts]
+        clipped: list[int] = []
         try:
-            for text in inputs:
-                router.check_input_size(model, [text])
+            for i, text in enumerate(inputs):
+                inputs[i], was_clipped = await _fit(router, model, text, clip=clip)
+                if was_clipped:
+                    clipped.append(i)
         except OmniGrowthError as exc:  # too large for this model: a later one may accept it
+            if exc.code is not ErrorCode.VALIDATION_FAILURE:
+                raise
             last_error = exc
             continue
         try:
@@ -77,8 +76,45 @@ async def embed_texts(
             last_error = exc
             continue
         return Embeddings(
-            provider=model.provider_name, model=model.model, vectors=vectors, clipped=clipped
+            provider=model.provider_name,
+            model=model.model,
+            vectors=vectors,
+            clipped=tuple(clipped),
         )
     raise last_error or OmniGrowthError(
         ErrorCode.MODEL_UNAVAILABLE, "no embedding-capable provider configured"
+    )
+
+
+MAX_CLIP_ROUNDS = 6
+
+
+async def _fit(
+    router: ModelRouter, model: ResolvedModel, text: str, *, clip: bool
+) -> tuple[str, bool]:
+    """Return ``text`` if its exact token count fits the context, else (with ``clip``) the
+    longest prefix found that fits: start from the approximate character budget, then
+    shrink by the measured tokens-per-character ratio until an EXACT count fits."""
+    try:
+        await router.check_text_budget(model, text)
+        return text, False
+    except OmniGrowthError as exc:
+        if not clip or exc.code is not ErrorCode.VALIDATION_FAILURE:
+            raise
+        budget = int(exc.details["max"])
+        tokens = int(exc.details["prompt_tokens"])
+    candidate = text[: min(len(text), router.approximate_char_budget(model))]
+    for _ in range(MAX_CLIP_ROUNDS):
+        try:
+            await router.check_text_budget(model, candidate)
+            return candidate, True
+        except OmniGrowthError as exc:
+            if exc.code is not ErrorCode.VALIDATION_FAILURE:
+                raise
+            tokens = int(exc.details["prompt_tokens"])
+            candidate = candidate[: max(1, int(len(candidate) * budget / tokens * 0.95))]
+    raise OmniGrowthError(
+        ErrorCode.VALIDATION_FAILURE,
+        "could not clip the text to the embedding context",
+        details={"limit": "context_tokens", "max": budget},
     )

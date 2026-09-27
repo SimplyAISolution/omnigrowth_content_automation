@@ -27,6 +27,8 @@ providers:
     # LM Studio must load chat models with a context length >= this value (Developer tab ->
     # model -> Context Length); check with GET /api/v0/models (loaded_context_length).
     context_tokens: 32768
+    budget_counting: lmstudio     # exact counts: LM Studio's chat template + tokenizer
+    idle_check: lmstudio_cli      # a call starts only when `lms ps` shows every model idle
     slot_lease_s: 30
   cloud:
     # Enabled only when OMNIGROWTH_CLOUD_API_KEY is set AND base_url is filled in.

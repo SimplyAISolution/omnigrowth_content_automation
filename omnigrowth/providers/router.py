@@ -12,18 +12,20 @@ and in workers a cross-process Redis slot per concurrency group (providers/slots
 from __future__ import annotations
 
 import asyncio
-import math
 import weakref
-from collections.abc import AsyncIterator, Iterable
+from collections.abc import AsyncIterator, Sequence
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from decimal import Decimal
+from typing import Any
 
 from omnigrowth.core.enums import ModelLocality, ModelRole, PrivacyClass, RoutingProfile
 from omnigrowth.core.errors import ErrorCode, OmniGrowthError
 from omnigrowth.providers.base import ChatProvider
 from omnigrowth.providers.config import ModelCandidate, ModelsConfig
+from omnigrowth.providers.idle import IdleProbe
 from omnigrowth.providers.slots import SlotLimiter
+from omnigrowth.providers.tokens import ApproximateTokenCounter, TokenCount, TokenCounter
 
 # The total deadline of one call: the provider timeout plus this margin. httpx timeouts are
 # per phase (connect/read/write), so without a total deadline a trickling response could hold
@@ -62,9 +64,15 @@ class ModelRouter:
         providers: dict[str, ChatProvider],
         *,
         slots: SlotLimiter | None = None,
+        counters: dict[str, TokenCounter] | None = None,
+        idle_probes: dict[str, IdleProbe] | None = None,
     ) -> None:
         self.config = config
         self.providers = providers
+        # Token counters per provider. Missing ones fall back to the APPROXIMATE estimate,
+        # but only for providers whose config says ``budget_counting: approximate``.
+        self.counters = dict(counters or {})
+        self.idle_probes = dict(idle_probes or {})
         # Cross-process slots (Redis) in workers; None in unit tests (in-process only).
         self.slots = slots
         # Semaphores are created lazily per running event loop: RQ jobs each run their own
@@ -146,33 +154,59 @@ class ModelRouter:
         provider = self.config.providers[model.provider_name]
         async with self.semaphore(model):
             if self.slots is None:
+                await self._verify_idle(model)  # a configured fail-closed check always applies
                 async with _deadline(provider.timeout_s, model):
                     yield
                 return
             key, limit = self._concurrency_key(model.provider_name)
-            async with (
-                self.slots.slot(
-                    key, limit, lease_s=provider.slot_lease_s, max_wait_s=provider.slot_wait_s
-                ),
-                _deadline(provider.timeout_s, model),
+            async with self.slots.slot(
+                key, limit, lease_s=provider.slot_lease_s, max_wait_s=provider.slot_wait_s
             ):
-                yield
+                # Holding the lease is not enough: the server must also report itself idle
+                # (a cancelled predecessor finishes prompt processing first; other clients
+                # of the server are outside the lease). Unverifiable -> blocked.
+                await self._verify_idle(model)
+                async with _deadline(provider.timeout_s, model):
+                    yield
 
-    def context_budget(self, model: ResolvedModel) -> tuple[int, float]:
+    async def _verify_idle(self, model: ResolvedModel) -> None:
         provider = self.config.providers[model.provider_name]
-        return model.context_tokens or provider.context_tokens, provider.chars_per_token
+        if provider.idle_check == "none":
+            return
+        probe = self.idle_probes.get(model.provider_name)
+        if probe is None:
+            raise OmniGrowthError(
+                ErrorCode.CONFIGURATION_ERROR,
+                "provider requires a server idle check but none was built",
+                details={"provider": model.provider_name},
+            )
+        await probe.wait_idle(timeout_s=provider.slot_wait_s)
 
-    def check_input_size(
-        self, model: ResolvedModel, texts: Iterable[str], *, max_output_tokens: int | None = None
-    ) -> None:
-        """Refuse a request whose pessimistic token estimate plus its output allowance does not
-        fit the served context window (instead of silent server-side truncation)."""
-        context, chars_per_token = self.context_budget(model)
-        chars = sum(len(t) for t in texts)
-        input_tokens = math.ceil(chars / chars_per_token)
+    def _counter(self, model: ResolvedModel) -> TokenCounter:
+        provider = self.config.providers[model.provider_name]
+        counter = self.counters.get(model.provider_name)
+        if counter is not None:
+            return counter
+        if provider.budget_counting == "lmstudio":
+            raise OmniGrowthError(
+                ErrorCode.CONFIGURATION_ERROR,
+                "provider requires the LM Studio token counter but none was built",
+                details={"provider": model.provider_name},
+            )
+        counter = ApproximateTokenCounter(provider.chars_per_token)
+        self.counters[model.provider_name] = counter
+        return counter
+
+    def _check(
+        self, model: ResolvedModel, count: TokenCount, max_output_tokens: int | None
+    ) -> TokenCount:
+        provider = self.config.providers[model.provider_name]
+        configured = model.context_tokens or provider.context_tokens
+        # The server's LOADED context wins when it is smaller than the configured one.
+        context = min(configured, count.loaded_context or configured)
         if max_output_tokens is None and model.role is not ModelRole.EMBEDDING_LOCAL:
-            max_output_tokens = self.config.providers[model.provider_name].default_output_tokens
-        needed = input_tokens + (max_output_tokens or 0)
+            max_output_tokens = provider.default_output_tokens
+        needed = count.total + (max_output_tokens or 0)
         if needed > context:
             raise OmniGrowthError(
                 ErrorCode.VALIDATION_FAILURE,
@@ -180,17 +214,47 @@ class ModelRouter:
                 details={
                     "limit": "context_tokens",
                     "max": context,
-                    "estimated_input_tokens": input_tokens,
+                    "configured_context": configured,
+                    "loaded_context": count.loaded_context,
+                    "prompt_tokens": count.prompt_tokens,
+                    "schema_tokens": count.schema_tokens,
                     "max_output_tokens": max_output_tokens or 0,
-                    "input_chars": chars,
+                    "counted_by": count.counted_by,
+                    "exact": count.exact,
                 },
             )
+        return count
+
+    async def check_chat_budget(
+        self,
+        model: ResolvedModel,
+        messages: Sequence[dict[str, Any]],
+        response_format: Any | None,
+        max_output_tokens: int | None,
+    ) -> TokenCount:
+        """Refuse a request unless template-rendered prompt tokens + schema tokens + output
+        allowance fit the context (exact with the server tokenizer where configured)."""
+        count = await self._counter(model).count_chat(model.model, messages, response_format)
+        return self._check(model, count, max_output_tokens)
+
+    async def check_text_budget(self, model: ResolvedModel, text: str) -> TokenCount:
+        count = await self._counter(model).count_text(
+            model.model, text, embedding=model.role is ModelRole.EMBEDDING_LOCAL
+        )
+        return self._check(model, count, None)
+
+    def approximate_char_budget(self, model: ResolvedModel) -> int:
+        """APPROXIMATE character budget for clipping (verified afterwards by an exact count)."""
+        provider = self.config.providers[model.provider_name]
+        return int((model.context_tokens or provider.context_tokens) * provider.chars_per_token)
 
     async def aclose(self) -> None:
         for provider in self.providers.values():
             await provider.aclose()
         if self.slots is not None:
             await self.slots.aclose()
+        for counter in self.counters.values():
+            await counter.aclose()
 
 
 @asynccontextmanager

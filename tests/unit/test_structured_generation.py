@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import math
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
@@ -567,10 +568,13 @@ async def test_oversized_prompt_is_refused_before_any_model_call() -> None:
         await _run_prompt(100_000, None)  # ceil(100000/3) = 33334 > 32768
     assert info.value.code is ErrorCode.VALIDATION_FAILURE
     assert info.value.details["limit"] == "context_tokens"
-    # 33,334 for the message text plus the response_format schema, which the server also
-    # tokenizes (counted since the Phase 9 review); max_tokens unset -> default 4,096 output.
-    assert info.value.details["estimated_input_tokens"] > 33_334
-    assert info.value.details["max_output_tokens"] == 4_096
+    # This synthetic provider has no tokenizer: the count is the APPROXIMATE estimate and is
+    # labelled so (33,334 for the text + the response_format schema, counted separately).
+    assert info.value.details["counted_by"] == "approximate"
+    assert info.value.details["exact"] is False
+    assert info.value.details["prompt_tokens"] == 33_334
+    assert info.value.details["schema_tokens"] > 0
+    assert info.value.details["max_output_tokens"] == 4_096  # max_tokens unset -> default
 
 
 async def test_context_budget_counts_the_output_allowance() -> None:
@@ -705,3 +709,165 @@ async def test_embedding_budget_is_per_text_and_clipping_is_explicit() -> None:
     clipped = await embed_texts(router, [short, long_text], clip=True)
     assert clipped.clipped == (1,)
     assert [len(t) for t in embedder.inputs[-1]] == [6_000, 6_144]
+
+
+# ------------------------------------------------------------------ exact token counting
+class ExactCounter:
+    """Stands in for the LM Studio SDK counter: fixed counts and a loaded context."""
+
+    def __init__(self, prompt: int, schema: int, loaded: int | None) -> None:
+        from omnigrowth.providers.tokens import TokenCount
+
+        self.count = TokenCount(prompt, schema, True, "lmstudio-sdk", loaded)
+        self.seen: list[object] = []
+
+    async def count_chat(self, model: str, messages: object, response_format: object) -> object:
+        self.seen.append(messages)
+        return self.count
+
+    async def count_text(self, model: str, text: str, *, embedding: bool) -> object:
+        return self.count
+
+    async def aclose(self) -> None:
+        return None
+
+
+def _exact_config(context: int = 32_768) -> ModelsConfig:
+    return ModelsConfig.model_validate(
+        {
+            "presets": {"p": {"base_url_host": "http://h/v1", "base_url_docker": "http://d/v1"}},
+            "providers": {
+                "primary": {
+                    "locality": "LOCAL",
+                    "preset": "p",
+                    "context_tokens": context,
+                    "budget_counting": "lmstudio",
+                }
+            },
+            "roles": {"CHEAP_LOCAL": [{"provider": "primary", "model": "m"}]},
+        }
+    )
+
+
+async def _run_exact(counter: ExactCounter, max_tokens: int | None) -> FakeProvider:
+    primary = FakeProvider("primary", script=[ok()])
+    router = ModelRouter(_exact_config(), {"primary": primary}, counters={"primary": counter})  # type: ignore[dict-item]
+    await generate_structured(
+        Answer,
+        StubPrompt(max_tokens=max_tokens),
+        router=router,
+        context=context(),
+        recorder=InMemoryRecorder(),
+        capabilities=CapabilityCache(),
+    )
+    return primary
+
+
+async def test_exact_counts_decide_and_the_loaded_context_wins() -> None:
+    # 20,000 prompt + 500 schema + 8,000 output = 28,500 fits 32,768 ...
+    assert len((await _run_exact(ExactCounter(20_000, 500, 32_768), 8_000)).requests) == 1
+    # ... but not a server that LOADED the model with only 16,384 tokens.
+    with pytest.raises(OmniGrowthError) as info:
+        await _run_exact(ExactCounter(20_000, 500, 16_384), 8_000)
+    details = info.value.details
+    assert details["max"] == 16_384 and details["configured_context"] == 32_768
+    assert details["loaded_context"] == 16_384
+    assert details["counted_by"] == "lmstudio-sdk" and details["exact"] is True
+    assert (details["prompt_tokens"], details["schema_tokens"]) == (20_000, 500)
+
+
+async def test_a_provider_configured_for_exact_counting_never_falls_back_to_estimates() -> None:
+    primary = FakeProvider("primary", script=[ok()])
+    router = ModelRouter(_exact_config(), {"primary": primary})  # no counter built
+    with pytest.raises(OmniGrowthError) as info:
+        await generate_structured(
+            Answer,
+            StubPrompt(),
+            router=router,
+            context=context(),
+            recorder=InMemoryRecorder(),
+            capabilities=CapabilityCache(),
+        )
+    assert info.value.code is ErrorCode.CONFIGURATION_ERROR
+    assert primary.requests == []
+
+
+async def test_the_counter_sees_the_request_as_built() -> None:
+    counter = ExactCounter(100, 10, 32_768)
+    await _run_exact(counter, 1_000)
+    messages = counter.seen[0]
+    assert isinstance(messages, list) and messages  # the rendered request's messages
+
+
+async def test_embedding_clip_converges_on_exact_counts() -> None:
+    """Regression (review #11): the clip loop shrinks by the MEASURED token ratio until an
+    exact count fits (here 1 token per 2 characters, far denser than the 3-char estimate)."""
+    from omnigrowth.providers.embeddings import embed_texts
+    from omnigrowth.providers.tokens import TokenCount
+
+    class DenseCounter:
+        async def count_chat(self, model: str, messages: object, response_format: object) -> object:
+            raise AssertionError("not used")  # pragma: no cover
+
+        async def count_text(self, model: str, text: str, *, embedding: bool) -> TokenCount:
+            return TokenCount(math.ceil(len(text) / 2), 0, True, "lmstudio-sdk", 2_048)
+
+        async def aclose(self) -> None:
+            return None
+
+    class Embedder(FakeProvider):
+        def __init__(self) -> None:
+            super().__init__("primary", script=[])
+            self.inputs: list[list[str]] = []
+
+        async def embed(self, model: str, texts: list[str]) -> list[list[float]]:
+            self.inputs.append(texts)
+            return [[1.0] for _ in texts]
+
+    cfg = ModelsConfig.model_validate(
+        {
+            "presets": {"p": {"base_url_host": "http://h/v1", "base_url_docker": "http://d/v1"}},
+            "providers": {
+                "primary": {"locality": "LOCAL", "preset": "p", "budget_counting": "lmstudio"}
+            },
+            "roles": {
+                "EMBEDDING_LOCAL": [{"provider": "primary", "model": "e", "context_tokens": 2048}]
+            },
+        }
+    )
+    embedder = Embedder()
+    router = ModelRouter(cfg, {"primary": embedder}, counters={"primary": DenseCounter()})  # type: ignore[dict-item]
+    result = await embed_texts(router, ["x" * 20_000], clip=True)
+    assert result.clipped == (0,)
+    (text,) = embedder.inputs[-1]
+    assert math.ceil(len(text) / 2) <= 2_048  # fits by the exact count
+    assert len(text) > 3_000  # but not clipped far below the budget
+
+
+async def test_token_counter_never_loads_a_model() -> None:
+    """Regression (review B1): an unloaded model is refused, never loaded by counting."""
+    from omnigrowth.providers.tokens import LMStudioTokenCounter
+
+    class Session:
+        def __init__(self) -> None:
+            self.loaded_calls = 0
+
+        async def list_loaded(self) -> list[object]:
+            self.loaded_calls += 1
+            return []
+
+        async def model(self, *args: object, **kwargs: object) -> object:
+            raise AssertionError("model() may load onto the GPU and must never be called")
+
+    class Client:
+        llm = Session()
+        embedding = Session()
+
+    counter = LMStudioTokenCounter("http://127.0.0.1:1234/v1")
+    counter._client = Client()
+    with pytest.raises(OmniGrowthError) as info:
+        await counter.count_chat("qwen/qwen3.5-9b", [{"role": "user", "content": "hi"}], None)
+    assert info.value.details["reason"] == "MODEL_NOT_LOADED"
+    with pytest.raises(OmniGrowthError):
+        await counter.count_text("nomic", "hi", embedding=True)
+    assert Client.llm.loaded_calls == 1 and Client.embedding.loaded_calls == 1

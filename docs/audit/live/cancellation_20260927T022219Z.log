@@ -1,0 +1,1414 @@
+Streaming logs from LM Studio
+
+[2026-09-26 22:22:21][DEBUG] Received request: POST to /v1/chat/completions with body [Sensitive]
+[2026-09-26 22:22:21][INFO][qwen/qwen3.5-9b] Running chat completion on conversation with 1 messages.
+[2026-09-26 22:22:21][DEBUG] 7.54.190.303 I slot get_availabl: id  0 | task -1 | selected slot by LRU, t_last = 396629784
+[2026-09-26 22:22:21][DEBUG] 7.54.190.598 I slot launch_slot_: id  0 | task 19233 | processing task, is_child = 0
+[2026-09-26 22:22:21][INFO][qwen/qwen3.5-9b] Prompt processing progress: 0.0%
+[2026-09-26 22:22:21][INFO][qwen/qwen3.5-9b] Prompt processing progress: 87.1%
+[2026-09-26 22:22:21][INFO][qwen/qwen3.5-9b] Prompt processing progress: 100.0%
+[2026-09-26 22:22:21][INFO][qwen/qwen3.5-9b] Accumulated 1 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:21][INFO][qwen/qwen3.5-9b] Accumulated 2 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:21][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:21][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:21][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:21][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:21][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getLoadConfig] Getting load config stack for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:21][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:21][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:21][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:21][INFO][qwen/qwen3.5-9b] Accumulated 3 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:21][INFO][qwen/qwen3.5-9b] Accumulated 4 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:21][INFO][qwen/qwen3.5-9b] Accumulated 5 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:21][INFO][qwen/qwen3.5-9b] Accumulated 6 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:21][INFO][qwen/qwen3.5-9b] Accumulated 7 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:21][INFO][qwen/qwen3.5-9b] Accumulated 8 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:21][INFO][qwen/qwen3.5-9b] Accumulated 9 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:21][INFO][qwen/qwen3.5-9b] Accumulated 10 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:21][INFO][qwen/qwen3.5-9b] Accumulated 11 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:21][INFO][qwen/qwen3.5-9b] Accumulated 12 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:21][INFO][qwen/qwen3.5-9b] Accumulated 13 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:21][INFO][qwen/qwen3.5-9b] Accumulated 14 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:21][INFO][qwen/qwen3.5-9b] Accumulated 15 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:21][INFO][qwen/qwen3.5-9b] Accumulated 16 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:21][INFO][qwen/qwen3.5-9b] Accumulated 17 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:21][INFO][qwen/qwen3.5-9b] Accumulated 18 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:21][INFO][qwen/qwen3.5-9b] Accumulated 19 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:21][INFO][qwen/qwen3.5-9b] Accumulated 20 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:21][INFO][qwen/qwen3.5-9b] Accumulated 21 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:21][INFO][qwen/qwen3.5-9b] Accumulated 22 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:21][INFO][qwen/qwen3.5-9b] Accumulated 23 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:21][INFO][qwen/qwen3.5-9b] Accumulated 24 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:21][INFO][qwen/qwen3.5-9b] Accumulated 25 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:21][INFO][qwen/qwen3.5-9b] Accumulated 26 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:21][INFO][qwen/qwen3.5-9b] Accumulated 27 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:21][INFO][qwen/qwen3.5-9b] Accumulated 28 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:21][INFO][qwen/qwen3.5-9b] Accumulated 29 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:21][INFO][qwen/qwen3.5-9b] Accumulated 30 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:21][INFO][qwen/qwen3.5-9b] Accumulated 31 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:21][INFO][qwen/qwen3.5-9b] Accumulated 32 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:21][INFO][qwen/qwen3.5-9b] Accumulated 33 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 34 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 35 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 36 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 37 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 38 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 39 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 40 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 41 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 42 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 43 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 44 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 45 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 46 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 47 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 48 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 49 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 50 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 51 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 52 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 53 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 54 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 55 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:22][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:22][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:22][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:22][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getLoadConfig] Getting load config stack for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:22][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:22][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:22][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 56 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 57 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 58 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 59 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 60 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 61 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 62 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 63 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 64 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 65 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 66 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 67 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 68 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 69 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 70 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 71 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 72 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 73 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 74 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 75 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 76 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 77 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 78 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 79 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 80 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 81 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 82 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 83 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 84 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 85 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 86 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 87 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 88 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 89 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 90 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 91 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 92 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 93 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 94 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 95 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 96 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 97 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 98 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 99 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 100 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 101 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 102 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 103 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 104 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 105 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 106 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 107 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:22][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 108 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:22][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:22][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:22][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getLoadConfig] Getting load config stack for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:22][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:22][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 109 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 110 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 111 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 112 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 113 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 114 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 115 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 116 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 117 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 118 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 119 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 120 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 121 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:22][INFO][qwen/qwen3.5-9b] Accumulated 122 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 123 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 124 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 125 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 126 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 127 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 128 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 129 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 130 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 131 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 132 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 133 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 134 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 135 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 136 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 137 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 138 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 139 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 140 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 141 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 142 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 143 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 144 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 145 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 146 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 147 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 148 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 149 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 150 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 151 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 152 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 153 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 154 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 155 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 156 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 157 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 158 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 159 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 160 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 161 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:23][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:23][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:23][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:23][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getLoadConfig] Getting load config stack for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:23][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:23][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:23][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 162 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 163 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 164 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 165 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 166 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 167 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 168 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 169 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 170 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 171 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 172 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 173 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 174 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 175 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 176 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 177 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 178 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 179 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 180 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 181 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 182 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 183 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 184 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 185 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 186 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 187 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 188 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 189 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 190 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 191 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 192 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 193 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 194 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 195 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 196 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 197 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 198 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 199 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 200 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 201 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 202 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 203 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 204 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 205 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 206 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 207 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 208 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 209 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 210 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 211 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:23][INFO][qwen/qwen3.5-9b] Accumulated 212 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 213 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:24][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:24][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:24][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:24][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:24][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getLoadConfig] Getting load config stack for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 214 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:24][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 215 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 216 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 217 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 218 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 219 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 220 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 221 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 222 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 223 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 224 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 225 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 226 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 227 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 228 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 229 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 230 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 231 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 232 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 233 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 234 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 235 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 236 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 237 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 238 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 239 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 240 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 241 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 242 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 243 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 244 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 245 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 246 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 247 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 248 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 249 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 250 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 251 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 252 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 253 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 254 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 255 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 256 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 257 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 258 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 259 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 260 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 261 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 262 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 263 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 264 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:24][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:24][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:24][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:24][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getLoadConfig] Getting load config stack for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 265 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:24][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:24][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 266 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 267 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 268 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][DEBUG] 7.57.500.580 I slot print_timing: id  0 | task 19233 | n_gen =    269, tg =  89.21 t/s, tg_3s =  89.54 t/s
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 269 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 270 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 271 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 272 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 273 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 274 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 275 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 276 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 277 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 278 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 279 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 280 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 281 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 282 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 283 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 284 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 285 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 286 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 287 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 288 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 289 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 290 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 291 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 292 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 293 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 294 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 295 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 296 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 297 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 298 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 299 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 300 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:24][INFO][qwen/qwen3.5-9b] Accumulated 301 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 302 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 303 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 304 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 305 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 306 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 307 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 308 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 309 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 310 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 311 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 312 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 313 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 314 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 315 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 316 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 317 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:25][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:25][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:25][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:25][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:25][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getLoadConfig] Getting load config stack for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:25][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:25][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 318 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 319 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 320 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 321 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 322 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 323 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 324 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 325 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 326 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 327 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 328 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 329 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 330 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 331 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 332 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 333 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 334 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 335 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 336 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 337 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 338 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 339 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 340 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 341 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 342 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 343 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 344 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 345 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 346 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 347 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 348 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 349 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 350 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 351 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 352 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 353 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 354 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 355 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 356 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 357 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 358 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 359 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 360 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 361 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 362 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 363 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 364 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 365 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 366 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 367 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 368 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 369 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 370 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:25][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:25][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:25][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:25][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:25][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getLoadConfig] Getting load config stack for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:25][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:25][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 371 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 372 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 373 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 374 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 375 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 376 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 377 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 378 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 379 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 380 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 381 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 382 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 383 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 384 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 385 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 386 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 387 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 388 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 389 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 390 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:25][INFO][qwen/qwen3.5-9b] Accumulated 391 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:26][INFO][qwen/qwen3.5-9b] Accumulated 392 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:26][INFO][qwen/qwen3.5-9b] Accumulated 393 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:26][INFO][qwen/qwen3.5-9b] Accumulated 394 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:26][INFO][qwen/qwen3.5-9b] Accumulated 395 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:26][INFO][qwen/qwen3.5-9b] Accumulated 396 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:26][INFO][qwen/qwen3.5-9b] Accumulated 397 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:26][INFO][qwen/qwen3.5-9b] Accumulated 398 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:26][INFO][qwen/qwen3.5-9b] Accumulated 399 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:26][DEBUG] 7.58.957.012 I slot print_timing: id  0 | task 19233 | prompt eval time =     256.60 ms /    31 tokens (    8.28 ms per token,   120.81 tokens per second)
+7.58.957.021 I slot print_timing: id  0 | task 19233 |        eval time =    4460.71 ms /   400 tokens (   11.18 ms per token,    89.45 tokens per second)
+7.58.957.022 I slot print_timing: id  0 | task 19233 |       total time =    4717.31 ms /   431 tokens
+7.58.957.023 I slot print_timing: id  0 | task 19233 |    graphs reused =      19507
+7.58.957.039 I slot      release: id  0 | task 19233 | stop processing: n_tokens = 430, truncated = 0
+[2026-09-26 22:22:26][INFO][qwen/qwen3.5-9b] Accumulated 400 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:26][INFO][qwen/qwen3.5-9b] Model generated tool calls: [Sensitive]
+[2026-09-26 22:22:26][INFO][qwen/qwen3.5-9b] Generated prediction: [Sensitive]
+[2026-09-26 22:22:26][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:26][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:26][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:26][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:26][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:26][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getLoadConfig] Getting load config stack for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:26][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:26][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:26][DEBUG] Received request: GET to /v1/models
+[2026-09-26 22:22:26][INFO] Returning {
+  "data": [
+    {
+      "id": "qwen/qwen3.5-9b",
+      "object": "model",
+      "owned_by": "organization_owner"
+    },
+    {
+      "id": "text-embedding-nomic-embed-text-v1.5",
+      "object": "model",
+      "owned_by": "organization_owner"
+    },
+    {
+      "id": "google/gemma-4-12b-qat",
+      "object": "model",
+      "owned_by": "organization_owner"
+    },
+    {
+      "id": "qwen3.5-4b-uncensored-hauhaucs-aggressive",
+      "object": "model",
+      "owned_by": "organization_owner"
+    },
+    {
+      "id": "prism-ml/bonsai-27b",
+      "object": "model",
+      "owned_by": "organization_owner"
+    },
+    {
+      "id": "google/gemma-4-e4b",
+      "object": "model",
+      "owned_by": "organization_owner"
+    },
+    {
+      "id": "qwen3.5-9b-uncensored-hauhaucs-aggressive",
+      "object": "model",
+      "owned_by": "organization_owner"
+    },
+    {
+      "id": "zai-org/glm-4.6v-flash",
+      "object": "model",
+      "owned_by": "organization_owner"
+    },
+    {
+      "id": "qwen/qwen3-4b-thinking-2507",
+      "object": "model",
+      "owned_by": "organization_owner"
+    },
+    {
+      "id": "liquid/lfm2-1.2b",
+      "object": "model",
+      "owned_by": "organization_owner"
+    },
+    {
+      "id": "deepseek/deepseek-r1-0528-qwen3-8b",
+      "object": "model",
+      "owned_by": "organization_owner"
+    }
+  ],
+  "object": "list"
+}
+[2026-09-26 22:22:26][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:26][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:26][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:26][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:26][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:26][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getLoadConfig] Getting load config stack for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:26][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:26][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:27][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:27][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:27][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:27][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:27][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:27][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getLoadConfig] Getting load config stack for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:27][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:27][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:28][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:28][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:28][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:28][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:28][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getLoadConfig] Getting load config stack for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:28][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:28][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:28][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:28][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:28][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:28][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:28][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:28][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:28][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getLoadConfig] Getting load config stack for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:28][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:28][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:29][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:29][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:29][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:29][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:29][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:29][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getLoadConfig] Getting load config stack for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:29][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:29][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:29][DEBUG] Received request: POST to /v1/chat/completions with body [Sensitive]
+[2026-09-26 22:22:29][INFO][qwen/qwen3.5-9b] Running chat completion on conversation with 1 messages.
+[2026-09-26 22:22:29][DEBUG] 8.02.713.505 I slot get_availabl: id  0 | task -1 | selected slot by LCP similarity, f_sim_best = 1.000 (> 0.100 thold), f_keep = 0.072
+[2026-09-26 22:22:29][DEBUG] 8.02.728.107 I slot launch_slot_: id  0 | task 19635 | processing task, is_child = 0
+[2026-09-26 22:22:29][INFO][qwen/qwen3.5-9b] Prompt processing progress: 0.0%
+[2026-09-26 22:22:29][INFO][qwen/qwen3.5-9b] Prompt processing progress: 100.0%
+[2026-09-26 22:22:29][INFO][qwen/qwen3.5-9b] Accumulated 1 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:29][INFO][qwen/qwen3.5-9b] Accumulated 2 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:29][INFO][qwen/qwen3.5-9b] Accumulated 3 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:29][INFO][qwen/qwen3.5-9b] Accumulated 4 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:29][INFO][qwen/qwen3.5-9b] Accumulated 5 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:29][INFO][qwen/qwen3.5-9b] Accumulated 6 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:29][INFO][qwen/qwen3.5-9b] Accumulated 7 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:29][INFO][qwen/qwen3.5-9b] Accumulated 8 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 9 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 10 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 11 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 12 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 13 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 14 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 15 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 16 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 17 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 18 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 19 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 20 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 21 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 22 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:30][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:30][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:30][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:30][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:30][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getLoadConfig] Getting load config stack for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:30][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:30][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 23 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 24 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 25 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 26 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 27 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 28 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 29 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 30 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 31 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 32 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 33 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 34 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 35 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 36 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 37 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 38 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 39 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 40 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 41 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 42 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 43 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 44 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 45 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 46 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 47 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 48 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 49 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 50 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 51 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 52 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 53 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 54 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 55 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 56 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 57 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 58 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 59 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 60 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 61 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 62 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 63 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 64 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 65 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 66 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 67 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 68 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 69 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 70 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 71 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 72 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 73 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 74 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:30][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:30][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:30][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:30][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getLoadConfig] Getting load config stack for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:30][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:30][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:30][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 75 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 76 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 77 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 78 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 79 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 80 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 81 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 82 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 83 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 84 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 85 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 86 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 87 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 88 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 89 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 90 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 91 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 92 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 93 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 94 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 95 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 96 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 97 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:30][INFO][qwen/qwen3.5-9b] Accumulated 98 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 99 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 100 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 101 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 102 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 103 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 104 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 105 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 106 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 107 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 108 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 109 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 110 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 111 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 112 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 113 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 114 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 115 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 116 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 117 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 118 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 119 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 120 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 121 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 122 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 123 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 124 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 125 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 126 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:31][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:31][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:31][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:31][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:31][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getLoadConfig] Getting load config stack for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:31][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 127 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 128 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 129 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 130 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 131 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 132 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 133 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 134 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 135 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 136 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 137 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 138 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 139 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 140 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 141 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 142 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 143 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 144 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 145 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 146 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 147 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 148 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 149 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 150 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 151 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 152 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 153 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 154 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 155 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 156 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 157 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 158 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 159 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 160 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 161 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 162 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 163 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 164 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 165 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 166 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 167 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 168 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 169 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 170 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 171 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 172 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 173 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 174 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 175 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 176 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 177 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 178 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:31][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:31][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:31][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:31][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getLoadConfig] Getting load config stack for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:31][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:31][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 179 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 180 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 181 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 182 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 183 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 184 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 185 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 186 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 187 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:31][INFO][qwen/qwen3.5-9b] Accumulated 188 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 189 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 190 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 191 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 192 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 193 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 194 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 195 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 196 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 197 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 198 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 199 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 200 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 201 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 202 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 203 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 204 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 205 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 206 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 207 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 208 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 209 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 210 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 211 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 212 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 213 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 214 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 215 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 216 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 217 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 218 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 219 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 220 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 221 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 222 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 223 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 224 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 225 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 226 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 227 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 228 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:32][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:32][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:32][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:32][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:32][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getLoadConfig] Getting load config stack for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:32][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 229 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 230 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 231 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 232 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 233 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 234 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 235 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 236 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 237 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 238 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 239 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 240 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 241 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 242 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 243 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 244 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 245 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 246 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 247 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 248 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 249 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 250 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 251 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 252 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 253 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 254 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 255 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 256 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 257 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 258 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 259 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 260 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 261 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 262 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 263 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 264 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 265 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 266 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 267 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 268 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][DEBUG] 8.05.768.100 I slot print_timing: id  0 | task 19635 | n_gen =    269, tg =  89.31 t/s, tg_3s =  89.64 t/s
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 269 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 270 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 271 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 272 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 273 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 274 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 275 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 276 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:32][INFO][qwen/qwen3.5-9b] Accumulated 277 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 278 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 279 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:33][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:33][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:33][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:33][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:33][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getLoadConfig] Getting load config stack for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:33][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:33][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 280 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 281 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 282 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 283 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 284 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 285 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 286 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 287 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 288 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 289 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 290 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 291 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 292 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 293 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 294 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 295 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 296 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 297 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 298 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 299 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 300 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 301 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 302 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 303 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 304 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 305 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 306 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 307 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 308 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 309 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 310 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 311 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 312 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 313 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 314 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 315 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 316 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 317 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 318 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 319 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 320 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 321 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 322 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 323 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 324 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 325 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 326 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 327 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 328 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 329 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 330 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 331 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:33][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:33][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:33][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:33][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:33][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getLoadConfig] Getting load config stack for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:33][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:33][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 332 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 333 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 334 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 335 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 336 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 337 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 338 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 339 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 340 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 341 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 342 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 343 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 344 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 345 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 346 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 347 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 348 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 349 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 350 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 351 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 352 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 353 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Accumulated 354 tokens in reasoning content [Sensitive]
+[2026-09-26 22:22:33][INFO][LM STUDIO SERVER] Client disconnected. Stopping generation... (If the model is busy processing the prompt, it will finish first.)
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Model generated tool calls: [Sensitive]
+[2026-09-26 22:22:33][INFO][qwen/qwen3.5-9b] Generated prediction: [Sensitive]
+[2026-09-26 22:22:33][DEBUG] 8.06.724.165 W srv          stop: cancel task, id_task = 19635
+[2026-09-26 22:22:33][DEBUG] 8.06.734.748 I slot      release: id  0 | task 19635 | stop processing: n_tokens = 386, truncated = 0
+[2026-09-26 22:22:34][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:34][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:34][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:34][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:34][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:34][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getLoadConfig] Getting load config stack for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:34][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:34][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:34][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:34][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:34][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:34][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:34][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:34][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getLoadConfig] Getting load config stack for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:34][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:34][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:35][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:35][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:35][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:35][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:35][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:35][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getLoadConfig] Getting load config stack for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:35][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:35][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:35][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:35][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:35][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:35][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:35][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:35][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getLoadConfig] Getting load config stack for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:35][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:35][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:36][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:36][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:36][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:36][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:36][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:36][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getLoadConfig] Getting load config stack for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:36][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:36][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:36][DEBUG] Received request: GET to /v1/models
+[2026-09-26 22:22:36][INFO] Returning {
+  "data": [
+    {
+      "id": "qwen/qwen3.5-9b",
+      "object": "model",
+      "owned_by": "organization_owner"
+    },
+    {
+      "id": "text-embedding-nomic-embed-text-v1.5",
+      "object": "model",
+      "owned_by": "organization_owner"
+    },
+    {
+      "id": "google/gemma-4-12b-qat",
+      "object": "model",
+      "owned_by": "organization_owner"
+    },
+    {
+      "id": "qwen3.5-4b-uncensored-hauhaucs-aggressive",
+      "object": "model",
+      "owned_by": "organization_owner"
+    },
+    {
+      "id": "prism-ml/bonsai-27b",
+      "object": "model",
+      "owned_by": "organization_owner"
+    },
+    {
+      "id": "google/gemma-4-e4b",
+      "object": "model",
+      "owned_by": "organization_owner"
+    },
+    {
+      "id": "qwen3.5-9b-uncensored-hauhaucs-aggressive",
+      "object": "model",
+      "owned_by": "organization_owner"
+    },
+    {
+      "id": "zai-org/glm-4.6v-flash",
+      "object": "model",
+      "owned_by": "organization_owner"
+    },
+    {
+      "id": "qwen/qwen3-4b-thinking-2507",
+      "object": "model",
+      "owned_by": "organization_owner"
+    },
+    {
+      "id": "liquid/lfm2-1.2b",
+      "object": "model",
+      "owned_by": "organization_owner"
+    },
+    {
+      "id": "deepseek/deepseek-r1-0528-qwen3-8b",
+      "object": "model",
+      "owned_by": "organization_owner"
+    }
+  ],
+  "object": "list"
+}
+[2026-09-26 22:22:37][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:37][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:37][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:37][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:37][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:37][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getLoadConfig] Getting load config stack for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:37][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:37][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:37][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:37][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:37][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:37][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:37][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:37][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getLoadConfig] Getting load config stack for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:37][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:37][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:38][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:38][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:38][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:38][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:38][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:38][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getLoadConfig] Getting load config stack for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:38][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:38][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:38][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:38][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:38][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:38][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:38][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:38][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getLoadConfig] Getting load config stack for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:38][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:38][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:39][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:39][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:39][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:39][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:39][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:39][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getLoadConfig] Getting load config stack for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:39][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:39][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:39][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:39][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:39][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:39][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:39][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getLoadConfig] Getting load config stack for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:39][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:39][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:39][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:40][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:40][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:40][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:40][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:40][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:40][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getLoadConfig] Getting load config stack for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:40][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:40][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:41][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:41][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:41][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:41][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:41][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:41][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getLoadConfig] Getting load config stack for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:41][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:41][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:41][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:41][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:41][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:41][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:41][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:41][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getLoadConfig] Getting load config stack for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:41][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:41][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:42][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:42][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:42][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:42][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:42][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:42][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getLoadConfig] Getting load config stack for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:42][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:42][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:42][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:42][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:42][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:42][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:42][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getLoadConfig] Getting load config stack for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:42][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:42][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:42][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:43][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:43][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:43][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:43][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:43][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:43][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getLoadConfig] Getting load config stack for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:43][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:43][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:43][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:43][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:43][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:43][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:43][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:43][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getLoadConfig] Getting load config stack for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:43][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:43][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:44][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:44][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:44][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:44][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:44][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:44][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getLoadConfig] Getting load config stack for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:44][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:44][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:45][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:45][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:45][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:45][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:45][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getLoadConfig] Getting load config stack for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:45][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:45][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:45][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:45][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:45][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:45][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:45][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:45][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:45][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getLoadConfig] Getting load config stack for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:45][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:45][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:46][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:46][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:46][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:46][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:46][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:46][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getLoadConfig] Getting load config stack for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:46][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:46][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:46][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:46][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:46][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:46][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:46][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:46][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getLoadConfig] Getting load config stack for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:46][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:46][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:47][DEBUG] Received request: GET to /v1/models
+[2026-09-26 22:22:47][INFO] Returning {
+  "data": [
+    {
+      "id": "qwen/qwen3.5-9b",
+      "object": "model",
+      "owned_by": "organization_owner"
+    },
+    {
+      "id": "text-embedding-nomic-embed-text-v1.5",
+      "object": "model",
+      "owned_by": "organization_owner"
+    },
+    {
+      "id": "google/gemma-4-12b-qat",
+      "object": "model",
+      "owned_by": "organization_owner"
+    },
+    {
+      "id": "qwen3.5-4b-uncensored-hauhaucs-aggressive",
+      "object": "model",
+      "owned_by": "organization_owner"
+    },
+    {
+      "id": "prism-ml/bonsai-27b",
+      "object": "model",
+      "owned_by": "organization_owner"
+    },
+    {
+      "id": "google/gemma-4-e4b",
+      "object": "model",
+      "owned_by": "organization_owner"
+    },
+    {
+      "id": "qwen3.5-9b-uncensored-hauhaucs-aggressive",
+      "object": "model",
+      "owned_by": "organization_owner"
+    },
+    {
+      "id": "zai-org/glm-4.6v-flash",
+      "object": "model",
+      "owned_by": "organization_owner"
+    },
+    {
+      "id": "qwen/qwen3-4b-thinking-2507",
+      "object": "model",
+      "owned_by": "organization_owner"
+    },
+    {
+      "id": "liquid/lfm2-1.2b",
+      "object": "model",
+      "owned_by": "organization_owner"
+    },
+    {
+      "id": "deepseek/deepseek-r1-0528-qwen3-8b",
+      "object": "model",
+      "owned_by": "organization_owner"
+    }
+  ],
+  "object": "list"
+}
+[2026-09-26 22:22:47][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:47][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:47][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:47][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:47][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:47][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getLoadConfig] Getting load config stack for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:47][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:47][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:47][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:47][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:47][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:47][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:47][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:47][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getLoadConfig] Getting load config stack for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:47][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:47][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:48][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:48][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:48][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:48][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:48][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:48][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getLoadConfig] Getting load config stack for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:48][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:48][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:49][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:49][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:49][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:49][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:49][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:49][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getLoadConfig] Getting load config stack for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:49][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:49][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:49][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:49][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:49][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:49][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:49][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:49][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getLoadConfig] Getting load config stack for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:49][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:49][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:50][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:50][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:50][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:50][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:50][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getLoadConfig] Getting load config stack for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:50][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:50][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:50][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:50][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:50][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:50][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:50][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:50][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:50][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getLoadConfig] Getting load config stack for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:50][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:50][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:51][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:51][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:51][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:51][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:51][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:51][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getLoadConfig] Getting load config stack for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:51][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:51][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:51][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:51][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:51][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:51][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:51][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:51][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getLoadConfig] Getting load config stack for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:51][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:51][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:52][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:52][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:52][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:52][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:52][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:52][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getLoadConfig] Getting load config stack for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:52][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:52][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:53][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:53][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:53][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:53][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:53][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:53][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getLoadConfig] Getting load config stack for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:53][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:53][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:53][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:53][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=listLoaded] Listing loaded models
+[2026-09-26 22:22:53][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:53][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:53][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"zwln7B218ofZTxrvw895Aa3n"}
+[2026-09-26 22:22:53][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getLoadConfig] Getting load config stack for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:53][INFO][LMSAuthenticator][Client=lms-cli][Endpoint=getModelInfo] Getting descriptor for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}
+[2026-09-26 22:22:53][DEBUG][LMSAuthenticator][Client=lms-cli][Endpoint=getInstanceProcessingState] Getting instance processing state for specifier: {"type":"instanceReference","instanceReference":"+4B9XBkLyhlVzJ/NFlKegaIe"}

@@ -1,0 +1,256 @@
+{
+  "provenance": "FIRST RUN: samples were stamped at probe START (lms ps takes ~0.33 s), so one busy sample labelled 33.81 s belongs to caller B's own request. Superseded by gpu_exclusivity_20260927T022647Z (interval-stamped samples).",
+  "ran_at": "20260927T022552Z",
+  "label": "real local inference (LM Studio) + real Redis lease",
+  "events_s": {
+    "a_start": 1.016357299988158,
+    "lease_deleted": 3.058975699939765,
+    "a_end": 10.051716699963436,
+    "a_reason": "SLOT_LOST",
+    "b_start": 33.96985640004277,
+    "b_end": 34.346341599943116
+  },
+  "server_idle_observed_between_a_cancel_and_b_start": [
+    10.2,
+    10.79,
+    11.37,
+    11.95,
+    12.54
+  ],
+  "server_log_has_disconnect_stop": true,
+  "timeline": [
+    {
+      "t": 0.04,
+      "server": "idle"
+    },
+    {
+      "t": 0.67,
+      "server": "idle"
+    },
+    {
+      "t": 1.28,
+      "server": "busy"
+    },
+    {
+      "t": 1.89,
+      "server": "busy"
+    },
+    {
+      "t": 2.48,
+      "server": "busy"
+    },
+    {
+      "t": 3.07,
+      "server": "busy"
+    },
+    {
+      "t": 3.68,
+      "server": "busy"
+    },
+    {
+      "t": 4.29,
+      "server": "busy"
+    },
+    {
+      "t": 4.88,
+      "server": "busy"
+    },
+    {
+      "t": 5.47,
+      "server": "busy"
+    },
+    {
+      "t": 6.07,
+      "server": "busy"
+    },
+    {
+      "t": 6.64,
+      "server": "busy"
+    },
+    {
+      "t": 7.24,
+      "server": "busy"
+    },
+    {
+      "t": 7.83,
+      "server": "busy"
+    },
+    {
+      "t": 8.44,
+      "server": "busy"
+    },
+    {
+      "t": 9.03,
+      "server": "busy"
+    },
+    {
+      "t": 9.61,
+      "server": "busy"
+    },
+    {
+      "t": 10.2,
+      "server": "idle"
+    },
+    {
+      "t": 10.79,
+      "server": "idle"
+    },
+    {
+      "t": 11.37,
+      "server": "idle"
+    },
+    {
+      "t": 11.95,
+      "server": "idle"
+    },
+    {
+      "t": 12.54,
+      "server": "idle"
+    },
+    {
+      "t": 13.12,
+      "server": "idle"
+    },
+    {
+      "t": 13.7,
+      "server": "idle"
+    },
+    {
+      "t": 14.28,
+      "server": "idle"
+    },
+    {
+      "t": 14.87,
+      "server": "idle"
+    },
+    {
+      "t": 15.45,
+      "server": "idle"
+    },
+    {
+      "t": 16.05,
+      "server": "idle"
+    },
+    {
+      "t": 16.63,
+      "server": "idle"
+    },
+    {
+      "t": 17.23,
+      "server": "idle"
+    },
+    {
+      "t": 17.8,
+      "server": "idle"
+    },
+    {
+      "t": 18.38,
+      "server": "idle"
+    },
+    {
+      "t": 18.99,
+      "server": "idle"
+    },
+    {
+      "t": 19.6,
+      "server": "idle"
+    },
+    {
+      "t": 20.18,
+      "server": "idle"
+    },
+    {
+      "t": 20.77,
+      "server": "idle"
+    },
+    {
+      "t": 21.36,
+      "server": "idle"
+    },
+    {
+      "t": 21.95,
+      "server": "idle"
+    },
+    {
+      "t": 22.53,
+      "server": "idle"
+    },
+    {
+      "t": 23.12,
+      "server": "idle"
+    },
+    {
+      "t": 23.7,
+      "server": "idle"
+    },
+    {
+      "t": 24.28,
+      "server": "idle"
+    },
+    {
+      "t": 24.87,
+      "server": "idle"
+    },
+    {
+      "t": 25.47,
+      "server": "idle"
+    },
+    {
+      "t": 26.06,
+      "server": "idle"
+    },
+    {
+      "t": 26.63,
+      "server": "idle"
+    },
+    {
+      "t": 27.24,
+      "server": "idle"
+    },
+    {
+      "t": 27.83,
+      "server": "idle"
+    },
+    {
+      "t": 28.41,
+      "server": "idle"
+    },
+    {
+      "t": 29.0,
+      "server": "idle"
+    },
+    {
+      "t": 29.61,
+      "server": "idle"
+    },
+    {
+      "t": 30.23,
+      "server": "idle"
+    },
+    {
+      "t": 30.82,
+      "server": "idle"
+    },
+    {
+      "t": 31.43,
+      "server": "idle"
+    },
+    {
+      "t": 32.03,
+      "server": "idle"
+    },
+    {
+      "t": 32.62,
+      "server": "idle"
+    },
+    {
+      "t": 33.22,
+      "server": "idle"
+    },
+    {
+      "t": 33.81,
+      "server": "busy"
+    }
+  ],
+  "server_log": "gpu_exclusivity_20260927T022552Z.log"
+}

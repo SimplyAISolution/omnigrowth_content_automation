@@ -50,6 +50,14 @@ class ProviderConfig(_Strict):
     # token is deliberately pessimistic (English BPE averages ~4). ``context_tokens`` must not
     # exceed what the server actually loads the model with; a candidate may override it.
     context_tokens: int = Field(default=32_768, ge=512)
+    # How tokens are counted for the budget: "lmstudio" = the server's own chat template and
+    # tokenizer via the LM Studio SDK (exact; also reads the LOADED context length);
+    # "approximate" = characters / chars_per_token (labelled approximate everywhere).
+    budget_counting: Literal["lmstudio", "approximate"] = "approximate"
+    # Before every call, verify the server itself reports all loaded models idle with an
+    # empty queue ("lmstudio_cli": `lms ps --json`); "none" = no server-side verification
+    # (unit tests, remote APIs). A failed or impossible verification BLOCKS the call.
+    idle_check: Literal["lmstudio_cli", "none"] = "none"
     chars_per_token: float = Field(default=3.0, gt=0.5, le=8.0)
     # Output allowance assumed when a request sets no max_tokens (servers then generate up
     # to their own limit, so 0 would under-count).

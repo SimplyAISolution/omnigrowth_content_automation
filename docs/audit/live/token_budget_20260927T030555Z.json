@@ -1,0 +1,59 @@
+{
+  "model": "qwen/qwen3.5-9b",
+  "cases": [
+    {
+      "case": "english",
+      "characters": 53,
+      "exact_prompt_tokens": 20,
+      "server_prompt_tokens": 20,
+      "approx_chars_div_3": 18,
+      "approx_undercounts": true,
+      "loaded_context": 32768
+    },
+    {
+      "case": "chinese",
+      "characters": 116,
+      "exact_prompt_tokens": 66,
+      "server_prompt_tokens": 66,
+      "approx_chars_div_3": 39,
+      "approx_undercounts": true,
+      "loaded_context": 32768
+    },
+    {
+      "case": "arabic",
+      "characters": 240,
+      "exact_prompt_tokens": 79,
+      "server_prompt_tokens": 79,
+      "approx_chars_div_3": 80,
+      "approx_undercounts": false,
+      "loaded_context": 32768
+    },
+    {
+      "case": "emoji",
+      "characters": 222,
+      "exact_prompt_tokens": 358,
+      "server_prompt_tokens": 358,
+      "approx_chars_div_3": 74,
+      "approx_undercounts": true,
+      "loaded_context": 32768
+    },
+    {
+      "case": "long_url",
+      "characters": 652,
+      "exact_prompt_tokens": 359,
+      "server_prompt_tokens": 359,
+      "approx_chars_div_3": 218,
+      "approx_undercounts": true,
+      "loaded_context": 32768
+    },
+    {
+      "case": "mixed_system_user",
+      "characters": 408,
+      "exact_prompt_tokens": 215,
+      "server_prompt_tokens": 215,
+      "approx_chars_div_3": 136,
+      "approx_undercounts": true,
+      "loaded_context": 32768
+    }
+  ]
+}

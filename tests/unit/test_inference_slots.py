@@ -252,3 +252,93 @@ async def test_external_cancellation_is_not_reported_as_slot_loss() -> None:
         await task
     slot, _ = RedisSlotLimiter.names("g", 0)
     assert redis._get(slot) is None  # released
+
+
+# ------------------------------------------------------------------ server idle check
+async def _probe(statuses: list[list[dict[str, Any]]]) -> Any:
+    from omnigrowth.providers.idle import LMStudioCliIdleProbe
+
+    feed = iter(statuses)
+
+    async def runner() -> list[dict[str, Any]]:
+        try:
+            return next(feed)
+        except StopIteration:
+            return statuses[-1]
+
+    async def no_sleep(_: float) -> None:
+        return None
+
+    return LMStudioCliIdleProbe("lms", runner=runner, sleep=no_sleep)
+
+
+IDLE = [{"identifier": "m", "status": "idle", "queued": 0}]
+BUSY = [{"identifier": "m", "status": "generating", "queued": 0}]
+QUEUED = [{"identifier": "m", "status": "idle", "queued": 1}]
+
+
+async def test_idle_needs_two_consecutive_confirmations() -> None:
+    probe = await _probe([BUSY, IDLE, BUSY, IDLE, IDLE])
+    result = await probe.wait_idle(timeout_s=60)
+    assert result["idle"] is True
+
+
+async def test_busy_or_queued_server_blocks_the_call() -> None:
+    for state in (BUSY, QUEUED):
+        probe = await _probe([state])
+        probe._clock = iter([0.0, 0.0, 999.0, 999.0]).__next__  # type: ignore[assignment]
+        with pytest.raises(OmniGrowthError) as info:
+            await probe.wait_idle(timeout_s=1)
+        assert info.value.details["reason"] == "SERVER_BUSY"
+
+
+async def test_unverifiable_idleness_blocks_the_call() -> None:
+    from omnigrowth.providers.idle import LMStudioCliIdleProbe
+
+    probe = LMStudioCliIdleProbe("C:/definitely/not/lms.exe")
+    with pytest.raises(OmniGrowthError) as info:
+        await probe.wait_idle(timeout_s=1)
+    assert info.value.code is ErrorCode.MODEL_UNAVAILABLE
+    assert info.value.details["reason"] == "IDLENESS_UNVERIFIABLE"
+
+
+async def test_router_never_calls_the_model_when_idleness_is_not_verified() -> None:
+    from decimal import Decimal
+
+    from omnigrowth.core.enums import ModelLocality, ModelRole
+    from omnigrowth.providers.base import ChatRequest
+    from omnigrowth.providers.config import ModelsConfig
+    from omnigrowth.providers.fake import FakeProvider
+    from omnigrowth.providers.router import ModelRouter, ResolvedModel
+
+    class NeverIdle:
+        async def wait_idle(self, *, timeout_s: float) -> dict[str, Any]:
+            raise OmniGrowthError(
+                ErrorCode.MODEL_UNAVAILABLE, "busy", details={"reason": "SERVER_BUSY"}
+            )
+
+    cfg = ModelsConfig.model_validate(
+        {
+            "presets": {"p": {"base_url_host": "http://h/v1", "base_url_docker": "http://d/v1"}},
+            "providers": {"a": {"locality": "LOCAL", "preset": "p", "idle_check": "lmstudio_cli"}},
+            "roles": {"CHEAP_LOCAL": [{"provider": "a", "model": "m"}]},
+        }
+    )
+    redis = MemoryRedis()
+    await _clean_start(redis, "provider:a")
+    called: list[ChatRequest] = []
+    router = ModelRouter(
+        cfg,
+        {"a": FakeProvider("a", script=[])},
+        slots=limiter(redis),
+        idle_probes={"a": NeverIdle()},  # type: ignore[dict-item]
+    )
+    model = ResolvedModel(
+        ModelRole.CHEAP_LOCAL, "a", "m", ModelLocality.LOCAL, Decimal(0), Decimal(0)
+    )
+    with pytest.raises(OmniGrowthError) as info:
+        async with router.slot(model):
+            called.append(ChatRequest(model="m", messages=[]))  # pragma: no cover
+    assert info.value.details["reason"] == "SERVER_BUSY" and called == []
+    slot, _ = RedisSlotLimiter.names("provider:a", 0)
+    assert redis._get(slot) is None  # the lease was released

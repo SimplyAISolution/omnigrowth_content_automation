@@ -46,7 +46,15 @@ ARTICLE = (
 
 
 def _router(provider: ChatProvider) -> ModelRouter:
-    return ModelRouter(load_models_config(REPO / "config"), {"lmstudio": provider})
+    """Repo model config, but for FIXTURE replay: a FakeProvider has no tokenizer and no
+    server to query, so budget counting is the labelled approximate estimate and there is
+    no server idle check (both are verified against LM Studio in tests/live/)."""
+    config = load_models_config(REPO / "config")
+    replay = {
+        name: p.model_copy(update={"budget_counting": "approximate", "idle_check": "none"})
+        for name, p in config.providers.items()
+    }
+    return ModelRouter(config.model_copy(update={"providers": replay}), {"lmstudio": provider})
 
 
 def fixture_deps() -> AgentDeps:

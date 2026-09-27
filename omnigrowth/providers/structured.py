@@ -50,15 +50,6 @@ log = logging.getLogger(__name__)
 MAX_REPAIRS = 2
 
 
-def request_texts(request: ChatRequest) -> list[str]:
-    """Everything the server tokenizes: every message as built (incl. the appended schema
-    instruction in JSON_OBJECT / prompt-only modes) and the response_format schema."""
-    texts = [m["content"] for m in request.messages if isinstance(m.get("content"), str)]
-    if request.response_format is not None:
-        texts.append(json.dumps(request.response_format, separators=(",", ":")))
-    return texts
-
-
 FALLBACK_CODES = frozenset(
     {
         ErrorCode.MODEL_UNAVAILABLE,
@@ -314,8 +305,8 @@ class _Attempt:
             request = _build_request(
                 self.model, messages, schema, mode, self.prompt, attempt_no, temperature, max_tokens
             )
-            self.router.check_input_size(
-                self.model, request_texts(request), max_output_tokens=request.max_tokens
+            await self.router.check_chat_budget(
+                self.model, request.messages, request.response_format, request.max_tokens
             )
             try:
                 async with self.router.slot(self.model):
@@ -512,7 +503,9 @@ async def probe_structured_mode[T: BaseModel](
             prompt.temperature,
             prompt.max_tokens,
         )
-        router.check_input_size(model, request_texts(request), max_output_tokens=request.max_tokens)
+        await router.check_chat_budget(
+            model, request.messages, request.response_format, request.max_tokens
+        )
         try:
             async with router.slot(model):
                 result = await provider.chat(request)

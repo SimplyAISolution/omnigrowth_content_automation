@@ -10,9 +10,11 @@ from omnigrowth.core.enums import ModelLocality
 from omnigrowth.core.settings import Settings
 from omnigrowth.providers.base import ChatProvider
 from omnigrowth.providers.config import ModelsConfig, ProviderConfig, load_models_config
+from omnigrowth.providers.idle import IdleProbe, LMStudioCliIdleProbe
 from omnigrowth.providers.openai_compatible import OpenAICompatibleProvider
 from omnigrowth.providers.router import ModelRouter
 from omnigrowth.providers.slots import RedisSlotLimiter
+from omnigrowth.providers.tokens import LMStudioTokenCounter, TokenCounter
 
 log = logging.getLogger(__name__)
 
@@ -74,4 +76,18 @@ def build_router(
     config = load_models_config(settings.config_dir)
     # Every production router shares the GPU slots through Redis (A2 across processes).
     slots = RedisSlotLimiter.from_url(settings.redis_url.get_secret_value())
-    return ModelRouter(config, build_providers(config, settings, transport=transport), slots=slots)
+    counters: dict[str, TokenCounter] = {}
+    probes: dict[str, IdleProbe] = {}
+    for name, provider in config.providers.items():
+        url = resolve_base_url(name, provider, config, settings)
+        if provider.budget_counting == "lmstudio" and url is not None:
+            counters[name] = LMStudioTokenCounter(url)
+        if provider.idle_check == "lmstudio_cli":
+            probes[name] = LMStudioCliIdleProbe()
+    return ModelRouter(
+        config,
+        build_providers(config, settings, transport=transport),
+        slots=slots,
+        counters=counters,
+        idle_probes=probes,
+    )
