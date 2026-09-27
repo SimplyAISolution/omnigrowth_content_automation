@@ -67,6 +67,14 @@ worker = "python -m omnigrowth.workflows.worker"
 scheduler = "python -m omnigrowth.scheduling"
 models-probe = "python -m omnigrowth.services.model_probe"
 create-owner = "python -m omnigrowth.services.create_owner"
+# Frontend (Phase 11): typecheck + component tests; browser journeys against a throwaway,
+# fixture-seeded API (scripts/ui_env.py) on the installed Microsoft Edge.
+ui-check = [
+    { shell = "npm --prefix frontend run typecheck" },
+    { shell = "npm --prefix frontend test" },
+]
+ui-e2e = { shell = "npm --prefix frontend run e2e" }
+openapi = "python scripts/export_openapi.py"
 
 [tool.poe.tasks.check]
 help = "Canonical gate (AGENTS.md §4 + ADR-0005)"

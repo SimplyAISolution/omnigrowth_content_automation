@@ -1,11 +1,11 @@
 ```
-phase: 10
-task: phase-10 gate (platform writers + repurposing graph)
+phase: 11
+task: phase-11 gate (frontend)
 gate: GATE_PASSED (2026-09-27; see ENGINEERING_LOG)
-last_green_commit: 15d3624 (phase 10 changes uncommitted; human signs)
-next_phase: 11 — Frontend (Vite + React + TS)
+last_green_commit: f4c714e (phase 11 changes uncommitted; human signs)
+next_phase: 12 — n8n integration
 shell: PowerShell Core 7.6.6 (Git Bash also available)
-blockers: phase 10 commits pending (human signs)
+blockers: phase 11 commit pending (human signs)
 ```
 
 ## Notes
@@ -23,3 +23,4 @@ blockers: phase 10 commits pending (human signs)
 - Phase 9: experiments (A14: unit = post at fixed age, floor 30/variant, power 80 %, fixed 0.95, Bonferroni, fixed endpoint, simulated evidence separated) + GPU lease, backlog lock, killable parsing, context budget. Unit/integration green; live blocked by environment.
 - Phase 9 closing checks: controlled live rerun, real-server cancellation/lease-loss evidence + idle gate, exact server tokenization, randomization inference + power inflation 1.25, frozen timeline. Live §55 (real local inference, mock publication) passed on a frozen tree.
 - Phase 10: writers for every platform (A15; D2 retired), per-subreddit/per-instance account settings, repurposing graph (`/content/{id}/repurpose`, `/derivatives`) with DB-enforced lineage and 409 on recursive duplicates. Live §55 (real local inference, mock publication) passed with YouTube + Instagram written.
+- Phase 11: Vite + React + TS frontend over /api/v1 (approvals, content, calendar, publishing, campaigns, analytics, experiments, sources, brand, platforms), generated typed client + OpenAPI drift tests, GET /platforms catalog, fixture-seeded throwaway environment for Playwright journeys (Edge). Publication shown as simulated everywhere.

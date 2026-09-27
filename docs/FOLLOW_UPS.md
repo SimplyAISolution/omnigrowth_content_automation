@@ -34,10 +34,20 @@ Left open:
 - The planner prompt still lists formats by example; unsupported formats are corrected by
   `planner.schedule` from `config/qa.yaml`.
 
-### 4. Phase 11 — Frontend (Vite + React + TS)
-- Approvals queue first (it drives the human-in-the-loop), then Content Queue, Calendar,
-  Campaigns, Analytics. API-only today.
-- Human: design preferences, if any.
+### 4. Phase 11 — Frontend (Vite + React + TS) — DONE (2026-09-27; frontend/README.md)
+Left open (each is explained in the UI where the action would be):
+- No API yet for: pausing, duplicating or archiving campaigns; archiving content; users and
+  settings; model/routing views; retrying a FAILED publication job (schedule again instead).
+- Not built in the UI although the API supports it: designing experiments, editing the brand
+  profile/audiences, file and URL source upload, editing platform settings (subreddit
+  profiles, instance limits), editing production fields (`platform_fields`), manual metric entry.
+- The approval-action menu offered per state and the "real evidence" rule on the analytics
+  screen are presentation copies of backend rules (the API still decides); exposing
+  `is_real_evidence` per publication from the API would remove the copy.
+- `/content` returns at most 200 items (no pagination in the UI yet).
+- The frontend gate (`poe ui-check`, `poe ui-e2e`) is separate from `poe check`, whose
+  composition AGENTS.md §4 defines; CI wiring decides whether to chain them.
+- Publication screens follow the server's publish mode; only MOCK exists today.
 
 ### 5. Phase 12 — n8n integration
 - HMAC-verified inbound webhooks (`WEBHOOK_ENDPOINT` principals for Idempotency-Key),
@@ -68,6 +78,7 @@ Left open:
 | Superuser DB role, CI docker/windows jobs, dev hot-reload profile | Operational hardening. | Before any remote deployment |
 
 ## Decisions (resolved 2026-09-26)
+- 2026-09-27 (Phase 11 kickoff): keep the Phase 10 format subsets as the current supported scope, not verified capabilities — Facebook TEXT_POST/IMAGE_POST; Rumble LONG_VIDEO_OUTLINE/LONG_VIDEO_SCRIPT/SHORT; Mastodon TEXT_POST/THREAD.
 - ADR-0003 was already ACCEPTED at the Phase 1 gate; nothing to confirm.
 - DOCX zip-bomb guard: 100:1 per member accepted -> SPEC_AMENDMENTS A13.
 - Local LLM server: LM Studio only; Ollama removed from role routing (config/models.yaml).

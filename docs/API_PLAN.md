@@ -27,7 +27,7 @@ Assumed ADRs: ADR-0003 (RQ + Postgres outbox, A3), ADR-0006 (auth: single-tenant
   - `EDITOR`: create/edit brands' content objects, sources, campaigns, approvals (§37 actions), analytics ingest, experiments.
   - `OWNER`: users, brands create/archive, campaign archive (C12), platform accounts + credentials, live-enable, settings, routing profile/overrides, webhook endpoints, global audit, `MANUAL_CONFIRM_NOT_PUBLISHED` reconciliation (J13), `mark-deleted` (P9).
 - Missing/invalid/expired token → `401 UNAUTHORIZED` with `WWW-Authenticate: Bearer`. Valid token, insufficient role → `403 FORBIDDEN`.
-- **CSRF: not applicable.** The API never sets or reads cookies; credentials travel only in the `Authorization` header, which browsers never attach automatically to cross-site requests, so a third-party page cannot ride an authenticated session. CORS is an explicit origin allowlist (`OMNIGROWTH_CORS_ORIGINS`, default empty; the Phase 11 Vite origin is added then) with `allow_credentials=false`. **Invariant:** if cookie auth is ever introduced, CSRF protection becomes mandatory in the same change (a test asserts no `Set-Cookie` header is ever emitted by `/api/v1`).
+- **CSRF: not applicable.** The API never sets or reads cookies; credentials travel only in the `Authorization` header, which browsers never attach automatically to cross-site requests, so a third-party page cannot ride an authenticated session. CORS: none is configured (no CORS middleware; the planned `OMNIGROWTH_CORS_ORIGINS` allowlist was never needed). The Phase 11 frontend is served same-origin: its dev and preview servers proxy `/api` (frontend/README.md). If a cross-origin client is ever added, the allowlist must be explicit with `allow_credentials=false`. **Invariant:** if cookie auth is ever introduced, CSRF protection becomes mandatory in the same change (a test asserts no `Set-Cookie` header is ever emitted by `/api/v1`).
 - First OWNER is created by a CLI command (`uv run poe create-owner`), not by an unauthenticated API route. There is no self-signup.
 
 ### 1.3 Pagination — `Page[T]`
@@ -313,6 +313,7 @@ Legend — **[IK]** = `Idempotency-Key` required · **async** = returns 202 + jo
 ### 2.14 Platform accounts & credentials — §15, §25, A6
 | Method | Path | Request | Response | Min role | Status | Notes |
 |---|---|---|---|---|---|---|
+| GET | `/platforms` | — | `Page[PlatformCatalogRead]` | VIEWER | 200 | Phase 11, read-only: per platform `has_writer`, supported `formats` and QA `limits` (from `config/qa.yaml`, UNVERIFIED), `capability_status` (`UNVERIFIED`), `effective_publisher` (`MOCK` or null) and `live_publishing_available` (false). Lets clients present formats without duplicating them. |
 | GET | `/platform-accounts` | filters (`brand_id`, `platform`) | `Page[PlatformAccountRead]` | VIEWER | 200 | Includes `credential_status` (never secret values), `live_enabled`, `has_open_uncertain`. |
 | POST | `/platform-accounts` | `PlatformAccountCreate` | `PlatformAccountRead` | OWNER | 201, 409 | `live_enabled` always `false` on create (not in schema). |
 | GET | `/platform-accounts/{account_id}` | — | `PlatformAccountRead` | VIEWER | 200, 404 | |

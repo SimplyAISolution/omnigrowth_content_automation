@@ -764,3 +764,71 @@ PHASE 10 GATE — PASSED (all run this session, 2026-09-27)
   Not established: real-platform publishing readiness; live behaviour of the FACEBOOK, REDDIT,
     SUBSTACK, RUMBLE and MASTODON writers (not in the §55 plan; fixtures + unit/integration only).
 ```
+
+## 2026-09-27 — Phase 11: frontend (Vite + React + TS) — gate PASSED
+Baseline: HEAD f4c714e (Phase 10, carries an SSH signature block; `--show-signature` cannot verify
+it here because gpg.ssh.allowedSignersFile is not configured), clean tree. Scope: docs/PHASES.md
+Phase 11 + ADR-0007. Human decision kept: Phase 10 format subsets are the supported scope
+(FOLLOW_UPS decisions).
+
+Built: frontend/ SPA — Overview, Approvals, Content, content review (versions/diff, QA,
+decisions, publishing record, repurposing), Calendar (day/week/month, filters, drag-to-reschedule
++ keyboard path), Publishing (jobs, failures, outcomes, cancel, reconcile), Campaigns (wizard,
+plan, research, strategy, ideas, source), Analytics (provenance, missing inputs, suggestions),
+Experiments (plan, verdict explanations), Sources, Brand, Platforms; Models/Automations/Settings
+explain that no API exists. Typed client generated from a committed OpenAPI snapshot
+(scripts/export_openapi.py; drift tests on JSON and on schema.d.ts). New read-only
+GET /api/v1/platforms (formats/limits from config/qa.yaml, publisher MOCK). scripts/ui_env.py:
+throwaway og_ui_<hex> DB seeded by fixture replay (no real LLM), API on 8012 (MOCK, Redis DB 15,
+in-process limiter), dropped afterwards. poe ui-check / ui-e2e / openapi. No CORS middleware
+exists (API_PLAN corrected): the UI is served same-origin via the Vite proxy.
+
+Debug loop (4 root causes, each fixed on the first attempt):
+1. Seed wizard 422 "body should be a list": dependency override passed the RecordingJobQueue
+   class; FastAPI read its field as a body parameter -> override returns an instance.
+2. Component tests could not reach the fetch mock: openapi-fetch captured globalThis.fetch at
+   import and relative URLs are invalid under Node -> late-bound fetch + absolute base URL.
+3. `npm run e2e` seed job CONFIGURATION_ERROR (config/qa.yaml not found): run from frontend/
+   -> ui_env.py chdirs to the repo root. (Also: repeated local runs hit the real 5/min login
+   limiter -> the throwaway env uses the in-memory limiter with a higher login allowance;
+   production defaults unchanged.)
+4. Keyboard e2e: focus moved to <main> on first load, skipping the skip link -> only after
+   in-app navigation.
+
+Reviewer (read-only): 0 BLOCKER, 5 MAJOR, 15 MINOR. Fixed all MAJOR: M1 dialogs kept stale text
+(now reset per open/version; per-asset remount); M2 reconcile could never succeed (URL/note now
+required as the API demands; EDITOR may confirm published, OWNER not-published); M3 "Evaluate now"
+implied early looks (only in COLLECTING, job watched, WINDOW_OPEN explained); M4 manual numbers on
+mock posts shown as real (real = non-MOCK publication + API/MANUAL, as in experiments); M5 schedule
+used the header brand's accounts (now the asset's brand; reschedule keeps the job's account).
+MINOR fixed: 1 invalid date, 2 cleared fields kept, 3 endless polling, 4 idempotency key reused
+across campaigns, 5 wrong refresh target, 6 misleading tiles, 7 hidden active filter, 8
+auto-approve copy, 9 publish mode now from the server, 10 "Live" badge, 12 state file moved out of
+the Vite root without the DB URL, 13 DB leak on failed prepare, 14 schema.d.ts drift test,
+15 strict e2e problem watch + tests for the flagged paths. MINOR 11 corrected: there is no
+job-retry endpoint; the UI explains how to recover. Not changed: `poe check` composition
+(AGENTS.md §4); `ui-check` is the separate frontend gate.
+
+```
+PHASE 11 — Frontend — GATE_PASSED (all run this session, 2026-09-27)
+  Gate "typecheck + component tests": uv run poe ui-check -> tsc clean; Vitest
+    Test Files  8 passed (8) / Tests  24 passed (24)
+  Gate "approval flow driven through UI against running API": uv run poe ui-e2e (Playwright,
+    Microsoft Edge, real API on a fixture-seeded throwaway DB) -> 6 passed (34.2s):
+    editor rejects (reason required), requests revision, approves, schedules; scheduler tick
+    (MockPublisher) -> "Published (simulated)", "Done (simulated)", mock post id; viewer sees
+    decisions disabled AND the API answers 403 to a direct call; keyboard (skip link, focus,
+    Escape); axe-core wcag2a/aa/21aa: no serious/critical violations on 12 screens; analytics
+    simulated provenance; 390 px phone layout without horizontal overflow. Teardown dropped the DB.
+  uv run poe check -> 231 files already formatted / All checks passed! / Success: no issues
+    found in 155 source files / Contracts: 4 kept, 0 broken. / 723 passed, 131 deselected
+  uv run poe test-int -> 125 passed, 729 deselected in 124.68s
+  uv run alembic heads -> b10c4e7d9a52 (head); alembic check -> No new upgrade operations detected.
+  Live inference: NOT RUN (not required: no inference, routing, token-budget or publication
+    behaviour changed; the frontend only calls existing endpoints).
+LIMITATIONS: see FOLLOW_UPS Phase 11 (missing APIs explained in the UI; experiment design,
+  brand editing, file/URL upload, platform settings and production-field editing not in the UI;
+  presentation copies of the per-state action menu and the real-evidence rule; /content capped at
+  200). All earlier limitations stand (publication mocked everywhere; five Phase 10 writers not
+  live-validated; platform limits UNVERIFIED; some formats unsupported).
+```

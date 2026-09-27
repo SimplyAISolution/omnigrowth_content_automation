@@ -212,11 +212,11 @@ alembic/                    # migrations (primary agent only)
 config/                     # models.yaml, routing.yaml, metrics.yaml
 scripts/                    # *.ps1 + *.sh pairs (A10)
 docs/                       # spec, amendments, phases, ADRs, design docs, audit
-frontend/                   # Phase 11
+frontend/                   # Phase 11: Vite + React + TS SPA (frontend/README.md)
 n8n/                        # Phase 12
 pyproject.toml  uv.lock  docker-compose.yml  .env.example
 README.md SECURITY.md DEPLOYMENT.md DEVELOPMENT.md TESTING.md API.md PROMPTS.md CHANGELOG.md
 ```
 
 ## 10. Explicitly deferred
-Frontend (Phase 11), n8n (Phase 12), live platform connectors (Phase 13), web research provider (A5), audio/video transcription and OCR (§27 — `SourceType` accepted, processing raises `NotImplemented` with a tracking note).
+n8n (Phase 12), live platform connectors (Phase 13), web research provider (A5), audio/video transcription and OCR (§27 — `SourceType` accepted, processing raises `NotImplemented` with a tracking note).

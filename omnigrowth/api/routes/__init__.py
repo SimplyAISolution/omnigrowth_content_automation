@@ -17,6 +17,7 @@ from omnigrowth.api.routes import (
     health,
     jobs,
     platform_accounts,
+    platforms,
     publications,
     sources,
 )
@@ -33,6 +34,7 @@ api_router.include_router(content.router)
 api_router.include_router(approvals.router)
 api_router.include_router(publications.router)
 api_router.include_router(platform_accounts.router)
+api_router.include_router(platforms.router)
 api_router.include_router(analytics.router)
 api_router.include_router(analytics.recommendations_router)
 api_router.include_router(calendar.router)
