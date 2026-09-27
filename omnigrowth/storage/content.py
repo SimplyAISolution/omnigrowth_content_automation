@@ -13,16 +13,18 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, cast
 
-from sqlalchemy import Table, func, select, update
+from sqlalchemy import Table, func, select, text, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from omnigrowth.core.enums import (
     ApprovalActionType,
     ContentAssetStatus,
+    ContentFormat,
     ContentVersionOrigin,
     EmbeddingField,
     EmbeddingOwnerType,
+    Platform,
 )
 from omnigrowth.core.ids import uuid7
 from omnigrowth.core.state_machines import (
@@ -75,6 +77,102 @@ async def create_asset(
         brand_id=row["brand_id"],
     )
     return asset_id
+
+
+async def create_derivative(
+    session: AsyncSession,
+    *,
+    parent: ContentAsset,
+    source_version_id: uuid.UUID,
+    row: dict[str, Any],
+    actor: Actor,
+    correlation_id: str,
+) -> uuid.UUID:
+    """CA1 ``create`` -> DRAFT for a repurposed child (§9). Lineage follows from the parent
+    and is fixed at insert: the DB checks it on INSERT and forbids any later change."""
+    asset_id = row.get("id") or uuid7()
+    await create_with_state(
+        session,
+        machine=CONTENT_ASSET,
+        table=_ASSETS,
+        audit_table=_AUDIT,
+        row={
+            **row,
+            "id": asset_id,
+            "brand_id": parent.brand_id,
+            "parent_asset_id": parent.id,
+            "root_asset_id": parent.root_asset_id,
+            "lineage_depth": parent.lineage_depth + 1,
+            "source_version_id": source_version_id,
+        },
+        trigger="create",
+        actor=actor,
+        correlation_id=correlation_id,
+        brand_id=parent.brand_id,
+    )
+    return asset_id
+
+
+@dataclass(frozen=True, slots=True)
+class LineageNode:
+    id: uuid.UUID
+    platform: Platform
+    format: ContentFormat
+    lineage_depth: int
+
+
+# Walks at most this many hops: lineage_depth is capped at 5 by a CHECK constraint, so a
+# longer walk can only mean corrupted data and must not loop.
+_MAX_WALK = 16
+_ANCESTORS = text(
+    """
+    WITH RECURSIVE anc(id, parent_asset_id, platform, format, lineage_depth, hops) AS (
+        SELECT id, parent_asset_id, platform, format, lineage_depth, 0
+          FROM content_assets WHERE id = :asset_id
+        UNION ALL
+        SELECT c.id, c.parent_asset_id, c.platform, c.format, c.lineage_depth, a.hops + 1
+          FROM content_assets c JOIN anc a ON c.id = a.parent_asset_id
+         WHERE a.hops < :max_walk
+    )
+    SELECT id, platform::text, format::text, lineage_depth FROM anc ORDER BY hops
+    """
+)
+
+
+async def lineage(session: AsyncSession, asset_id: uuid.UUID) -> list[LineageNode]:
+    """The asset itself, then its parent, grandparent, ... up to the root."""
+    rows = await session.execute(_ANCESTORS, {"asset_id": asset_id, "max_walk": _MAX_WALK})
+    return [
+        LineageNode(r.id, Platform(r.platform), ContentFormat(r.format), r.lineage_depth)
+        for r in rows
+    ]
+
+
+async def live_in_tree(
+    session: AsyncSession, root_id: uuid.UUID, platform: Platform, fmt: ContentFormat
+) -> list[ContentAsset]:
+    """Non-archived assets of one lineage tree with this platform and format."""
+    rows = await session.execute(
+        select(ContentAsset)
+        .where(
+            ContentAsset.root_asset_id == root_id,
+            ContentAsset.platform == platform,
+            ContentAsset.format == fmt,
+            ContentAsset.archived_at.is_(None),
+        )
+        .order_by(ContentAsset.lineage_depth, ContentAsset.created_at)
+    )
+    return list(rows.scalars())
+
+
+async def derivatives(session: AsyncSession, asset_id: uuid.UUID) -> list[ContentAsset]:
+    """Direct children (repurposed from this asset), oldest first; archived ones included."""
+    rows = await session.execute(
+        select(ContentAsset)
+        .where(ContentAsset.parent_asset_id == asset_id)
+        .order_by(ContentAsset.created_at, ContentAsset.id)
+    )
+    return list(rows.scalars())
 
 
 async def transition_asset(

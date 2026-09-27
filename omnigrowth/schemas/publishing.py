@@ -43,6 +43,17 @@ class PlatformAccountCreate(_Request):
     handle: str = Field(min_length=1, max_length=200)
     display_name: str | None = Field(default=None, max_length=200)
     timezone: Timezone | None = None
+    # REDDIT subreddit profiles / MASTODON instance limits (content/platform_profiles.py).
+    settings: dict[str, Any] | None = None
+
+
+class PlatformAccountUpdate(_Request):
+    """Omitted fields are kept; ``settings`` replaces the whole settings object."""
+
+    handle: str | None = Field(default=None, min_length=1, max_length=200)
+    display_name: str | None = Field(default=None, max_length=200)
+    timezone: Timezone | None = None
+    settings: dict[str, Any] | None = None
 
 
 class PlatformAccountRead(_Read):
@@ -54,6 +65,7 @@ class PlatformAccountRead(_Read):
     display_name: str | None
     timezone: str | None
     live_enabled: bool
+    settings: dict[str, Any] = Field(default_factory=dict)
     effective_publisher: PublishMode | None = None
     has_open_uncertain: bool = False
     created_at: datetime
@@ -68,6 +80,7 @@ class ApprovalEdit(_Request):
     cta: str | None = Field(default=None, max_length=400)
     title: str | None = Field(default=None, max_length=300)
     hashtags: list[str] | None = Field(default=None, max_length=10)
+    platform_fields: dict[str, Any] | None = None  # see ContentVersionCreate
 
 
 class ApprovalActionRequest(_Request):

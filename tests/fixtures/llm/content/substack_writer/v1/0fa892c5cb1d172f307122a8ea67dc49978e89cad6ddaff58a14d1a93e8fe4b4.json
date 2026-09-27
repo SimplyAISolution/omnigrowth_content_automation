@@ -1,0 +1,10 @@
+{
+  "prompt": "content/substack_writer",
+  "responses": [
+    {
+      "content": "{\"title\": \"Why your AI should live in your office\", \"subtitle\": \"A practical case for local models in small firms\", \"hook\": \"Most small teams send client files to a cloud AI without thinking about where that data ends up.\", \"body\": \"## The case\\n\\nLocal AI agents keep proprietary data on the machine. A 9B-parameter model now runs on a consumer GPU with 12 GB of VRAM.\\n\\n## What to run first\\n\\nRoutine drafting and ticket summaries, which avoid per-token cloud fees when they run locally.\\n\\n## What to keep in the cloud\\n\\nLong, multi-step reasoning, where frontier models still lead.\", \"cta\": \"Follow for the full local-AI checklist series\", \"lead_magnet\": \"A one-page local-AI readiness checklist.\", \"cited_claims\": [1, 2, 3, 4], \"hook_type\": \"statement\", \"cta_type\": \"subscribe\"}",
+      "input_tokens": null,
+      "output_tokens": null
+    }
+  ]
+}

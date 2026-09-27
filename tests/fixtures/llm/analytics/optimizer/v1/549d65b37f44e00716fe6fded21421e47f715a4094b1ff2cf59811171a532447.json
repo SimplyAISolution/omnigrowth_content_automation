@@ -1,0 +1,10 @@
+{
+  "prompt": "analytics/optimizer",
+  "responses": [
+    {
+      "content": "{\"recommendations\": [{\"statement\": \"Publish more tactical LinkedIn text posts with a clear follow CTA.\", \"rationale\": \"S1 has the highest engagement rate in the report; the sample is small (one post), so treat this as a direction to test, not a conclusion.\", \"target\": \"LINKEDIN format=TEXT_POST\", \"evidence\": [\"S1\", \"S2\"]}, {\"statement\": \"Keep X threads short and contrarian; they drove clicks.\", \"rationale\": \"S3 shows the best click rate among the published posts.\", \"target\": \"X format=THREAD\", \"evidence\": [\"S3\"]}, {\"statement\": \"Double the posting frequency on Instagram.\", \"rationale\": \"Instagram engagement is high (row S9).\", \"target\": \"INSTAGRAM\", \"evidence\": [\"S9\"]}]}",
+      "input_tokens": null,
+      "output_tokens": null
+    }
+  ]
+}

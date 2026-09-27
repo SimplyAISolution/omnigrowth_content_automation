@@ -1,0 +1,19 @@
+{
+  "responses": [
+    {
+      "hook": "Would you paste a client file into a cloud chatbot?",
+      "body": "Many small teams do it every day without a second thought.\n\nLocal AI agents keep proprietary data on the machine, and routine drafting runs locally without per-token cloud fees.\n\nWhat is the first task you would keep in-house?",
+      "cta": "Follow for the full local-AI checklist series",
+      "hashtags": [
+        "LocalAI"
+      ],
+      "cited_claims": [
+        1,
+        3
+      ],
+      "hook_type": "question",
+      "cta_type": "follow",
+      "media_suggestion": null
+    }
+  ]
+}

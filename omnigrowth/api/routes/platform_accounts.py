@@ -9,7 +9,11 @@ from fastapi import APIRouter, status
 from omnigrowth.api.deps import OwnerDep, SessionDep, ViewerDep
 from omnigrowth.core.enums import Platform
 from omnigrowth.schemas.common import Page
-from omnigrowth.schemas.publishing import PlatformAccountCreate, PlatformAccountRead
+from omnigrowth.schemas.publishing import (
+    PlatformAccountCreate,
+    PlatformAccountRead,
+    PlatformAccountUpdate,
+)
 from omnigrowth.services import publishing as publishing_service
 
 router = APIRouter(prefix="/platform-accounts", tags=["platform-accounts"])
@@ -38,3 +42,10 @@ async def get_account(
     account_id: uuid.UUID, _principal: ViewerDep, session: SessionDep
 ) -> PlatformAccountRead:
     return await publishing_service.get_account(session, account_id)
+
+
+@router.patch("/{account_id}", response_model=PlatformAccountRead)
+async def update_account(
+    account_id: uuid.UUID, body: PlatformAccountUpdate, principal: OwnerDep, session: SessionDep
+) -> PlatformAccountRead:
+    return await publishing_service.update_account(session, principal.actor, account_id, body)

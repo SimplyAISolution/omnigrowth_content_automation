@@ -1,0 +1,41 @@
+{
+  "responses": [
+    {
+      "title_candidates": [
+        "Keep Client Data Off the Cloud",
+        "Local AI in 60 Seconds"
+      ],
+      "title": "Local AI in 60 Seconds",
+      "hook": "Your client files never have to leave the office.",
+      "sections": [
+        {
+          "heading": "Beat 1",
+          "text": "Local AI agents keep proprietary data on the machine."
+        },
+        {
+          "heading": "Beat 2",
+          "text": "A 9B-parameter model runs on a 12 GB consumer GPU."
+        },
+        {
+          "heading": "Beat 3",
+          "text": "Routine drafting runs locally, no per-token fees."
+        }
+      ],
+      "description": "A one-minute look at running routine AI work on your own hardware so client data stays on the machine.",
+      "thumbnail_concepts": [
+        "Laptop inside a padlock"
+      ],
+      "cta": "Follow for the full local-AI checklist series",
+      "hashtags": [
+        "LocalAI"
+      ],
+      "cited_claims": [
+        1,
+        2,
+        3
+      ],
+      "hook_type": "statement",
+      "cta_type": "follow"
+    }
+  ]
+}

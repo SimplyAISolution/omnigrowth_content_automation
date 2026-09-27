@@ -34,8 +34,11 @@ class AssetGenerateRequest(BaseModel):
 
 
 class ContentVersionCreate(BaseModel):
-    """Human edit (§36). Omitted optional fields keep the base version's value. For X the
-    body holds the posts separated by lines containing only ``---``."""
+    """Human edit (§36). Omitted optional fields keep the base version's value. For X and
+    Mastodon the body holds the posts separated by lines containing only ``---``.
+    ``platform_fields`` changes platform-specific fields (scenes, script sections, chapters,
+    subreddit, ...; see ``omnigrowth.agents.writers.*Extras``): keys given replace the base
+    version's, and the result is validated for the asset's platform."""
 
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
@@ -45,6 +48,7 @@ class ContentVersionCreate(BaseModel):
     cta: str | None = Field(default=None, max_length=400)
     title: str | None = Field(default=None, max_length=300)
     hashtags: list[str] | None = Field(default=None, max_length=10)
+    platform_fields: dict[str, Any] | None = None
     comment: str | None = Field(default=None, max_length=2000)
 
 
@@ -97,6 +101,12 @@ class ContentAssetRead(BaseModel):
     funnel_stage: FunnelStage | None
     current_version_id: uuid.UUID | None
     approved_version_id: uuid.UUID | None
+    # Repurposing graph (§9): a derivative knows its parent and the version it came from.
+    parent_asset_id: uuid.UUID | None = None
+    root_asset_id: uuid.UUID | None = None
+    lineage_depth: int = 0
+    source_version_id: uuid.UUID | None = None
+    repurpose_instructions: str | None = None
     quality_score: Decimal | None
     created_at: datetime
     updated_at: datetime
@@ -134,4 +144,14 @@ class RegenerateRequest(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
     content_version_id: uuid.UUID
+    instructions: str | None = Field(default=None, max_length=4000)
+
+
+class RepurposeRequest(BaseModel):
+    """Derive a new asset for another platform/format from this asset's current version."""
+
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    target_platform: Platform
+    target_format: ContentFormat
     instructions: str | None = Field(default=None, max_length=4000)

@@ -1,0 +1,10 @@
+{
+  "prompt": "content/reddit_writer",
+  "responses": [
+    {
+      "content": "{\"subreddit\": \"LocalLLaMA\", \"title\": \"Running routine client drafting on a 9B model with 12 GB of VRAM\", \"body\": \"We moved our routine drafting off cloud chatbots. Local agents keep proprietary data on the machine, which mattered more to our clients than we expected.\\n\\n- a 9B-parameter model on a consumer GPU with 12 GB of VRAM\\n- ticket summaries and first drafts run locally, no per-token fees\\n- long multi-step reasoning still goes to a frontier model\\n\\nWhat do you run locally, and where did you draw the line?\", \"flair\": \"Discussion\", \"cta\": null, \"cited_claims\": [1, 2, 3, 4], \"hook_type\": \"question\"}",
+      "input_tokens": null,
+      "output_tokens": null
+    }
+  ]
+}

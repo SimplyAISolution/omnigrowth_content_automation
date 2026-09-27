@@ -1,0 +1,10 @@
+{
+  "prompt": "content/mastodon_writer",
+  "responses": [
+    {
+      "content": "{\"posts\": [\"Small firms do not have to send client files to a cloud chatbot. Local AI agents keep proprietary data on the machine.\", \"A 9B-parameter model runs on a consumer GPU with 12 GB of VRAM. That covers drafting and ticket summaries without per-token fees.\", \"Long, multi-step reasoning is still where frontier models win. Use both on purpose.\"], \"content_warning\": null, \"cta\": \"Follow for the full local-AI checklist series\", \"hashtags\": [\"LocalAI\", \"SmallBusiness\"], \"cited_claims\": [1, 2, 3, 4], \"hook_type\": \"statement\", \"cta_type\": \"follow\"}",
+      "input_tokens": null,
+      "output_tokens": null
+    }
+  ]
+}

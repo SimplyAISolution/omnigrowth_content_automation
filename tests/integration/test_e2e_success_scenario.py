@@ -3,7 +3,8 @@
 Brand -> platforms -> article -> campaign (research, strategy, ideas, mix, 7-day plan) ->
 platform-native content + QA -> approval -> scheduler -> mock publication -> mock analytics
 -> report -> evidence-grounded recommendations -> audit trail. All LLM calls replay
-recorded fixtures (A8); YOUTUBE/INSTAGRAM items are reported as skipped (decision D2).
+recorded fixtures (A8). Since Phase 10 the YOUTUBE and INSTAGRAM items are written too
+(until then they were reported as skipped, decision D2).
 """
 
 from __future__ import annotations
@@ -131,13 +132,18 @@ async def test_success_scenario_end_to_end(env: Env) -> None:
     gen = await _ok(env, "POST", f"/campaigns/{campaign_id}/generate-assets", 202)
     await _run(gen["id"])
     result = (await _ok(env, "GET", f"/jobs/{gen['id']}"))["result"]
-    skipped = {s["platform"] for s in result["skipped"]}
-    assert skipped == {"YOUTUBE", "INSTAGRAM"}  # D2: no MVP writer, reported not faked
-    assert all(s["reason"] == "NOT_IMPLEMENTED" for s in result["skipped"])
+    assert result["skipped"] == []  # every platform has a writer since Phase 10
+    assert not result["failed"]
 
     # 11. Inspect the approval queue ------------------------------------------------------------
     queue = (await _ok(env, "GET", "/approvals", params={"campaign_id": campaign_id}))["items"]
     assert queue, "nothing reached approval"
+    by_platform = {a["platform"]: a for a in queue}
+    assert {"YOUTUBE", "INSTAGRAM"} <= set(by_platform)
+    video = by_platform["YOUTUBE"]["current_version"]
+    assert video["title"] and len(video["platform_payload"]["title_candidates"]) >= 2
+    assert video["platform_payload"]["sections"] and video["platform_payload"]["chapters"]
+    assert by_platform["INSTAGRAM"]["current_version"]["platform_payload"]["frames"]
     for asset in queue:
         stages = {r["stage"]: r["outcome"] for r in asset["qa"]}
         assert set(stages) == {"STRUCTURAL", "BRAND", "ACCURACY", "PLATFORM"}

@@ -22,12 +22,17 @@ Left open from Phase 9, deliberately:
 - **`PATCH /experiments` and the variant PATCH/POST from API_PLAN §2.11.** Not implemented, because designs are fixed at creation.
 - **Real experiment data.** It needs real posts (MANUAL export or Phase 13 LIVE). Until then, every mock-published experiment ends `NO_REAL_DATA`.
 
-### 3. Phase 10 — Breadth: platforms + repurposing
-- YouTube and Instagram writers first (removes the D2 `skipped: NOT_IMPLEMENTED` items from the
-  §55 flow), then Facebook, Reddit, Substack, Rumble, Mastodon; QA rules per platform in
-  `config/qa.yaml` (limits stay UNVERIFIED until Phase 13).
-- Repurposing graph (§9) with cycle prevention; `POST /content/{id}/repurpose` (today 501).
-- Human: none (writers only draft; nothing is published).
+### 3. Phase 10 — Breadth: platforms + repurposing — DONE (2026-09-27; SPEC_AMENDMENTS A15)
+Left open:
+- Formats not written yet: `COMMENT_DRAFT` (all), Facebook `REEL_SCRIPT`/`STORY`/`LONG_VIDEO_OUTLINE`,
+  Mastodon `IMAGE_POST`/`POLL`. Facebook/Rumble/Mastodon format lists await human confirmation.
+- Platform limits in `config/qa.yaml` stay UNVERIFIED until Phase 13.
+- Only the YouTube and Instagram writers ran against the live model; the other five are covered
+  by fixtures, unit and integration tests.
+- Repurposing always derives from the source's current version; choosing an older version and a
+  "repurpose tree" view (all descendants) are not built.
+- The planner prompt still lists formats by example; unsupported formats are corrected by
+  `planner.schedule` from `config/qa.yaml`.
 
 ### 4. Phase 11 — Frontend (Vite + React + TS)
 - Approvals queue first (it drives the human-in-the-loop), then Content Queue, Calendar,

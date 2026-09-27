@@ -700,3 +700,67 @@ LIMITATIONS (explicit): non-OmniGrowth LM Studio clients can overlap (parallel=4
   a frozen holder > lease/3; Docker workers blocked without `lms`; POSTING_TIME experiments refused;
   shift-model CIs; missing-at-age assumed unrelated to variant; parser memory cap POSIX-only.
 ```
+
+## 2026-09-27 — Phase 10: platform writers + repurposing graph — gate PASSED
+Baseline: HEAD 15d3624 (signed), clean tree. Scope from docs/PHASES.md Phase 10.
+
+Writers (A15): YouTube, Instagram, then Facebook, Reddit, Substack, Rumble, Mastodon — one prompt
+(`content/<platform>_writer.v1`) and one schema each; D2 retired. `body` = published text, `title`
+separate, platform fields (frames, sections, chapters, title candidates, thumbnails, pinned
+comment, subreddit/flair, subtitle/lead magnet, content warning) in `platform_payload`, validated
+by `*Extras` models (also for human edits via `platform_fields`). QA: titles, parts per format,
+chapters (warn), generic threads (X, Mastodon), parts/notes through brand + accuracy, Reddit CTA
+exemption, per-subreddit rules and Mastodon instance limit from `platform_accounts.settings`
+(validated; create + new `PATCH /platform-accounts/{id}`). All limits UNVERIFIED.
+
+Repurposing (§9): `POST /content/{id}/repurpose` (202, IK) + `GET /content/{id}/derivatives`.
+Migration b10c4e7d9a52: `source_version_id` (FK to the parent's version), `repurpose_instructions`,
+INSERT trigger (root/depth must follow the parent), immutability trigger extended, unique live
+(parent, platform, format). 409 RECURSIVE_DUPLICATE (ancestor pair) / DUPLICATE_DERIVATIVE
+(anywhere in the tree) / LINEAGE_TOO_DEEP (> 5). Decision: refuse, not warn (DATA_MODEL said warn;
+API_PLAN said 409; §9 "do not accidentally create recursive duplicates"); no override.
+
+Debug loop (2 root causes, each fixed on the first attempt):
+1. Symptom: test_known_issues recommendation job CONFIGURATION_ERROR only in the full integration
+   run. Cause: recommendations sorted report rows by (platform, format, hook, word_count); the
+   canonical near-duplicate LinkedIn posts tie, so DB row order changed the optimizer prompt and
+   its fixture hash. Fix: content-derived tie-breakers (angle, hook/CTA type, metrics JSON).
+   Verified: full test-int twice green; two obsolete optimizer fixtures removed.
+2. Symptom: repurposing tests intermittently "asset generation failed". Cause: the test picked the
+   first approved LinkedIn post, and several share one transaction timestamp -> different source
+   text -> fixture miss. Fix: pick by (hook, body, cta); fixtures re-recorded from scratch.
+   Verified: 4 consecutive replays 11/11; test-int twice 124/124.
+
+Reviewer (read-only): 0 BLOCKER, 2 MAJOR, 8 MINOR. Fixed: M1 an unwritten DRAFT derivative blocked
+retries (now re-claimed by a new job, fenced); M2 stale hook after edits on Mastodon/Reddit;
+m1 subreddit normalisation; m2 content warning counts toward Mastodon's limit; m3 Substack Note
+limit; m4 self-promotion written into the body; m5 "#1" is not a hashtag; m6 duplicates checked
+tree-wide under a root lock; m7 DB-guard tests assert specific constraint/trigger messages;
+m8 unique-index race, PATCH 403 and optimizer-order tests. Accepted: subreddit staleness uses
+the wall clock (warning only).
+
+```
+PHASE 10 GATE — PASSED (all run this session, 2026-09-27)
+  Gate: cycle-creation test fails correctly -> tests/integration/test_repurposing.py (DB rejects
+    re-parenting/self-parent/source change/bad root/bad depth/foreign source/missing source/
+    duplicate sibling; API 409 recursive duplicate, tree duplicate, depth > 5).
+  Gate: each writer has format tests -> tests/unit/test_platform_writers.py (every platform x
+    every configured format + failure cases).
+  uv run poe check -> 227 files already formatted / All checks passed! / Success: no issues found
+                      in 153 source files / Contracts: 4 kept, 0 broken. / 722 passed
+  uv run poe test-int -> 124 passed, 728 deselected (twice in a row)
+  uv run alembic heads -> b10c4e7d9a52 (head); alembic check -> No new upgrade operations detected.
+    Upgrade -> downgrade -> upgrade round trip OK on the dev DB.
+  LIVE §55 — "real local inference with mock publication", frozen tree (sha256 over 339 tracked +
+    untracked files 0bedf692... identical before and after): tests/integration/test_live_e2e.py ->
+    1 passed in 711.50s; record docs/audit/live/live_e2e_20260927T172040828361Z.json.
+    LM Studio: qwen/qwen3.5-9b Q4_K_M ctx 32768 (configured) AND an unrelated
+    qwen3.5-4b-uncensored (ctx 70144) left loaded as instructed (not unloaded; idle during the
+    run per the per-call idle check). 13 calls, 12,681 in / 59,446 out tokens, 87.5 tok/s
+    end-to-end; planning 225.6 s, generation 439.4 s. 7 generated incl. YOUTUBE
+    LONG_VIDEO_OUTLINE and INSTAGRAM CAROUSEL, 0 failed, 0 skipped; 7 passed QA; 7 published
+    by MockPublisher (no platform call, no real audience); 3 recommendations, 0 dropped.
+    One x_writer call hit max_tokens 8192 (FAILED) and the structured-output retry succeeded.
+  Not established: real-platform publishing readiness; live behaviour of the FACEBOOK, REDDIT,
+    SUBSTACK, RUMBLE and MASTODON writers (not in the §55 plan; fixtures + unit/integration only).
+```

@@ -22,6 +22,7 @@ from omnigrowth.schemas.content import (
     ContentVersionRead,
     QaResultRead,
     RegenerateRequest,
+    RepurposeRequest,
     SimilarContentRead,
 )
 from omnigrowth.schemas.sources import JobRead
@@ -135,6 +136,37 @@ async def regenerate(
     async def run() -> Outcome:
         job_id = await content_service.regenerate_asset(
             session, queue, principal.actor, asset_id, body.content_version_id, body.instructions
+        )
+        job = to_read(await job_service.get_job(session, job_id))
+        return 202, job, {"Location": f"/api/v1/jobs/{job_id}"}
+
+    return await idempotent(request, principal, {"asset_id": asset_id, **body.model_dump()}, run)
+
+
+@router.get("/{asset_id}/derivatives", response_model=Page[ContentAssetRead])
+async def list_derivatives(
+    asset_id: uuid.UUID, _principal: ViewerDep, session: SessionDep
+) -> Page[ContentAssetRead]:
+    """Assets repurposed directly from this one (repurposing graph, §9)."""
+    return Page[ContentAssetRead](items=await content_service.list_derivatives(session, asset_id))
+
+
+@router.post("/{asset_id}/repurpose", response_model=JobRead, status_code=status.HTTP_202_ACCEPTED)
+async def repurpose(
+    request: Request,
+    asset_id: uuid.UUID,
+    body: RepurposeRequest,
+    principal: EditorDep,
+    session: SessionDep,
+    queue: JobQueueDep,
+) -> JSONResponse:
+    """§9: a DRAFT derivative for another platform/format, written from this asset's current
+    version by an ASSET_GENERATION job. 409 on a recursive duplicate, a duplicate
+    derivative or a chain deeper than 5."""
+
+    async def run() -> Outcome:
+        job_id = await content_service.repurpose_asset(
+            session, queue, principal.actor, asset_id, body
         )
         job = to_read(await job_service.get_job(session, job_id))
         return 202, job, {"Location": f"/api/v1/jobs/{job_id}"}

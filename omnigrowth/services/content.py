@@ -17,6 +17,7 @@ from decimal import Decimal
 from typing import Any
 
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from omnigrowth.agents import writers
@@ -24,12 +25,18 @@ from omnigrowth.agents.base import AgentDeps, AgentScope, run_agent
 from omnigrowth.agents.strategy import StrategyOutput, strategy_block
 from omnigrowth.campaigns.context import PlanningContext, load_planning_context
 from omnigrowth.content.diff import diff_versions
+from omnigrowth.content.platform_profiles import (
+    SubredditProfile,
+    mastodon_max_characters,
+    subreddit_profiles,
+)
 from omnigrowth.content.qa import (
     CHECKER,
     ClaimRef,
     QaConfig,
     QaContext,
     SimilarHit,
+    cached_qa_config,
     overall_score,
     run_qa,
 )
@@ -47,6 +54,7 @@ from omnigrowth.core.enums import (
 from omnigrowth.core.errors import ErrorCode, OmniGrowthError
 from omnigrowth.core.ids import uuid7
 from omnigrowth.core.logging import get_context
+from omnigrowth.core.settings import get_settings
 from omnigrowth.core.state_machines import CONTENT_ASSET, Actor
 from omnigrowth.models import (
     Brand,
@@ -57,6 +65,7 @@ from omnigrowth.models import (
     ContentVersion,
     Offer,
     PlanItem,
+    PlatformAccount,
 )
 from omnigrowth.providers.embeddings import embed_texts
 from omnigrowth.publishing.scheduler import cancel_open_job
@@ -67,6 +76,7 @@ from omnigrowth.schemas.content import (
     ContentVersionRead,
     FieldChangeRead,
     QaResultRead,
+    RepurposeRequest,
     SimilarContentRead,
 )
 from omnigrowth.services.jobs import JobQueue, cancel_queued, create_job, dispatch
@@ -79,6 +89,15 @@ _QA_ACTOR = Actor(ActorType.SYSTEM, "content-qa")
 _AUTO_APPROVER = Actor(ActorType.SYSTEM, "auto-approve")
 _SOURCE_EXCERPT_CHARS = 4000
 _MUTABLE_CAMPAIGN = (CampaignStatus.ACTIVE, CampaignStatus.PAUSED)
+# Repurposing (§9) starts from content that passed QA; the child gets its own QA/approval.
+_REPURPOSABLE = (
+    ContentAssetStatus.QA_PASSED,
+    ContentAssetStatus.AWAITING_APPROVAL,
+    ContentAssetStatus.APPROVED,
+    ContentAssetStatus.SCHEDULED,
+    ContentAssetStatus.PUBLISHED,
+)
+MAX_LINEAGE_DEPTH = 5  # also a CHECK constraint on content_assets.lineage_depth
 
 
 def _correlation() -> str:
@@ -191,6 +210,24 @@ class _WriterContext:
     allowed_urls: frozenset[str]
     banned: tuple[str, ...]
     avoid: tuple[str, ...]
+    # Per-account platform settings (platform_accounts.settings) of the campaign's brand.
+    subreddits: tuple[SubredditProfile, ...] = ()
+    mastodon_max_chars: int | None = None
+
+
+async def _account_settings(
+    session: AsyncSession, brand_id: uuid.UUID, platform: Platform
+) -> list[dict[str, Any]]:
+    rows = await session.execute(
+        select(PlatformAccount.settings)
+        .where(
+            PlatformAccount.brand_id == brand_id,
+            PlatformAccount.platform == platform,
+            PlatformAccount.archived_at.is_(None),
+        )
+        .order_by(PlatformAccount.created_at, PlatformAccount.id)
+    )
+    return [dict(r or {}) for r in rows.scalars()]
 
 
 async def _writer_context(session: AsyncSession, campaign: Campaign) -> _WriterContext:
@@ -233,6 +270,12 @@ async def _writer_context(session: AsyncSession, campaign: Campaign) -> _WriterC
         allowed_urls=frozenset(urls),
         banned=tuple(profile.banned_phrases) if profile else (),
         avoid=tuple(profile.avoid_list) if profile else (),
+        subreddits=subreddit_profiles(
+            await _account_settings(session, campaign.brand_id, Platform.REDDIT)
+        ),
+        mastodon_max_chars=mastodon_max_characters(
+            await _account_settings(session, campaign.brand_id, Platform.MASTODON)
+        ),
     )
 
 
@@ -245,7 +288,9 @@ class _ItemInfo:
     cta: str | None
 
 
-def _plan_item_block(item: _ItemInfo | None, asset: ContentAsset) -> str:
+def _plan_item_block(
+    item: _ItemInfo | None, asset: ContentAsset, ctx: _WriterContext | None = None
+) -> str:
     lines = [f"Platform: {asset.platform.value}", f"Format: {asset.format.value}"]
     if asset.angle:
         lines.append(f"Angle: {asset.angle.value}")
@@ -255,17 +300,71 @@ def _plan_item_block(item: _ItemInfo | None, asset: ContentAsset) -> str:
             f"Funnel stage: {item.funnel_stage}",
             f"Call to action: {item.cta or '(none)'}",
         ]
+    if ctx is not None and asset.platform is Platform.REDDIT:
+        lines.append("SUBREDDIT PROFILES:" if ctx.subreddits else "SUBREDDIT PROFILES: (none)")
+        lines += [_subreddit_line(p) for p in ctx.subreddits]
+    if ctx is not None and asset.platform is Platform.MASTODON and ctx.mastodon_max_chars:
+        lines.append(f"Instance post limit: {ctx.mastodon_max_chars} characters")
     return "\n".join(lines)
 
 
+def _subreddit_line(profile: SubredditProfile) -> str:
+    rules = [
+        f"self-promotion {profile.self_promotion_policy.lower()}",
+        f"flair {'required' if profile.flair_required else 'optional'}"
+        + (f" ({', '.join(profile.allowed_flairs)})" if profile.allowed_flairs else ""),
+    ]
+    if profile.title_prefix:
+        rules.append(f"title must start with {profile.title_prefix!r}")
+    if profile.max_title_chars:
+        rules.append(f"title at most {profile.max_title_chars} characters")
+    if profile.disclosure_required:
+        rules.append("disclose affiliation")
+    if not profile.text_posts_allowed:
+        rules.append("NO text posts")
+    if profile.banned_phrases:
+        rules.append("never say: " + "; ".join(profile.banned_phrases))
+    summary = f" Rules: {profile.rules_summary}" if profile.rules_summary else ""
+    return f"- {profile.subreddit}: {', '.join(rules)}.{summary}"
+
+
 async def _idea_block(session: AsyncSession, asset: ContentAsset) -> str:
-    if asset.content_idea_id is None:
-        return asset.topic or "(none)"
-    idea = await session.get(ContentIdea, asset.content_idea_id)
-    if idea is None:
-        return asset.topic or "(none)"
-    summaries = [e["summary"] for e in idea.evidence if isinstance(e, dict) and "summary" in e]
-    return "\n".join([f"Hook idea: {idea.hook}", *summaries])
+    idea_text = asset.topic or "(none)"
+    idea = await session.get(ContentIdea, asset.content_idea_id) if asset.content_idea_id else None
+    if idea is not None:
+        summaries = [e["summary"] for e in idea.evidence if isinstance(e, dict) and "summary" in e]
+        idea_text = "\n".join([f"Hook idea: {idea.hook}", *summaries])
+    source = await _repurpose_source(session, asset)
+    return idea_text if source is None else f"{idea_text}\n\n{source}"
+
+
+async def _repurpose_source(session: AsyncSession, asset: ContentAsset) -> str | None:
+    """The exact version a derivative was made from, as the writer's starting point."""
+    if asset.parent_asset_id is None or asset.source_version_id is None:
+        return None
+    parent = await repo.get_asset(session, asset.parent_asset_id)
+    version = await repo.get_version(session, asset.parent_asset_id, asset.source_version_id)
+    if parent is None or version is None:
+        raise _not_found("repurposing source")
+    draft = writers.build_draft(parent.platform, parent.format, _fields(version))
+    lines = [
+        f"REPURPOSE SOURCE: an existing {parent.platform.value} {parent.format.value}. Rewrite "
+        "it natively for this plan item's platform and format; keep its facts, do not copy "
+        "its structure or length.",
+    ]
+    if draft.title:
+        lines.append(f"Title: {draft.title}")
+    lines += [f"Hook: {draft.hook}", *draft.segments, *draft.parts]
+    return "\n".join(lines)
+
+
+async def _plan_item_of(session: AsyncSession, asset: ContentAsset) -> PlanItem | None:
+    """The asset's plan item; a derivative serves its lineage root's plan item."""
+    item_id = asset.plan_item_id
+    if item_id is None and asset.root_asset_id != asset.id:
+        root = await repo.get_asset(session, asset.root_asset_id)
+        item_id = root.plan_item_id if root is not None else None
+    return await session.get(PlanItem, item_id) if item_id is not None else None
 
 
 async def generate_job(
@@ -317,7 +416,8 @@ async def generate_job(
             or asset.generation_request_id != job_id
         ):
             continue  # superseded or already generated by an earlier attempt
-        item = plan_by_id.get(asset.plan_item_id) if asset.plan_item_id else None
+        plan_item = await _plan_item_of(session, asset)
+        item = plan_by_id.get(plan_item.id) if plan_item is not None else None
         try:
             regenerating = asset.current_version_id is not None
             status = await _generate_one(
@@ -332,7 +432,9 @@ async def generate_job(
                     if regenerating
                     else ContentVersionOrigin.GENERATED
                 ),
-                revision_notes=await _revision_notes(session, asset) if regenerating else "(none)",
+                revision_notes=await _revision_notes(session, asset)
+                if regenerating
+                else asset.repurpose_instructions or "(none)",
             )
         except OmniGrowthError as exc:
             await session.rollback()
@@ -385,7 +487,7 @@ async def _generate_one(
         writers.variables(
             brand=ctx.planning.brand_block,
             strategy=ctx.strategy,
-            plan_item=_plan_item_block(item, asset),
+            plan_item=_plan_item_block(item, asset, ctx),
             idea=await _idea_block(session, asset),
             claims=ctx.claims,
             source=ctx.planning.source_text[:_SOURCE_EXCERPT_CHARS],
@@ -411,6 +513,7 @@ async def _generate_one(
             based_on_version_id=(
                 asset.current_version_id if origin is ContentVersionOrigin.REGENERATION else None
             ),
+            title=fields.title,
             hook=fields.hook,
             body=fields.body,
             cta=fields.cta,
@@ -443,12 +546,13 @@ async def _generate_one(
 
 
 async def _revision_notes(session: AsyncSession, asset: ContentAsset) -> str:
-    """Instructions of the latest REGENERATE request for this asset (§37)."""
+    """Instructions of the latest REGENERATE request for this asset (§37); a derivative
+    falls back to its repurposing instructions."""
     history = await repo.approval_history(session, asset.id)
     for action in reversed(history):
         if action.action is ApprovalActionType.REGENERATE:
-            return action.comment or "(none)"
-    return "(none)"
+            return action.comment or asset.repurpose_instructions or "(none)"
+    return asset.repurpose_instructions or "(none)"
 
 
 async def regenerate_asset(
@@ -523,6 +627,156 @@ async def regenerate_asset(
     return job_id
 
 
+# ------------------------------------------------------------------ repurposing (§9)
+def _refuse(message: str, reason: str, **details: Any) -> OmniGrowthError:
+    return OmniGrowthError(ErrorCode.CONFLICT, message, details={"reason": reason, **details})
+
+
+async def repurpose_asset(
+    session: AsyncSession,
+    queue: JobQueue,
+    actor: Actor,
+    asset_id: uuid.UUID,
+    body: RepurposeRequest,
+) -> uuid.UUID:
+    """Create a DRAFT derivative of ``asset_id``'s current version for another platform or
+    format, and an ASSET_GENERATION job that writes it (then QA, then approval as usual).
+
+    Refused with 409 when the derivative would repeat the (platform, format) of the source
+    or of any ancestor (a recursive duplicate, spec §9), when any other live asset of the
+    lineage tree has that pair, or when the lineage would exceed ``MAX_LINEAGE_DEPTH``. A
+    DRAFT sibling whose generation failed or never ran is claimed again instead.
+    Lineage is fixed at insert, so a cycle cannot be created at all (the DB rejects any
+    change of parent); the ancestor check covers loops back to an earlier form.
+    """
+    source = await repo.get_asset(session, asset_id, lock=True)
+    if source is None or source.archived_at is not None:
+        raise _not_found("content asset")
+    campaign = await campaign_repo.get_campaign(session, source.campaign_id)
+    if campaign is None or campaign.status not in _MUTABLE_CAMPAIGN:
+        raise OmniGrowthError(
+            ErrorCode.INVALID_STATE_TRANSITION,
+            "content of this campaign is frozen",
+            details={"failed_guard": "campaign_mutable"},
+        )
+    if source.status not in _REPURPOSABLE or source.current_version_id is None:
+        raise OmniGrowthError(
+            ErrorCode.INVALID_STATE_TRANSITION,
+            "only content that passed QA can be repurposed",
+            details={"failed_guard": "source_passed_qa", "status": source.status.value},
+        )
+    rules = cached_qa_config(get_settings().config_dir).platforms.get(body.target_platform)
+    if body.target_platform not in writers.WRITERS or rules is None:
+        raise OmniGrowthError(
+            ErrorCode.VALIDATION_FAILURE,
+            f"no writer for {body.target_platform.value}",
+            details={"reason": "NO_WRITER", "platform": body.target_platform.value},
+        )
+    if body.target_format not in rules.formats:
+        raise OmniGrowthError(
+            ErrorCode.VALIDATION_FAILURE,
+            f"{body.target_format.value} is not a {body.target_platform.value} format",
+            details={
+                "reason": "UNSUPPORTED_FORMAT",
+                "supported": [f.value for f in rules.formats],
+            },
+        )
+    if source.lineage_depth + 1 > MAX_LINEAGE_DEPTH:
+        raise _refuse(
+            "repurposing chain is too deep",
+            "LINEAGE_TOO_DEEP",
+            max_depth=MAX_LINEAGE_DEPTH,
+        )
+    target = (body.target_platform, body.target_format)
+    for node in await repo.lineage(session, source.id):
+        if (node.platform, node.format) == target:
+            raise _refuse(
+                "the lineage already contains this platform and format",
+                "RECURSIVE_DUPLICATE",
+                conflicting_asset_id=str(node.id),
+                lineage_depth=node.lineage_depth,
+            )
+    if source.root_asset_id != source.id:
+        # One lock per tree (root row, always taken last) serialises the tree-wide check.
+        await repo.get_asset(session, source.root_asset_id, lock=True)
+    retry: ContentAsset | None = None
+    for other in await repo.live_in_tree(session, source.root_asset_id, *target):
+        if other.parent_asset_id == source.id and other.status is ContentAssetStatus.DRAFT:
+            retry = other  # its earlier generation failed or never ran: write it again
+            continue
+        raise _refuse(
+            "this lineage already has live content for this platform and format",
+            "DUPLICATE_DERIVATIVE",
+            existing_asset_id=str(other.id),
+        )
+    correlation_id = _correlation()
+    job_id = await create_job(
+        session,
+        kind=JobKind.ASSET_GENERATION,
+        actor=actor,
+        brand_id=source.brand_id,
+        subject_type="campaigns",
+        subject_id=source.campaign_id,
+    )
+    if retry is not None:
+        # Re-point the DRAFT at this request; a late result of the old one is discarded.
+        await repo.claim_for_generation(session, [retry.id], job_id)
+        if body.instructions is not None:
+            retry.repurpose_instructions = body.instructions
+        await session.commit()
+        return await _dispatched(session, queue, job_id)
+    try:
+        await repo.create_derivative(
+            session,
+            parent=source,
+            source_version_id=source.current_version_id,
+            row={
+                "campaign_id": source.campaign_id,
+                "plan_item_id": None,
+                "content_idea_id": source.content_idea_id,
+                "platform": body.target_platform,
+                "format": body.target_format,
+                "generation_request_id": job_id,
+                "repurpose_instructions": body.instructions,
+                "audience_id": source.audience_id,
+                "offer_id": source.offer_id,
+                "pillar": source.pillar,
+                "topic": source.topic,
+                "angle": source.angle,
+                "funnel_stage": source.funnel_stage,
+            },
+            actor=actor,
+            correlation_id=correlation_id,
+        )
+    except IntegrityError as exc:
+        await session.rollback()
+        if "content_assets_one_derivative_idx" not in str(exc.orig):
+            raise
+        # The unique (parent, platform, format) index: a concurrent identical request won.
+        raise _refuse(
+            "this asset already has a derivative for this platform and format",
+            "DUPLICATE_DERIVATIVE",
+        ) from exc
+    await session.commit()
+    return await _dispatched(session, queue, job_id)
+
+
+async def _dispatched(session: AsyncSession, queue: JobQueue, job_id: uuid.UUID) -> uuid.UUID:
+    try:
+        dispatch(queue, JobKind.ASSET_GENERATION, job_id)
+    except OmniGrowthError:
+        # The derivative stays DRAFT; repeating the request claims it again.
+        await cancel_queued(session, job_id, reason="queue unavailable")
+        await session.commit()
+        raise
+    return job_id
+
+
+async def list_derivatives(session: AsyncSession, asset_id: uuid.UUID) -> list[ContentAssetRead]:
+    await _require_asset(session, asset_id)
+    return [await _asset_read(session, a) for a in await repo.derivatives(session, asset_id)]
+
+
 # ------------------------------------------------------------------ QA
 async def run_asset_qa(
     session: AsyncSession,
@@ -550,7 +804,7 @@ async def run_asset_qa(
     if campaign is None:
         raise _not_found("campaign")
     ctx = writer_ctx or await _writer_context(session, campaign)
-    item = await session.get(PlanItem, asset.plan_item_id) if asset.plan_item_id else None
+    item = await _plan_item_of(session, asset)
     draft = writers.build_draft(asset.platform, asset.format, _fields(version))
     similar, available, embedding_model = await _similarity(
         session, asset, version, draft.segments, deps
@@ -575,6 +829,8 @@ async def run_asset_qa(
         similar=similar,
         similarity_checked=available,
         embedding_model=embedding_model,
+        subreddits=ctx.subreddits,
+        max_chars_per_post=ctx.mastodon_max_chars if asset.platform is Platform.MASTODON else None,
     )
     results = run_qa(draft, qa_ctx, deps.qa)
     await repo.save_qa_results(
@@ -663,6 +919,8 @@ def _fields(version: ContentVersion) -> writers.VersionFields:
         cta=version.cta,
         hashtags=[str(t) for t in payload.get("hashtags", [])],
         cited_claims=[int(n) for n in payload.get("cited_claims", [])],
+        title=version.title,
+        extras=writers.extras_from_payload(payload),
     )
 
 
@@ -817,6 +1075,7 @@ async def edit_asset(
             body=body.body,
             cta=body.cta if body.cta is not None else base.cta,
             platform_payload={
+                **writers.merge_extras(asset.platform, base_payload, body.platform_fields),
                 "hashtags": hashtags,
                 "cited_claims": list(base_payload.get("cited_claims", [])),
             },
@@ -877,10 +1136,12 @@ def _edited_hook(
 ) -> str | None:
     if body.hook is not None:
         return body.hook
-    if asset.platform is Platform.X:
-        # An X hook is the first post: follow the edited body, never a stale copy.
+    if asset.platform in writers.THREADED:
+        # A thread's hook is its first post: follow the edited body, never a stale copy.
         posts = writers.split_posts(body.body)
         return posts[0].split("\n", 1)[0].strip() if posts else None
+    if asset.platform is Platform.REDDIT:
+        return body.title if body.title is not None else base.title or base.hook  # the title
     return base.hook
 
 

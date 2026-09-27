@@ -427,10 +427,195 @@ X_POSTS = [
 ]
 
 
+# ------------------------------------------------------------------ Phase 10 writers
+# YOUTUBE and INSTAGRAM answer the §55 campaign's items; the others answer repurposing
+# requests in tests/integration/test_repurposing.py. All pass QA against the ARTICLE.
+YOUTUBE_VIDEOS = [
+    {
+        "title_candidates": [
+            "How One Firm Kept Client Data Off the Cloud",
+            "Local AI on a 12 GB GPU: A Small-Firm Case Study",
+            "Your Client Files Never Leave the Office",
+        ],
+        "title": "How One Firm Kept Client Data Off the Cloud",
+        "hook": (
+            "What if your AI assistant never saw the cloud at all? That is how one small "
+            "firm uses it today."
+        ),
+        "sections": [
+            {
+                "heading": "The problem",
+                "text": (
+                    "Client files and cloud chatbots do not mix. Every paste sends private "
+                    "data to someone else's servers."
+                ),
+            },
+            {
+                "heading": "The setup",
+                "text": (
+                    "Local AI agents keep proprietary data on the machine. A 9B-parameter "
+                    "model runs on a consumer GPU with 12 GB of VRAM."
+                ),
+            },
+            {
+                "heading": "What runs locally",
+                "text": (
+                    "Routine drafting and ticket summaries run locally, which avoids "
+                    "per-token cloud fees."
+                ),
+            },
+            {
+                "heading": "Where the cloud still wins",
+                "text": (
+                    "Frontier models still lead at long, multi-step reasoning, so the hard "
+                    "jobs stay there."
+                ),
+            },
+        ],
+        "description": (
+            "A small firm moved its routine AI work onto its own hardware so client data "
+            "stays on the machine.\n\nWe walk through the setup, what runs locally, and "
+            "where a frontier model is still the better tool."
+        ),
+        "chapters": [
+            {"at": "0:00", "title": "The problem"},
+            {"at": "1:15", "title": "The setup"},
+            {"at": "3:40", "title": "What runs locally"},
+            {"at": "6:05", "title": "Where the cloud still wins"},
+        ],
+        "thumbnail_concepts": ["Office desk with a padlocked laptop; overlay: DATA STAYS HOME"],
+        "pinned_comment": "Which routine task would you move to a local model first?",
+        "cta": None,
+        "hashtags": ["LocalAI"],
+        "cited_claims": [1, 2, 3, 4],
+        "hook_type": "question",
+        "cta_type": "comment",
+    }
+]
+INSTAGRAM_POSTS = [
+    {
+        "hook": "Your AI does not need your client files. Swipe for the local setup.",
+        "caption": (
+            "Local AI agents keep proprietary data on the machine.\n\nA 9B-parameter model "
+            "runs on a consumer GPU with 12 GB of VRAM, enough for routine drafting.\n\n"
+            "Save this for your next tooling review."
+        ),
+        "frames": [
+            {"visual": "Bold title slide, brand teal", "text": "Keep client data at home"},
+            {"visual": "Icon of a laptop with a lock", "text": "Data stays on the machine"},
+            {"visual": "GPU photo with a label", "text": "12 GB of VRAM runs a 9B model"},
+            {"visual": "Checklist graphic", "text": "Drafting and summaries run locally"},
+            {"visual": "Split screen local vs cloud", "text": "Hard reasoning: frontier model"},
+        ],
+        "visual_direction": "Flat illustrations, brand teal and white, one idea per slide.",
+        "cta": None,
+        "hashtags": ["LocalAI", "SmallBusiness", "DataPrivacy"],
+        "cited_claims": [1, 2, 3, 4],
+        "hook_type": "statement",
+        "cta_type": "save",
+    }
+]
+FACEBOOK_POSTS = [
+    {
+        "hook": "Would you paste a client file into a cloud chatbot?",
+        "body": (
+            "Many small teams do it every day without a second thought.\n\nLocal AI agents "
+            "keep proprietary data on the machine, and routine drafting runs locally without "
+            "per-token cloud fees.\n\nWhat is the first task you would keep in-house?"
+        ),
+        "cta": "Follow for the full local-AI checklist series",
+        "hashtags": ["LocalAI"],
+        "cited_claims": [1, 3],
+        "hook_type": "question",
+        "cta_type": "follow",
+        "media_suggestion": None,
+    }
+]
+REDDIT_POSTS = [
+    {
+        "subreddit": "LocalLLaMA",
+        "title": "Running routine client drafting on a 9B model with 12 GB of VRAM",
+        "body": (
+            "We moved our routine drafting off cloud chatbots. Local agents keep proprietary "
+            "data on the machine, which mattered more to our clients than we expected.\n\n"
+            "- a 9B-parameter model on a consumer GPU with 12 GB of VRAM\n"
+            "- ticket summaries and first drafts run locally, no per-token fees\n"
+            "- long multi-step reasoning still goes to a frontier model\n\n"
+            "What do you run locally, and where did you draw the line?"
+        ),
+        "flair": "Discussion",
+        "cta": None,
+        "cited_claims": [1, 2, 3, 4],
+        "hook_type": "question",
+    }
+]
+SUBSTACK_POSTS = [
+    {
+        "title": "Why your AI should live in your office",
+        "subtitle": "A practical case for local models in small firms",
+        "hook": (
+            "Most small teams send client files to a cloud AI without thinking about where "
+            "that data ends up."
+        ),
+        "body": (
+            "## The case\n\nLocal AI agents keep proprietary data on the machine. A "
+            "9B-parameter model now runs on a consumer GPU with 12 GB of VRAM.\n\n"
+            "## What to run first\n\nRoutine drafting and ticket summaries, which avoid "
+            "per-token cloud fees when they run locally.\n\n## What to keep in the cloud"
+            "\n\nLong, multi-step reasoning, where frontier models still lead."
+        ),
+        "cta": "Follow for the full local-AI checklist series",
+        "lead_magnet": "A one-page local-AI readiness checklist.",
+        "cited_claims": [1, 2, 3, 4],
+        "hook_type": "statement",
+        "cta_type": "subscribe",
+    }
+]
+RUMBLE_VIDEOS = [
+    {
+        "title_candidates": ["Keep Client Data Off the Cloud", "Local AI in 60 Seconds"],
+        "title": "Local AI in 60 Seconds",
+        "hook": "Your client files never have to leave the office.",
+        "sections": [
+            {"heading": "Beat 1", "text": "Local AI agents keep proprietary data on the machine."},
+            {"heading": "Beat 2", "text": "A 9B-parameter model runs on a 12 GB consumer GPU."},
+            {"heading": "Beat 3", "text": "Routine drafting runs locally, no per-token fees."},
+        ],
+        "description": (
+            "A one-minute look at running routine AI work on your own hardware so client "
+            "data stays on the machine."
+        ),
+        "thumbnail_concepts": ["Laptop inside a padlock"],
+        "cta": "Follow for the full local-AI checklist series",
+        "hashtags": ["LocalAI"],
+        "cited_claims": [1, 2, 3],
+        "hook_type": "statement",
+        "cta_type": "follow",
+    }
+]
+MASTODON_POSTS = [
+    {
+        "posts": [
+            "Small firms do not have to send client files to a cloud chatbot. Local AI "
+            "agents keep proprietary data on the machine.",
+            "A 9B-parameter model runs on a consumer GPU with 12 GB of VRAM. That covers "
+            "drafting and ticket summaries without per-token fees.",
+            "Long, multi-step reasoning is still where frontier models win. Use both on purpose.",
+        ],
+        "content_warning": None,
+        "cta": "Follow for the full local-AI checklist series",
+        "hashtags": ["LocalAI", "SmallBusiness"],
+        "cited_claims": [1, 2, 3, 4],
+        "hook_type": "statement",
+        "cta_type": "follow",
+    }
+]
+
+
 # ------------------------------------------------------------------ Phase 7 (§55 E2E)
 # The §55 campaign adds YOUTUBE and INSTAGRAM; the planner answer for it (selected by the
-# platform list in the prompt) includes items for both so the E2E can prove they are
-# reported as skipped (decision D2).
+# platform list in the prompt) includes items for both. Until Phase 10 they were reported as
+# skipped (decision D2); since Phase 10 their writers produce them.
 E2E_PLAN = {
     "items": [
         plan_item(
@@ -521,7 +706,7 @@ OPTIMIZER = {
         {
             # Cites a row that does not exist: must be dropped, never stored.
             "statement": "Double the posting frequency on Instagram.",
-            "rationale": "Instagram was not published in this campaign.",
+            "rationale": "Instagram engagement is high (row S9).",
             "target": "INSTAGRAM",
             "evidence": ["S9"],
         },
@@ -543,6 +728,13 @@ def main() -> None:
     )
     write("content__linkedin_writer.json", LINKEDIN_POSTS)
     write("content__x_writer.json", X_POSTS)
+    write("content__youtube_writer.json", YOUTUBE_VIDEOS)
+    write("content__instagram_writer.json", INSTAGRAM_POSTS)
+    write("content__facebook_writer.json", FACEBOOK_POSTS)
+    write("content__reddit_writer.json", REDDIT_POSTS)
+    write("content__substack_writer.json", SUBSTACK_POSTS)
+    write("content__rumble_writer.json", RUMBLE_VIDEOS)
+    write("content__mastodon_writer.json", MASTODON_POSTS)
     write("analytics__optimizer.json", [OPTIMIZER])
 
 

@@ -1,11 +1,11 @@
 ```
-phase: 9
-task: phase-9 gate (experiments + safeguard fixes)
-gate: GATE_PASSED (2026-09-27; limitations listed in ENGINEERING_LOG — human to accept)
-last_green_commit: 495d6c4
-next_phase: 10 — Platforms + repurposing
+phase: 10
+task: phase-10 gate (platform writers + repurposing graph)
+gate: GATE_PASSED (2026-09-27; see ENGINEERING_LOG)
+last_green_commit: 15d3624 (phase 10 changes uncommitted; human signs)
+next_phase: 11 — Frontend (Vite + React + TS)
 shell: PowerShell Core 7.6.6 (Git Bash also available)
-blockers: phase 9 closing commits pending (human signs)
+blockers: phase 10 commits pending (human signs)
 ```
 
 ## Notes
@@ -22,3 +22,4 @@ blockers: phase 9 closing commits pending (human signs)
 - Phase 8: derived metrics as data (formula grammar, revisions), attribute comparisons, publication metrics, calendar, scheduled pulls, simulated-vs-real provenance (docs/METRICS.md). Upload/inference safeguards hardened (docs/audit/safeguards_post_mvp.md). Live §55 green (17 min).
 - Phase 9: experiments (A14: unit = post at fixed age, floor 30/variant, power 80 %, fixed 0.95, Bonferroni, fixed endpoint, simulated evidence separated) + GPU lease, backlog lock, killable parsing, context budget. Unit/integration green; live blocked by environment.
 - Phase 9 closing checks: controlled live rerun, real-server cancellation/lease-loss evidence + idle gate, exact server tokenization, randomization inference + power inflation 1.25, frozen timeline. Live §55 (real local inference, mock publication) passed on a frozen tree.
+- Phase 10: writers for every platform (A15; D2 retired), per-subreddit/per-instance account settings, repurposing graph (`/content/{id}/repurpose`, `/derivatives`) with DB-enforced lineage and 409 on recursive duplicates. Live §55 (real local inference, mock publication) passed with YouTube + Instagram written.

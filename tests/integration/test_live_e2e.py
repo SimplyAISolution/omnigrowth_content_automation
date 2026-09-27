@@ -9,8 +9,9 @@ Every run writes a NEW record ``docs/audit/live/live_e2e_<UTC timestamp>.json`` 
 historical records are never overwritten) labelled "real local inference with mock
 publication", with the LM Studio load state (models, quantization, context) and one row per
 model call (task, model, input/output tokens, latency, throughput) read from ``model_runs``.
-A pass does NOT establish real-platform publishing readiness; INSTAGRAM and YOUTUBE writers
-are not implemented and are skipped (decision D2).
+A pass does NOT establish real-platform publishing readiness. Since Phase 10 the INSTAGRAM
+and YOUTUBE items are written by their own writers (until then they were skipped, decision
+D2); publication of every platform stays MOCK.
 """
 
 from __future__ import annotations
@@ -38,7 +39,8 @@ pytestmark = pytest.mark.live_llm
 REPO = Path(__file__).resolve().parents[2]
 AUDIT_DIR = REPO / "docs" / "audit" / "live"
 LABEL = "real local inference with mock publication"
-EXCLUDED = ["INSTAGRAM", "YOUTUBE"]  # writers NOT_IMPLEMENTED (D2); not a platform test
+EXCLUDED: list[str] = []  # Phase 10: every platform has a writer (was INSTAGRAM, YOUTUBE)
+NEW_WRITERS = ("YOUTUBE", "INSTAGRAM")  # must be attempted by their writers, not skipped
 TOPIC = "Local AI agents will become an important alternative to fully cloud-hosted AI."
 
 
@@ -198,11 +200,13 @@ async def test_live_success_scenario(env: Env) -> None:
             "failed": job["result"]["failed"],
             "skipped": sorted({s["platform"] for s in job["result"]["skipped"]}),
         }
-        # Excluded platforms are asserted, not just labelled (writers NOT_IMPLEMENTED, D2).
-        assert set(EXCLUDED) <= set(steps["generation_result"]["skipped"]), steps[
-            "generation_result"
-        ]
+        assert steps["generation_result"]["skipped"] == [], steps["generation_result"]
         assets = (await _ok(env, "GET", "/content", params={"campaign_id": campaign_id}))["items"]
+        # The planned YOUTUBE/INSTAGRAM items reached their writers (their QA outcome may
+        # legitimately vary with model output; it is recorded below, not assumed).
+        written = {a["platform"] for a in assets if a["current_version_id"]}
+        planned = {p["platform"] for p in plan}
+        assert {p for p in NEW_WRITERS if p in planned} <= written, (planned, written)
         steps["assets"] = [
             {
                 "platform": a["platform"],

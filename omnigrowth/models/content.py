@@ -75,8 +75,9 @@ class ContentIdea(UUIDPkMixin, TimestampMixin, Base):
 class ContentAsset(UUIDPkMixin, TimestampMixin, ArchivableMixin, Base):
     """Mutable header of a piece of content; text lives in ``content_versions``.
 
-    Lineage immutability (``BEFORE UPDATE OF parent_asset_id, root_asset_id`` trigger) is
-    created in the Alembic migration, not here.
+    Lineage immutability (``BEFORE UPDATE`` trigger) and insert-time lineage consistency
+    (``BEFORE INSERT``: root and depth follow from the parent) are created in the Alembic
+    migrations, not here.
     """
 
     __tablename__ = "content_assets"
@@ -110,6 +111,25 @@ class ContentAsset(UUIDPkMixin, TimestampMixin, ArchivableMixin, Base):
             "(parent_asset_id IS NULL) = (root_asset_id = id)", name="root_iff_no_parent"
         ),
         CheckConstraint("lineage_depth BETWEEN 0 AND 5", name="lineage_depth_range"),
+        # A derivative records which version of its parent it was made from (Phase 10).
+        ForeignKeyConstraint(
+            ["parent_asset_id", "source_version_id"],
+            ["content_versions.content_asset_id", "content_versions.id"],
+            name="fk_content_assets_source_version",
+            ondelete="RESTRICT",
+            use_alter=True,
+        ),
+        CheckConstraint(
+            "(parent_asset_id IS NULL) = (source_version_id IS NULL)", name="source_iff_parent"
+        ),
+        Index(
+            "content_assets_one_derivative_idx",
+            "parent_asset_id",
+            "platform",
+            "format",
+            unique=True,
+            postgresql_where=text("parent_asset_id IS NOT NULL AND archived_at IS NULL"),
+        ),
         Index(
             "content_assets_campaign_status_idx",
             "campaign_id",
@@ -131,6 +151,8 @@ class ContentAsset(UUIDPkMixin, TimestampMixin, ArchivableMixin, Base):
     content_idea_id: Mapped[uuid.UUID | None] = mapped_column(fk("content_ideas.id"), nullable=True)
     # Same-brand parent enforced by the composite FK above.
     parent_asset_id: Mapped[uuid.UUID | None] = mapped_column(nullable=True)
+    source_version_id: Mapped[uuid.UUID | None] = mapped_column(nullable=True)
+    repurpose_instructions: Mapped[str | None] = mapped_column(Text, nullable=True)
     root_asset_id: Mapped[uuid.UUID] = mapped_column(fk("content_assets.id"), nullable=False)
     lineage_depth: Mapped[int] = mapped_column(SmallInteger, nullable=False, server_default=ZERO)
     platform: Mapped[Platform] = mapped_column(pg_enum(Platform), nullable=False)

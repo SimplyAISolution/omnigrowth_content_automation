@@ -21,6 +21,7 @@ import re
 from collections.abc import Iterable
 from dataclasses import dataclass, field
 from functools import lru_cache
+from itertools import pairwise
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlsplit
@@ -28,6 +29,7 @@ from urllib.parse import urlsplit
 import yaml
 from pydantic import BaseModel, ConfigDict, Field
 
+from omnigrowth.content.platform_profiles import SubredditProfile, normalize_subreddit
 from omnigrowth.core.enums import ClaimLabel, ContentFormat, Platform, QaOutcome, QaStage
 from omnigrowth.core.errors import ErrorCode, OmniGrowthError
 
@@ -35,6 +37,15 @@ CHECKER = "omnigrowth.content.qa@1"
 
 
 # ------------------------------------------------------------------ configuration
+class PartRange(BaseModel):
+    """How many production parts (scenes, slides, script sections) a format needs."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    min: int = Field(ge=0)
+    max: int = Field(ge=1)
+
+
 class PlatformRules(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -48,6 +59,17 @@ class PlatformRules(BaseModel):
     markdown_rendered: bool = False
     # Platforms that shorten links count every URL as this many characters (X: t.co).
     url_chars: int | None = None
+    # Multi-post platforms (X, Mastodon): a THREAD needs 2+ posts, a TEXT_POST exactly 1.
+    threaded: bool = False
+    max_title_chars: int | None = None
+    title_required: list[ContentFormat] = Field(default_factory=list)
+    # Production parts per format; formats not listed accept any number (including none).
+    parts: dict[ContentFormat, PartRange] = Field(default_factory=dict)
+    # Description chapters (YouTube): when timestamp lines are present they must start at
+    # 0:00, ascend, and number at least this many, or the platform ignores them.
+    chapters_min: int | None = None
+    # Per-format limit on the published text, where it differs from max_chars.
+    format_max_chars: dict[ContentFormat, int] = Field(default_factory=dict)
 
 
 class ModelThresholds(BaseModel):
@@ -101,7 +123,14 @@ def cached_qa_config(config_dir: Path) -> QaConfig:
 # ------------------------------------------------------------------ inputs / outputs
 @dataclass(frozen=True, slots=True)
 class Draft:
-    """What gets published: ``segments`` are the composed texts (one per X post)."""
+    """What gets published: ``segments`` are the composed texts (one per X/Mastodon post).
+
+    ``title`` is published separately (YouTube, Reddit, Substack, Rumble). ``parts`` are
+    production material the human turns into media (scenes, slides, script sections) and
+    ``notes`` other generated text (title candidates, thumbnail concepts, pinned comment):
+    neither is length-checked as published text, but both go through the brand and
+    accuracy stages because they reach an audience too.
+    """
 
     platform: Platform
     format: ContentFormat
@@ -111,6 +140,13 @@ class Draft:
     segments: tuple[str, ...]
     hashtags: tuple[str, ...] = ()
     cited_claims: tuple[int, ...] = ()
+    title: str | None = None
+    parts: tuple[str, ...] = ()
+    notes: tuple[str, ...] = ()
+    community: str | None = None  # REDDIT: target subreddit
+    flair: str | None = None
+    # MASTODON: shown before each post and counted in the instance's post limit.
+    content_warning: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -143,6 +179,10 @@ class QaContext:
     # False when no embedding model was reachable: reported, never blocking (§10).
     similarity_checked: bool = True
     embedding_model: str | None = None  # selects the calibrated thresholds
+    # REDDIT: the brand's configured subreddit profiles (platform_accounts.settings).
+    subreddits: tuple[SubredditProfile, ...] = ()
+    # MASTODON: the strictest configured instance limit, overriding config/qa.yaml.
+    max_chars_per_post: int | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -194,7 +234,7 @@ _URL = re.compile(
     r"(?![\w-])(?:/[^\s<>()\[\]{}\"']*)?",
     re.IGNORECASE,
 )
-_HASHTAG = re.compile(r"(?<![\w#])#(\w+)")
+_HASHTAG = re.compile(r"(?<![\w#])#(\w*[^\W\d_]\w*)")
 _MD_BOLD = re.compile(r"\*\*[^*\n]+\*\*|__[^_\n]+__")
 _MD_HEADING = re.compile(r"^\s{0,3}#{1,6}\s", re.MULTILINE)
 _STATISTIC = re.compile(
@@ -218,6 +258,22 @@ def _compact(text: str) -> str:
 
 def _full_text(draft: Draft) -> str:
     return "\n\n".join(draft.segments)
+
+
+def _checked_text(draft: Draft) -> str:
+    """Everything that reaches an audience: title, published text, parts and notes."""
+    extra = [*draft.parts, *draft.notes, draft.content_warning or ""]
+    return "\n".join([draft.title or "", draft.hook, _full_text(draft), draft.cta or "", *extra])
+
+
+_CHAPTER = re.compile(r"^\s*((?:\d{1,2}:)?\d{1,2}:\d{2})\s+\S", re.MULTILINE)
+
+
+def _seconds(stamp: str) -> int:
+    total = 0
+    for piece in stamp.split(":"):
+        total = total * 60 + int(piece)
+    return total
 
 
 def _clean_url(url: str) -> str:
@@ -268,9 +324,25 @@ def structural(draft: Draft, ctx: QaContext, rules: PlatformRules) -> StageResul
     if not draft.body.strip() or not any(s.strip() for s in draft.segments):
         findings.append(_fail("EMPTY_BODY", "the post has no body"))
     written = bool(ctx.expected_cta) and _norm(ctx.expected_cta or "") in _norm(_full_text(draft))
-    if ctx.cta_required and not (draft.cta and draft.cta.strip()) and not written:
+    # Reddit posts are community-native (spec §8): a call to action is never required.
+    required = ctx.cta_required and draft.platform is not Platform.REDDIT
+    if required and not (draft.cta and draft.cta.strip()) and not written:
         findings.append(_fail("MISSING_CTA", "this plan item requires a call to action"))
-    if draft.platform is Platform.X:
+    if draft.format in rules.title_required and not (draft.title and draft.title.strip()):
+        findings.append(_fail("MISSING_TITLE", f"{draft.format.value} needs a title"))
+    span = rules.parts.get(draft.format)
+    if span is not None and not span.min <= len(draft.parts) <= span.max:
+        code = "TOO_FEW_PARTS" if len(draft.parts) < span.min else "TOO_MANY_PARTS"
+        findings.append(
+            _fail(
+                code,
+                f"{draft.format.value} needs {span.min}-{span.max} parts",
+                parts=len(draft.parts),
+                min=span.min,
+                max=span.max,
+            )
+        )
+    if rules.threaded:
         posts = len(draft.segments)
         if draft.format is ContentFormat.THREAD and posts < 2:
             findings.append(_fail("THREAD_TOO_SHORT", "a thread needs at least 2 posts"))
@@ -290,7 +362,7 @@ def structural(draft: Draft, ctx: QaContext, rules: PlatformRules) -> StageResul
 
 
 def brand(draft: Draft, ctx: QaContext, config: QaConfig) -> StageResult:
-    text = "\n".join([draft.hook, _full_text(draft), draft.cta or ""])
+    text = _checked_text(draft)
     findings = [
         _fail("BANNED_PHRASE", f"uses banned phrase {p!r}", phrase=p)
         for p in _phrase_hits(text, ctx.banned_phrases)
@@ -332,7 +404,7 @@ def brand(draft: Draft, ctx: QaContext, config: QaConfig) -> StageResult:
 
 def accuracy(draft: Draft, ctx: QaContext) -> StageResult:
     findings: list[Finding] = []
-    text = "\n".join([draft.hook, _full_text(draft), draft.cta or ""])
+    text = _checked_text(draft)
     allowed = {_clean_url(u) for u in ctx.allowed_urls}
     for url in dict.fromkeys(_URL.findall(text)):
         if _clean_url(url) not in allowed:
@@ -376,8 +448,22 @@ def accuracy(draft: Draft, ctx: QaContext) -> StageResult:
     return _result(QaStage.ACCURACY, findings)
 
 
-def platform(draft: Draft, rules: PlatformRules) -> StageResult:
+def platform(draft: Draft, rules: PlatformRules, ctx: QaContext | None = None) -> StageResult:
     findings: list[Finding] = []
+    title = (draft.title or "").strip()
+    if rules.max_title_chars is not None and len(title) > rules.max_title_chars:
+        findings.append(
+            _fail(
+                "TITLE_TOO_LONG",
+                f"title is {len(title)} characters",
+                length=len(title),
+                max=rules.max_title_chars,
+            )
+        )
+    if rules.chapters_min is not None:
+        findings += _chapter_findings(draft, rules.chapters_min)
+    if draft.platform is Platform.REDDIT and ctx is not None:
+        findings += _community_findings(draft, ctx)
     if draft.format not in rules.formats:
         findings.append(
             _fail(
@@ -386,8 +472,9 @@ def platform(draft: Draft, rules: PlatformRules) -> StageResult:
             )
         )
     if rules.max_chars_per_post is not None:
+        warning = len(draft.content_warning or "")
         for index, segment in enumerate(draft.segments, start=1):
-            length = _counted_length(segment, rules)
+            length = _counted_length(segment, rules) + warning
             if length > rules.max_chars_per_post:
                 findings.append(
                     _fail(
@@ -405,6 +492,16 @@ def platform(draft: Draft, rules: PlatformRules) -> StageResult:
                 f"text is {len(_full_text(draft))} characters",
                 length=len(_full_text(draft)),
                 max=rules.max_chars,
+            )
+        )
+    format_max = rules.format_max_chars.get(draft.format)
+    if format_max is not None and len(_full_text(draft)) > format_max:
+        findings.append(
+            _fail(
+                "OVER_LENGTH",
+                f"a {draft.format.value} is at most {format_max} characters",
+                length=len(_full_text(draft)),
+                max=format_max,
             )
         )
     if rules.hook_visible_chars is not None and len(draft.hook) > rules.hook_visible_chars:
@@ -437,6 +534,90 @@ def platform(draft: Draft, rules: PlatformRules) -> StageResult:
     return _result(QaStage.PLATFORM, findings)
 
 
+def _chapter_findings(draft: Draft, minimum: int) -> list[Finding]:
+    stamps = [_seconds(m) for m in _CHAPTER.findall(_full_text(draft))]
+    if not stamps:
+        return []
+    problems: list[str] = []
+    if stamps[0] != 0:
+        problems.append("the first chapter must start at 0:00")
+    if any(b <= a for a, b in pairwise(stamps)):
+        problems.append("chapter timestamps must ascend")
+    if len(stamps) < minimum:
+        problems.append(f"at least {minimum} chapters are needed")
+    return (
+        [_warn("CHAPTERS_IGNORED", "chapters will not be shown: " + "; ".join(problems))]
+        if problems
+        else []
+    )
+
+
+def _community_findings(draft: Draft, ctx: QaContext) -> list[Finding]:
+    """Per-subreddit rules (spec §8). Without profiles the post can still be drafted."""
+    if not ctx.subreddits:
+        return [_warn("NO_SUBREDDIT_PROFILE", "no subreddit is configured for this brand")]
+    name = normalize_subreddit(draft.community or "").casefold()
+    profile = next((p for p in ctx.subreddits if p.subreddit.casefold() == name), None)
+    if profile is None:
+        return [
+            _fail(
+                "UNKNOWN_SUBREDDIT",
+                "the target subreddit is not one of the configured profiles",
+                subreddit=draft.community,
+                configured=[p.subreddit for p in ctx.subreddits],
+            )
+        ]
+    findings: list[Finding] = []
+    text = _checked_text(draft)
+    findings += [
+        _fail("SUBREDDIT_BANNED_PHRASE", f"r/{profile.subreddit} bans {p!r}", phrase=p)
+        for p in _phrase_hits(text, profile.banned_phrases)
+    ]
+    if not profile.text_posts_allowed:
+        findings.append(_fail("POST_TYPE_NOT_ALLOWED", "text posts are not allowed here"))
+    promoted = bool(draft.cta and draft.cta.strip()) or bool(
+        ctx.expected_cta and _norm(ctx.expected_cta) in _norm(_full_text(draft))
+    )
+    if profile.self_promotion_policy == "BANNED" and promoted:
+        findings.append(
+            _fail("SELF_PROMOTION_BANNED", "this subreddit bans self-promotion; drop the CTA")
+        )
+    title = (draft.title or "").strip()
+    if profile.max_title_chars is not None and len(title) > profile.max_title_chars:
+        findings.append(
+            _fail(
+                "TITLE_TOO_LONG", "title exceeds the subreddit limit", max=profile.max_title_chars
+            )
+        )
+    if profile.title_prefix and not title.startswith(profile.title_prefix):
+        findings.append(
+            _fail(
+                "TITLE_PREFIX_MISSING", "missing required title prefix", prefix=profile.title_prefix
+            )
+        )
+    flair = (draft.flair or "").strip()
+    allowed = {f.casefold() for f in profile.allowed_flairs}
+    if profile.flair_required and not flair:
+        findings.append(_fail("FLAIR_REQUIRED", "this subreddit requires post flair"))
+    elif flair and allowed and flair.casefold() not in allowed:
+        findings.append(_fail("UNKNOWN_FLAIR", "flair is not in the allowed list", flair=flair))
+    if profile.disclosure_required:
+        findings.append(
+            _warn("DISCLOSURE_REQUIRED", "the subreddit requires disclosing affiliation; check it")
+        )
+    if profile.stale():
+        findings.append(
+            _warn(
+                "SUBREDDIT_PROFILE_STALE",
+                "subreddit rules were not reviewed in the last 90 days",
+                last_reviewed_at=profile.last_reviewed_at.isoformat()
+                if profile.last_reviewed_at
+                else None,
+            )
+        )
+    return findings
+
+
 def run_qa(draft: Draft, ctx: QaContext, config: QaConfig) -> list[StageResult]:
     rules = config.platforms.get(draft.platform)
     if rules is None:
@@ -445,11 +626,13 @@ def run_qa(draft: Draft, ctx: QaContext, config: QaConfig) -> list[StageResult]:
             f"no QA rules for platform {draft.platform.value}",
             details={"platform": draft.platform.value},
         )
+    if ctx.max_chars_per_post is not None and rules.max_chars_per_post is not None:
+        rules = rules.model_copy(update={"max_chars_per_post": ctx.max_chars_per_post})
     return [
         structural(draft, ctx, rules),
         brand(draft, ctx, config),
         accuracy(draft, ctx),
-        platform(draft, rules),
+        platform(draft, rules, ctx),
     ]
 
 

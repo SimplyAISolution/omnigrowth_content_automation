@@ -41,7 +41,7 @@ Legend: `U` = `UNVERIFIED`. "MVP publisher" is what runs in the MVP (Phase 7) an
 | `MASTODON` | U | U | U | U | U | U | U | `UNVERIFIED` | `MockPublisher` | `ManualExportPublisher` per instance if needed | 10 / 13 |
 
 Notes:
-- Per A7, only `LINKEDIN` and `X` writers are in MVP scope; all other platform writers are interface + stub raising `NotImplementedError` until Phase 10.
+- Per A7, only `LINKEDIN` and `X` writers were in MVP scope. Since Phase 10 (A15) every platform has a writer; publishing for all of them is still `MockPublisher` and every capability here stays `UNVERIFIED`.
 - Spec §15's required-connector list omits Mastodon; the `Platform` enum and §7E include it. Treated here as in scope for Phase 13 (see Open questions).
 - Every `fetch_metrics` result must leave unobtainable `AnalyticsSnapshot` fields `NULL` (spec §6: "Use nullable metrics"); never zero-fill (spec principle 13, PHASES Phase 8 gate).
 
@@ -280,7 +280,7 @@ One platform per session. The agent never calls platform endpoints on its own in
 3. **RESOLVED (GLOSSARY §4a):** `QUOTE_POST` added to `ContentFormat`.
 4. **RESOLVED (GLOSSARY §4a):** metrics without a dedicated field (LinkedIn dwell proxies, Substack email open rate, Reddit upvote ratio) go in `analytics_snapshots.platform_metrics` (jsonb).
 5. **RESOLVED (GLOSSARY §4a):** snapshot provenance is `MetricSource` (`MOCK, FIXTURE, API, MANUAL`).
-6. **Facebook, Rumble, Mastodon formats** are not defined in spec §8; the proposed lists above need human confirmation.
+6. **Facebook, Rumble, Mastodon formats** are not defined in spec §8; the proposed lists above need human confirmation. Phase 10 writers support these subsets (`config/qa.yaml`): FACEBOOK `TEXT_POST`, `IMAGE_POST`; RUMBLE `LONG_VIDEO_OUTLINE`, `LONG_VIDEO_SCRIPT`, `SHORT`; MASTODON `TEXT_POST`, `THREAD`. `COMMENT_DRAFT`, Facebook `REEL_SCRIPT`/`STORY`/`LONG_VIDEO_OUTLINE`, Mastodon `IMAGE_POST`/`POLL` and Reddit `COMMENT_DRAFT` are not written yet.
 7. **Mastodon** is in the `Platform` enum and §7E but not in §15's required-connector list — confirm Phase 13 scope.
 8. **Video/image platforms** (`INSTAGRAM`, `YOUTUBE`, `RUMBLE`, `FACEBOOK` video): we generate scripts, not media. Is a live adapter ever in scope, or is the flow always "human attaches finished media, then publish"? Affects the `ContentAsset.media_requirements` contract.
 9. **Paid API tiers** (possibly X, Reddit — unverified): the human must approve any spend (AGENTS.md §7). Budget owner and ceiling?

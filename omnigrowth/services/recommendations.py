@@ -7,6 +7,7 @@ labels do not resolve are dropped and counted, never stored.
 
 from __future__ import annotations
 
+import json
 import logging
 import uuid
 from typing import Any, cast
@@ -65,7 +66,21 @@ async def request_generation(
 def _labelled_rows(report_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Rows with a snapshot, in a content-derived order (stable prompt -> stable fixtures)."""
     rows = [r for r in report_rows if r["snapshot_id"] is not None]
-    rows.sort(key=lambda r: (r["platform"], r["format"], r["hook"] or "", r["word_count"]))
+    # Near-duplicate posts share hook and length; the other content fields break the tie so
+    # the order never depends on how the database returned the rows.
+    rows.sort(
+        key=lambda r: (
+            r["platform"],
+            r["format"],
+            r["hook"] or "",
+            r["word_count"],
+            r["angle"] or "",
+            r["hook_type"] or "",
+            r["cta_type"] or "",
+            # Rows equal on everything above render the same line unless metrics differ.
+            json.dumps(r["metrics"], sort_keys=True, default=str),
+        )
+    )
     labelled: list[dict[str, Any]] = []
     for n, row in enumerate(rows, start=1):
         derived = row["derived"]

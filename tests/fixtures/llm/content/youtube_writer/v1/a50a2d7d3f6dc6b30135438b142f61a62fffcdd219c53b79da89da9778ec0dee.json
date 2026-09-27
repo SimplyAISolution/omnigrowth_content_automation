@@ -1,0 +1,10 @@
+{
+  "prompt": "content/youtube_writer",
+  "responses": [
+    {
+      "content": "{\"title_candidates\": [\"How One Firm Kept Client Data Off the Cloud\", \"Local AI on a 12 GB GPU: A Small-Firm Case Study\", \"Your Client Files Never Leave the Office\"], \"title\": \"How One Firm Kept Client Data Off the Cloud\", \"hook\": \"What if your AI assistant never saw the cloud at all? That is how one small firm uses it today.\", \"sections\": [{\"heading\": \"The problem\", \"text\": \"Client files and cloud chatbots do not mix. Every paste sends private data to someone else's servers.\"}, {\"heading\": \"The setup\", \"text\": \"Local AI agents keep proprietary data on the machine. A 9B-parameter model runs on a consumer GPU with 12 GB of VRAM.\"}, {\"heading\": \"What runs locally\", \"text\": \"Routine drafting and ticket summaries run locally, which avoids per-token cloud fees.\"}, {\"heading\": \"Where the cloud still wins\", \"text\": \"Frontier models still lead at long, multi-step reasoning, so the hard jobs stay there.\"}], \"description\": \"A small firm moved its routine AI work onto its own hardware so client data stays on the machine.\\n\\nWe walk through the setup, what runs locally, and where a frontier model is still the better tool.\", \"chapters\": [{\"at\": \"0:00\", \"title\": \"The problem\"}, {\"at\": \"1:15\", \"title\": \"The setup\"}, {\"at\": \"3:40\", \"title\": \"What runs locally\"}, {\"at\": \"6:05\", \"title\": \"Where the cloud still wins\"}], \"thumbnail_concepts\": [\"Office desk with a padlocked laptop; overlay: DATA STAYS HOME\"], \"pinned_comment\": \"Which routine task would you move to a local model first?\", \"cta\": null, \"hashtags\": [\"LocalAI\"], \"cited_claims\": [1, 2, 3, 4], \"hook_type\": \"question\", \"cta_type\": \"comment\"}",
+      "input_tokens": null,
+      "output_tokens": null
+    }
+  ]
+}

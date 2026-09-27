@@ -1,0 +1,325 @@
+{
+  "ran_at": "2026-09-27T17:20:40.828361+00:00",
+  "label": "real local inference with mock publication",
+  "publishing": "MockPublisher (PUBLISH_MODE=MOCK): no platform call, no real audience",
+  "excluded_platforms": [],
+  "not_established": "real-platform publishing readiness",
+  "server_before": {
+    "loaded": [
+      {
+        "id": "qwen/qwen3.5-9b",
+        "quantization": "Q4_K_M",
+        "loaded_context_length": 32768,
+        "arch": "qwen35"
+      },
+      {
+        "id": "qwen3.5-4b-uncensored-hauhaucs-aggressive",
+        "quantization": "Q4_K_M",
+        "loaded_context_length": 70144,
+        "arch": "qwen35"
+      }
+    ]
+  },
+  "outcome": "PASSED",
+  "steps": {
+    "planning": {
+      "status": "SUCCEEDED",
+      "seconds": 225.6,
+      "error_code": null
+    },
+    "plan": [
+      "INSTAGRAM",
+      "LINKEDIN",
+      "X",
+      "YOUTUBE"
+    ],
+    "generation": {
+      "status": "SUCCEEDED",
+      "seconds": 439.4,
+      "error_code": null
+    },
+    "generation_result": {
+      "generated": 7,
+      "failed": [],
+      "skipped": []
+    },
+    "assets": [
+      {
+        "platform": "LINKEDIN",
+        "format": "TEXT_POST",
+        "status": "AWAITING_APPROVAL",
+        "fails": []
+      },
+      {
+        "platform": "X",
+        "format": "THREAD",
+        "status": "AWAITING_APPROVAL",
+        "fails": []
+      },
+      {
+        "platform": "LINKEDIN",
+        "format": "CAROUSEL",
+        "status": "AWAITING_APPROVAL",
+        "fails": []
+      },
+      {
+        "platform": "LINKEDIN",
+        "format": "ARTICLE",
+        "status": "AWAITING_APPROVAL",
+        "fails": []
+      },
+      {
+        "platform": "YOUTUBE",
+        "format": "LONG_VIDEO_OUTLINE",
+        "status": "AWAITING_APPROVAL",
+        "fails": []
+      },
+      {
+        "platform": "X",
+        "format": "THREAD",
+        "status": "AWAITING_APPROVAL",
+        "fails": []
+      },
+      {
+        "platform": "INSTAGRAM",
+        "format": "CAROUSEL",
+        "status": "AWAITING_APPROVAL",
+        "fails": []
+      }
+    ],
+    "approval_queue": 7,
+    "publishing": {
+      "claimed": 7,
+      "succeeded": 7,
+      "published": 7
+    },
+    "analytics_pull": {
+      "status": "SUCCEEDED",
+      "seconds": 0.0,
+      "error_code": null
+    },
+    "report": {
+      "coverage": {
+        "published": 7,
+        "with_snapshot": 7
+      },
+      "derived": {
+        "click_rate": {
+          "value": 0.005881,
+          "null_reason": null,
+          "null_code": null,
+          "missing_inputs": [],
+          "aggregation": "RATIO_OF_SUMS"
+        },
+        "comment_rate": {
+          "value": 0.006172,
+          "null_reason": null,
+          "null_code": null,
+          "missing_inputs": [],
+          "aggregation": "RATIO_OF_SUMS"
+        },
+        "content_efficiency": {
+          "value": null,
+          "null_reason": "conversion_count, reach not captured",
+          "null_code": "MISSING_INPUT",
+          "missing_inputs": []
+        },
+        "engagement_rate": {
+          "value": 0.040608,
+          "null_reason": null,
+          "null_code": null,
+          "missing_inputs": [
+            "saves"
+          ],
+          "aggregation": "RATIO_OF_SUMS"
+        },
+        "follow_conversion": {
+          "value": 0.073684,
+          "null_reason": null,
+          "null_code": null,
+          "missing_inputs": [],
+          "aggregation": "RATIO_OF_SUMS"
+        },
+        "save_rate": {
+          "value": 0.006208,
+          "null_reason": null,
+          "null_code": null,
+          "missing_inputs": [],
+          "aggregation": "RATIO_OF_SUMS"
+        },
+        "share_rate": {
+          "value": 0.002664,
+          "null_reason": null,
+          "null_code": null,
+          "missing_inputs": [],
+          "aggregation": "RATIO_OF_SUMS"
+        }
+      }
+    },
+    "recommendations": {
+      "stored": 3,
+      "dropped": 0,
+      "statements": [
+        "Prioritize LinkedIn Carousel posts featuring Case Studies to build authority.",
+        "Increase X Thread production using Contrarian hooks for secondary reach.",
+        "Reduce LinkedIn Article format output due to low performance."
+      ]
+    }
+  },
+  "finished_at": "2026-09-27T17:32:30.158304+00:00",
+  "server_after": {
+    "loaded": [
+      {
+        "id": "qwen/qwen3.5-9b",
+        "quantization": "Q4_K_M",
+        "loaded_context_length": 32768,
+        "arch": "qwen35"
+      },
+      {
+        "id": "qwen3.5-4b-uncensored-hauhaucs-aggressive",
+        "quantization": "Q4_K_M",
+        "loaded_context_length": 70144,
+        "arch": "qwen35"
+      }
+    ]
+  },
+  "model_calls": [
+    {
+      "task": "research",
+      "model": "qwen/qwen3.5-9b",
+      "status": "SUCCEEDED",
+      "error_code": null,
+      "input_tokens": 540,
+      "output_tokens": 3436,
+      "latency_s": 52.8,
+      "output_tok_per_s_end_to_end": 65.1
+    },
+    {
+      "task": "strategy",
+      "model": "qwen/qwen3.5-9b",
+      "status": "SUCCEEDED",
+      "error_code": null,
+      "input_tokens": 525,
+      "output_tokens": 3523,
+      "latency_s": 39.3,
+      "output_tok_per_s_end_to_end": 89.5
+    },
+    {
+      "task": "opportunity",
+      "model": "qwen/qwen3.5-9b",
+      "status": "SUCCEEDED",
+      "error_code": null,
+      "input_tokens": 802,
+      "output_tokens": 5611,
+      "latency_s": 62.6,
+      "output_tok_per_s_end_to_end": 89.6
+    },
+    {
+      "task": "planner",
+      "model": "qwen/qwen3.5-9b",
+      "status": "SUCCEEDED",
+      "error_code": null,
+      "input_tokens": 965,
+      "output_tokens": 5515,
+      "latency_s": 61.7,
+      "output_tok_per_s_end_to_end": 89.3
+    },
+    {
+      "task": "linkedin_writer",
+      "model": "qwen/qwen3.5-9b",
+      "status": "SUCCEEDED",
+      "error_code": null,
+      "input_tokens": 1097,
+      "output_tokens": 3786,
+      "latency_s": 42.3,
+      "output_tok_per_s_end_to_end": 89.4
+    },
+    {
+      "task": "x_writer",
+      "model": "qwen/qwen3.5-9b",
+      "status": "SUCCEEDED",
+      "error_code": null,
+      "input_tokens": 1047,
+      "output_tokens": 6844,
+      "latency_s": 76.5,
+      "output_tok_per_s_end_to_end": 89.5
+    },
+    {
+      "task": "linkedin_writer",
+      "model": "qwen/qwen3.5-9b",
+      "status": "SUCCEEDED",
+      "error_code": null,
+      "input_tokens": 1098,
+      "output_tokens": 4951,
+      "latency_s": 55.3,
+      "output_tok_per_s_end_to_end": 89.5
+    },
+    {
+      "task": "linkedin_writer",
+      "model": "qwen/qwen3.5-9b",
+      "status": "SUCCEEDED",
+      "error_code": null,
+      "input_tokens": 1092,
+      "output_tokens": 4943,
+      "latency_s": 55.0,
+      "output_tok_per_s_end_to_end": 89.8
+    },
+    {
+      "task": "youtube_writer",
+      "model": "qwen/qwen3.5-9b",
+      "status": "SUCCEEDED",
+      "error_code": null,
+      "input_tokens": 1346,
+      "output_tokens": 4650,
+      "latency_s": 52.6,
+      "output_tok_per_s_end_to_end": 88.5
+    },
+    {
+      "task": "x_writer",
+      "model": "qwen/qwen3.5-9b",
+      "status": "FAILED",
+      "error_code": "LLM_OUTPUT_INVALID",
+      "input_tokens": 1043,
+      "output_tokens": 8192,
+      "latency_s": 91.9,
+      "output_tok_per_s_end_to_end": 89.2
+    },
+    {
+      "task": "x_writer",
+      "model": "qwen/qwen3.5-9b",
+      "status": "SUCCEEDED",
+      "error_code": null,
+      "input_tokens": 1082,
+      "output_tokens": 1058,
+      "latency_s": 12.0,
+      "output_tok_per_s_end_to_end": 88.4
+    },
+    {
+      "task": "instagram_writer",
+      "model": "qwen/qwen3.5-9b",
+      "status": "SUCCEEDED",
+      "error_code": null,
+      "input_tokens": 1219,
+      "output_tokens": 3477,
+      "latency_s": 38.9,
+      "output_tok_per_s_end_to_end": 89.3
+    },
+    {
+      "task": "optimizer",
+      "model": "qwen/qwen3.5-9b",
+      "status": "SUCCEEDED",
+      "error_code": null,
+      "input_tokens": 825,
+      "output_tokens": 3460,
+      "latency_s": 38.5,
+      "output_tok_per_s_end_to_end": 89.9
+    }
+  ],
+  "throughput": {
+    "calls": 13,
+    "output_tokens": 59446,
+    "input_tokens": 12681,
+    "model_seconds": 679.4,
+    "mean_output_tok_per_s_end_to_end": 87.5
+  }
+}

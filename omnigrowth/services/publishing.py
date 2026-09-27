@@ -17,6 +17,7 @@ from sqlalchemy import Table, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from omnigrowth.content.platform_profiles import validate_settings
 from omnigrowth.core.enums import (
     ApprovalActionType,
     CampaignStatus,
@@ -47,6 +48,7 @@ from omnigrowth.models import (
     Publication,
     PublicationJob,
 )
+from omnigrowth.observability.audit import record_audit
 from omnigrowth.publishing.config import cached_publishing_config
 from omnigrowth.publishing.scheduler import (
     RELEASE_CLAIM,
@@ -61,6 +63,7 @@ from omnigrowth.schemas.publishing import (
     ApprovalActionRequest,
     PlatformAccountCreate,
     PlatformAccountRead,
+    PlatformAccountUpdate,
     PublicationJobRead,
     PublicationRead,
     PublicationReconcileRequest,
@@ -125,6 +128,7 @@ async def create_account(
         display_name=body.display_name,
         timezone=body.timezone,
         live_enabled=False,  # A6: live publishing is never enabled at create time
+        settings=validate_settings(body.platform, body.settings),
     )
     session.add(account)
     try:
@@ -134,6 +138,42 @@ async def create_account(
         raise OmniGrowthError(
             ErrorCode.CONFLICT, "this handle is already registered for the platform"
         ) from exc
+    await session.commit()
+    return await _account_read(session, account)
+
+
+async def update_account(
+    session: AsyncSession, actor: Actor, account_id: uuid.UUID, body: PlatformAccountUpdate
+) -> PlatformAccountRead:
+    """Handle, display name, timezone and settings; never ``live_enabled`` (A6)."""
+    account = await session.get(PlatformAccount, account_id, with_for_update=True)
+    if account is None or account.archived_at is not None:
+        raise _not_found("platform account")
+    changes = body.model_dump(exclude_unset=True)
+    if "settings" in changes:
+        changes["settings"] = validate_settings(account.platform, body.settings)
+    if "handle" in changes and changes["handle"] is None:
+        del changes["handle"]
+    before = {k: getattr(account, k) for k in changes}
+    for key, value in changes.items():
+        setattr(account, key, value)
+    try:
+        await session.flush([account])
+    except IntegrityError as exc:
+        await session.rollback()
+        raise OmniGrowthError(
+            ErrorCode.CONFLICT, "this handle is already registered for the platform"
+        ) from exc
+    await record_audit(
+        session,
+        actor=actor,
+        action="platform_account.updated",
+        entity_type="platform_accounts",
+        entity_id=account.id,
+        brand_id=account.brand_id,
+        before=before,
+        after=changes,
+    )
     await session.commit()
     return await _account_read(session, account)
 

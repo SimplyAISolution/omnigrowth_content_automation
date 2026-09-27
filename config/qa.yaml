@@ -32,7 +32,79 @@ platforms:
     formats: [TEXT_POST, THREAD, POLL, COMMENT_DRAFT]
     max_chars_per_post: 280   # standard accounts (UNVERIFIED; long posts need a subscription)
     min_chars: 20
+    threaded: true
     max_thread_posts: 15
     max_hashtags: 2
     markdown_rendered: false
     url_chars: 23             # every link counts as 23 characters (t.co; UNVERIFIED)
+  # Phase 10 platforms. Every number below is UNVERIFIED (commonly cited, not checked
+  # against official docs); formats for FACEBOOK, RUMBLE and MASTODON are the proposed
+  # lists from docs/PLATFORM_CAPABILITIES.md (spec 8 defines none) awaiting confirmation.
+  # "parts" = production parts the human turns into media (scenes, slides, sections).
+  INSTAGRAM:
+    formats: [REEL_SCRIPT, CAROUSEL, STORY, IMAGE_POST]
+    max_chars: 2200           # caption (UNVERIFIED)
+    min_chars: 50
+    hook_visible_chars: 125   # caption text before "more" (UNVERIFIED)
+    max_hashtags: 5           # house style; the platform allows more (UNVERIFIED)
+    markdown_rendered: false
+    parts:
+      REEL_SCRIPT: {min: 3, max: 15}   # scenes
+      CAROUSEL: {min: 2, max: 10}      # slides (UNVERIFIED maximum)
+      STORY: {min: 1, max: 10}         # frames
+      IMAGE_POST: {min: 0, max: 1}
+  FACEBOOK:
+    formats: [TEXT_POST, IMAGE_POST]
+    max_chars: 63206          # (UNVERIFIED)
+    min_chars: 50
+    max_hashtags: 3
+    markdown_rendered: false
+  YOUTUBE:
+    formats: [LONG_VIDEO_OUTLINE, LONG_VIDEO_SCRIPT, SHORT]
+    max_chars: 5000           # description (UNVERIFIED)
+    min_chars: 50
+    max_title_chars: 100      # (UNVERIFIED)
+    title_required: [LONG_VIDEO_OUTLINE, LONG_VIDEO_SCRIPT, SHORT]
+    max_hashtags: 3
+    markdown_rendered: false
+    chapters_min: 3           # (UNVERIFIED) first at 0:00, ascending
+    parts:
+      LONG_VIDEO_OUTLINE: {min: 3, max: 20}
+      LONG_VIDEO_SCRIPT: {min: 3, max: 30}
+      SHORT: {min: 1, max: 8}
+  REDDIT:
+    formats: [DISCUSSION, TEXT_POST]
+    max_chars: 40000          # self-post body (UNVERIFIED)
+    min_chars: 100
+    max_title_chars: 300      # (UNVERIFIED); a subreddit profile may set a lower limit
+    title_required: [DISCUSSION, TEXT_POST]
+    max_hashtags: 0           # hashtags read as spam on Reddit (warning)
+    markdown_rendered: true
+  SUBSTACK:
+    formats: [NEWSLETTER, ARTICLE, NOTE]
+    min_chars: 50
+    format_max_chars:
+      NOTE: 1000              # house limit for a short Note (the prompt asks for <= 600)
+    title_required: [NEWSLETTER, ARTICLE]
+    max_hashtags: 0
+    markdown_rendered: true
+  RUMBLE:
+    formats: [LONG_VIDEO_OUTLINE, LONG_VIDEO_SCRIPT, SHORT]
+    min_chars: 50
+    title_required: [LONG_VIDEO_OUTLINE, LONG_VIDEO_SCRIPT, SHORT]
+    max_hashtags: 3
+    markdown_rendered: false
+    parts:
+      LONG_VIDEO_OUTLINE: {min: 3, max: 20}
+      LONG_VIDEO_SCRIPT: {min: 3, max: 30}
+      SHORT: {min: 1, max: 8}
+  MASTODON:
+    formats: [TEXT_POST, THREAD]
+    threaded: true
+    max_chars_per_post: 500   # common instance default (UNVERIFIED); an account's
+                              # settings.max_characters overrides it
+    min_chars: 20
+    max_thread_posts: 15
+    max_hashtags: 5
+    markdown_rendered: false
+    url_chars: 23             # (UNVERIFIED)

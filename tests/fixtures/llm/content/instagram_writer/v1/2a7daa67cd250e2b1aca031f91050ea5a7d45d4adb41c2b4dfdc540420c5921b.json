@@ -1,0 +1,10 @@
+{
+  "prompt": "content/instagram_writer",
+  "responses": [
+    {
+      "content": "{\"hook\": \"Your AI does not need your client files. Swipe for the local setup.\", \"caption\": \"Local AI agents keep proprietary data on the machine.\\n\\nA 9B-parameter model runs on a consumer GPU with 12 GB of VRAM, enough for routine drafting.\\n\\nSave this for your next tooling review.\", \"frames\": [{\"visual\": \"Bold title slide, brand teal\", \"text\": \"Keep client data at home\"}, {\"visual\": \"Icon of a laptop with a lock\", \"text\": \"Data stays on the machine\"}, {\"visual\": \"GPU photo with a label\", \"text\": \"12 GB of VRAM runs a 9B model\"}, {\"visual\": \"Checklist graphic\", \"text\": \"Drafting and summaries run locally\"}, {\"visual\": \"Split screen local vs cloud\", \"text\": \"Hard reasoning: frontier model\"}], \"visual_direction\": \"Flat illustrations, brand teal and white, one idea per slide.\", \"cta\": null, \"hashtags\": [\"LocalAI\", \"SmallBusiness\", \"DataPrivacy\"], \"cited_claims\": [1, 2, 3, 4], \"hook_type\": \"statement\", \"cta_type\": \"save\"}",
+      "input_tokens": null,
+      "output_tokens": null
+    }
+  ]
+}

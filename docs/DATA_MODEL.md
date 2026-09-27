@@ -783,6 +783,8 @@ Mutable header of a piece of content; all text lives in `content_versions`.
 | parent_asset_id | uuid | Y | — | FK self — repurposing source (§9) |
 | root_asset_id | uuid | N | — | FK self — lineage root (= `id` for roots). Set at insert from parent |
 | lineage_depth | smallint | N | `0` | parent.depth + 1; `CHECK (lineage_depth BETWEEN 0 AND 5)` |
+| source_version_id | uuid | Y | — | The parent's version a derivative was made from; `FOREIGN KEY (parent_asset_id, source_version_id) REFERENCES content_versions (content_asset_id, id)`; present iff a parent is (Phase 10, A15) |
+| repurpose_instructions | text | Y | — | Human instructions for the writer of a derivative |
 | platform | platform | N | — | |
 | format | content_format | N | — | |
 | status | content_asset_status | N | `'DRAFT'` | |
@@ -804,11 +806,12 @@ Constraints:
 - `CHECK (parent_asset_id IS NULL OR parent_asset_id <> id)`; `CHECK ((parent_asset_id IS NULL) = (root_asset_id = id))`.
 - `FOREIGN KEY (id, current_version_id) REFERENCES content_versions (content_asset_id, id)` and same for `approved_version_id` — the pointed-to version must belong to this asset (MATCH SIMPLE: skipped while NULL).
 - `UNIQUE (plan_item_id)` — one asset per plan item (NULLs distinct).
+- `CHECK ((parent_asset_id IS NULL) = (source_version_id IS NULL))`; unique index `content_assets_one_derivative_idx (parent_asset_id, platform, format) WHERE parent_asset_id IS NOT NULL AND archived_at IS NULL` — one live derivative per platform/format per source.
 
 **Cycle prevention (§9, Phase 10 gate).** Three layers:
 1. *Structural*: `parent_asset_id` is set only at INSERT and must reference an already-existing row. A new row cannot be an ancestor of an existing row, so inserts alone can only build a forest. Cycles become possible only via UPDATE of `parent_asset_id`.
-2. *App-level*: the repurposing service forbids re-parenting; any API that would change lineage runs a recursive-CTE ancestor walk from the proposed parent (`WITH RECURSIVE anc AS (...) SELECT 1 FROM anc WHERE id = $self`) inside the same transaction with `SELECT … FOR UPDATE` on both rows, raising `VALIDATION_FAILURE` on hit, and enforces `lineage_depth` ≤ configured max. Also warns (not blocks, §10) when a child has the same `(platform, format)` as an ancestor — the "recursive duplicate" pattern.
-3. *DB (recommended, primary-agent decision)*: `BEFORE UPDATE OF parent_asset_id, root_asset_id` trigger raising an exception unconditionally → lineage immutable at DB level; with (1) this makes cycles impossible without needing a recursive check in the trigger.
+2. *App-level (as built, Phase 10, A15)*: no API changes lineage; `POST /content/{id}/repurpose` walks the ancestors with a bounded recursive CTE (`storage/content.lineage`) under a row lock on the source and **refuses** (409, not warn) a child whose `(platform, format)` equals the source's or any ancestor's (`RECURSIVE_DUPLICATE`), any other live asset of the same tree with that pair (`DUPLICATE_DERIVATIVE`; the root row is locked too so the tree-wide check is serialised), and depth > 5 (`LINEAGE_TOO_DEEP`). A DRAFT sibling that was never written is re-claimed instead.
+3. *DB*: `content_assets_lineage_immutable` (`BEFORE UPDATE`) rejects any change of `parent_asset_id`, `root_asset_id`, `lineage_depth` or `source_version_id`; `content_assets_lineage_consistent` (`BEFORE INSERT`) requires `root_asset_id = parent.root_asset_id` and `lineage_depth = parent.lineage_depth + 1` (depth 0 for roots). With (1) cycles are impossible; tested in `tests/integration/test_repurposing.py`.
 
 Indexes:
 - `content_assets_campaign_status_idx (campaign_id, status) WHERE archived_at IS NULL` — content queue per campaign.
