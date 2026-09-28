@@ -348,3 +348,102 @@ def precheck_url(url: str, policy: FetchPolicy | None = None) -> None:
         return
     if is_blocked_ip(literal):
         raise _blocked("destination address not allowed", url, address=str(literal))
+
+
+# ------------------------------------------------------------------ outbound webhooks (Phase 12)
+ALL_PORTS = frozenset(range(1, 65536))
+
+
+def _allowlisted(target: _Target, allowlist: frozenset[str]) -> bool:
+    return f"{target.host}:{target.port}" in allowlist
+
+
+def _never_allowed(ip: IPAddress) -> bool:
+    """Blocked even for allowlisted hosts: link-local (cloud metadata), unspecified, multicast."""
+    if isinstance(ip, ipaddress.IPv6Address) and (inner := embedded_ipv4(ip)) is not None:
+        return _never_allowed(inner)
+    return ip.is_link_local or ip.is_unspecified or ip.is_multicast
+
+
+def check_webhook_target(url: str, allowlist: frozenset[str]) -> None:
+    """Validate a webhook target when it is configured (no DNS; ``safe_post`` re-checks).
+
+    Public targets: HTTPS on 443 only. ``host:port`` entries in ``allowlist`` (e.g. a
+    self-hosted n8n) may use HTTP and private addresses on exactly that port.
+    """
+    target = parse_target(url, FetchPolicy(allowed_ports=ALL_PORTS))
+    if urlsplit(url).fragment:
+        raise _blocked("fragment not allowed", url)
+    if _allowlisted(target, allowlist):
+        return
+    if target.scheme != "https" or target.port != 443:
+        raise _blocked("public webhook targets must use https on port 443", url)
+    precheck_url(url)
+
+
+async def safe_post(
+    url: str,
+    *,
+    body: bytes,
+    headers: dict[str, str],
+    allowlist: frozenset[str],
+    timeout_s: float,
+    resolver: Resolver = system_resolver,
+    transport: httpx.AsyncBaseTransport | None = None,
+) -> int:
+    """POST a signed webhook and return the HTTP status (the body is discarded).
+
+    Same guard as fetches: parsed and resolved once, every address checked, connection
+    pinned to the checked IP (DNS rebinding), no proxies, no cookies, no redirects followed
+    (a 3xx is returned as the status and counts as a failed attempt).
+    """
+    check_webhook_target(url, allowlist)
+    target = parse_target(url, FetchPolicy(allowed_ports=ALL_PORTS))
+    trusted = _allowlisted(target, allowlist)
+    try:
+        literal: IPAddress | None = ipaddress.ip_address(target.host)
+    except ValueError:
+        literal = None
+    try:
+        async with asyncio.timeout(timeout_s):
+            addresses = (
+                [literal] if literal is not None else await resolver(target.host, target.port)
+            )
+            if not addresses:
+                raise _blocked("host resolved to no addresses", url)
+            for ip in addresses:
+                if _never_allowed(ip) or (not trusted and is_blocked_ip(ip)):
+                    raise _blocked("destination address not allowed", url, address=str(ip))
+            ip = addresses[0]
+            async with httpx.AsyncClient(
+                transport=transport,
+                timeout=httpx.Timeout(timeout_s),
+                follow_redirects=False,
+                trust_env=False,
+            ) as client:
+                request = client.build_request(
+                    "POST",
+                    _pinned_url(target, ip),
+                    content=body,
+                    headers={
+                        **headers,
+                        "Host": _host_header(target),
+                        "User-Agent": "OmniGrowth-Webhooks/1",
+                        "Content-Type": "application/json",
+                        "Connection": "close",
+                    },
+                    extensions={"sni_hostname": target.host} if target.scheme == "https" else {},
+                )
+                response = await client.send(request, stream=True)
+                await response.aclose()
+                return response.status_code
+    except TimeoutError as exc:
+        raise OmniGrowthError(
+            ErrorCode.QUEUE_FAILURE, "webhook timed out", details={"reason": "TIMEOUT"}
+        ) from exc
+    except (httpx.HTTPError, httpx.InvalidURL) as exc:
+        raise OmniGrowthError(
+            ErrorCode.QUEUE_FAILURE,
+            "webhook request failed",
+            details={"reason": type(exc).__name__},
+        ) from exc

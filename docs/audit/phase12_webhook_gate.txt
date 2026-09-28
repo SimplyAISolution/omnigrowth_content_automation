@@ -1,0 +1,38 @@
+# Phase 12 webhook gate evidence (2026-09-27). Local 127.0.0.1 receiver standing in for n8n;
+# no real n8n, email, chat or social platform was contacted. Secrets are generated per run.
+$ uv run pytest tests/integration/test_webhooks.py tests/unit/test_webhooks.py tests/unit/test_n8n_workflows.py -v
+tests/integration/test_webhooks.py::test_integration_management_is_owner_only_audited_and_shows_secrets_once PASSED
+tests/integration/test_webhooks.py::test_inbound_authentication_scope_replay_rotation_and_revocation PASSED
+tests/integration/test_webhooks.py::test_inbound_campaign_generate_is_limited_to_its_brands PASSED
+tests/integration/test_webhooks.py::test_inbound_campaign_generate_starts_planning_as_the_integration PASSED
+tests/integration/test_webhooks.py::test_approval_events_reach_only_matching_subscriptions_with_minimal_signed_payloads PASSED
+tests/integration/test_webhooks.py::test_retries_duplicates_exhaustion_downtime_recovery_and_revocation PASSED
+tests/integration/test_webhooks.py::test_publication_failure_and_uncertainty_events_say_whether_they_were_simulated PASSED
+tests/integration/test_webhooks.py::test_auto_approved_content_is_not_announced_as_needing_approval PASSED
+tests/integration/test_webhooks.py::test_outbound_rotation_signs_with_both_secrets_during_the_grace_period PASSED
+tests/integration/test_webhooks.py::test_a_last_attempt_whose_sender_died_ends_failed_not_stuck PASSED
+tests/integration/test_webhooks.py::test_a_slow_sender_cannot_overwrite_a_newer_attempt PASSED
+tests/unit/test_webhooks.py::test_secrets_are_derived_per_row_and_version_and_need_a_server_key PASSED
+tests/unit/test_webhooks.py::test_signature_verification_rejects_tampering_staleness_and_missing_headers PASSED
+tests/unit/test_webhooks.py::test_the_delivery_id_is_signed_so_a_captured_request_cannot_be_rerun PASSED
+tests/unit/test_webhooks.py::test_outbound_header_carries_one_signature_per_active_secret PASSED
+tests/unit/test_webhooks.py::test_disallowed_webhook_targets[http://hooks.example.com/webhook] PASSED
+tests/unit/test_webhooks.py::test_disallowed_webhook_targets[https://hooks.example.com:5678/webhook] PASSED
+tests/unit/test_webhooks.py::test_disallowed_webhook_targets[https://127.0.0.1/webhook] PASSED
+tests/unit/test_webhooks.py::test_disallowed_webhook_targets[https://user:pw@hooks.example.com/webhook] PASSED
+tests/unit/test_webhooks.py::test_disallowed_webhook_targets[https://hooks.example.com/webhook#frag] PASSED
+tests/unit/test_webhooks.py::test_disallowed_webhook_targets[ftp://hooks.example.com/x] PASSED
+tests/unit/test_webhooks.py::test_disallowed_webhook_targets[https://2130706433/x] PASSED
+tests/unit/test_webhooks.py::test_allowlisted_self_hosted_n8n_targets PASSED
+tests/unit/test_webhooks.py::test_allowlist_entries_must_name_a_port PASSED
+tests/unit/test_webhooks.py::test_safe_post_pins_the_checked_address_and_never_follows_redirects PASSED
+tests/unit/test_webhooks.py::test_safe_post_blocks_rebinding_and_metadata_even_when_allowlisted PASSED
+tests/unit/test_webhooks.py::test_backoff_grows_and_is_bounded PASSED
+tests/unit/test_webhooks.py::test_payload_is_minimal_deterministic_and_marks_simulation PASSED
+tests/unit/test_webhooks.py::test_a_crashed_webhook_loop_is_logged_and_restarted PASSED
+tests/unit/test_n8n_workflows.py::test_workflow_files_are_generated_from_the_reviewed_code PASSED
+tests/unit/test_n8n_workflows.py::test_workflows_are_inactive_secret_free_and_send_nothing_real[omnigrowth-event-notifications.json] PASSED
+tests/unit/test_n8n_workflows.py::test_workflows_are_inactive_secret_free_and_send_nothing_real[omnigrowth-send-text-source.json] PASSED
+tests/unit/test_n8n_workflows.py::test_n8n_verification_accepts_signed_events_and_rejects_forgeries_stale_and_duplicates PASSED
+tests/unit/test_n8n_workflows.py::test_n8n_inbound_signing_is_accepted_by_omnigrowth_verification PASSED
+============================= 34 passed in 24.59s =============================

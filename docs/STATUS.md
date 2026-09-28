@@ -1,11 +1,11 @@
 ```
-phase: 11
-task: phase-11 gate (frontend)
+phase: 12
+task: phase-12 gate (n8n integration)
 gate: GATE_PASSED (2026-09-27; see ENGINEERING_LOG)
-last_green_commit: f4c714e (phase 11 changes uncommitted; human signs)
-next_phase: 12 — n8n integration
+last_green_commit: f25a15a (phase 11, signed)
+next_phase: 13 — real connectors (needs human decisions + credentials)
 shell: PowerShell Core 7.6.6 (Git Bash also available)
-blockers: phase 11 commit pending (human signs)
+blockers: phase 12 commit pending (staged; human signs)
 ```
 
 ## Notes
@@ -24,3 +24,4 @@ blockers: phase 11 commit pending (human signs)
 - Phase 9 closing checks: controlled live rerun, real-server cancellation/lease-loss evidence + idle gate, exact server tokenization, randomization inference + power inflation 1.25, frozen timeline. Live §55 (real local inference, mock publication) passed on a frozen tree.
 - Phase 10: writers for every platform (A15; D2 retired), per-subreddit/per-instance account settings, repurposing graph (`/content/{id}/repurpose`, `/derivatives`) with DB-enforced lineage and 409 on recursive duplicates. Live §55 (real local inference, mock publication) passed with YouTube + Instagram written.
 - Phase 11: Vite + React + TS frontend over /api/v1 (approvals, content, calendar, publishing, campaigns, analytics, experiments, sources, brand, platforms), generated typed client + OpenAPI drift tests, GET /platforms catalog, fixture-seeded throwaway environment for Playwright journeys (Edge). Publication shown as simulated everywhere.
+- Phase 12: n8n integration. INTEGRATION principal (own actor type; HMAC; brand + operation scoped; rotate with 24 h grace, revoke, audited) for text/URL ingestion and campaign planning only. Outbound `content.approval_requested`, `publication.failed`, `publication.uncertain` via DB-trigger outbox, signed at-least-once delivery in the scheduler's own loop (bounded retries, backoff, inspectable/redeliverable failures). SSRF-guarded targets with a host:port allowlist for self-hosted n8n. Owner "Automations" page. Importable inactive workflows + setup in `n8n/`. `poe ui-check` joined `poe check`. Publication still simulated.

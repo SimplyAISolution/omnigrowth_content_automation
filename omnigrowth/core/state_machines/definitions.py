@@ -32,6 +32,7 @@ from omnigrowth.core.enums import (
 )
 from omnigrowth.core.state_machines.machine import (
     AGENT,
+    INTEGRATION,
     OWNER_EDITOR,
     OWNER_ONLY,
     SCHEDULER,
@@ -46,10 +47,10 @@ CAMPAIGN = StateMachine(
     terminal=frozenset({C.ARCHIVED.value}),
     transitions=(
         tr("C1", None, C.DRAFT, "create", OWNER_EDITOR),
-        tr("C2", C.DRAFT, C.PLANNING, "start_planning", OWNER_EDITOR),
+        tr("C2", C.DRAFT, C.PLANNING, "start_planning", OWNER_EDITOR, INTEGRATION),
         tr("C3", C.PLANNING, C.READY_FOR_REVIEW, "planning_succeeded", SYSTEM),
         tr("C4", C.PLANNING, C.FAILED, "planning_failed", SYSTEM),
-        tr("C5", C.FAILED, C.PLANNING, "retry_planning", OWNER_EDITOR),
+        tr("C5", C.FAILED, C.PLANNING, "retry_planning", OWNER_EDITOR, INTEGRATION),
         tr("C6", C.READY_FOR_REVIEW, C.PLANNING, "replan", OWNER_EDITOR),
         tr("C7", C.READY_FOR_REVIEW, C.ACTIVE, "accept_plan", OWNER_EDITOR),
         tr("C8", C.ACTIVE, C.PAUSED, "pause", OWNER_EDITOR),
@@ -209,7 +210,17 @@ JOB = StateMachine(
         {JobStatus.SUCCEEDED.value, JobStatus.FAILED.value, JobStatus.CANCELLED.value}
     ),
     transitions=(
-        tr("JB1", None, JobStatus.QUEUED, "enqueue", OWNER_EDITOR, SYSTEM, SCHEDULER, AGENT),
+        tr(
+            "JB1",
+            None,
+            JobStatus.QUEUED,
+            "enqueue",
+            OWNER_EDITOR,
+            SYSTEM,
+            SCHEDULER,
+            AGENT,
+            INTEGRATION,
+        ),
         tr("JB2", JobStatus.QUEUED, JobStatus.RUNNING, "start", SYSTEM),
         tr("JB3", JobStatus.RUNNING, JobStatus.SUCCEEDED, "succeed", SYSTEM),
         tr("JB4", JobStatus.RUNNING, JobStatus.FAILED, "fail", SYSTEM),
@@ -234,7 +245,7 @@ SOURCE_ASSET = StateMachine(
         }
     ),
     transitions=(
-        tr("SA1", None, SourceAssetStatus.PENDING, "create", OWNER_EDITOR, SYSTEM),
+        tr("SA1", None, SourceAssetStatus.PENDING, "create", OWNER_EDITOR, SYSTEM, INTEGRATION),
         tr("SA2", SourceAssetStatus.PENDING, SourceAssetStatus.NORMALIZED, "normalized", SYSTEM),
         tr("SA3", SourceAssetStatus.PENDING, SourceAssetStatus.FAILED, "failed", SYSTEM),
         tr("SA4", SourceAssetStatus.PENDING, SourceAssetStatus.UNSUPPORTED, "unsupported", SYSTEM),

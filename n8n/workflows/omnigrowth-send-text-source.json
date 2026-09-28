@@ -1,0 +1,154 @@
+{
+  "name": "OmniGrowth — send a text source (example)",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Send a text source to OmniGrowth\nEnv: OMNIGROWTH_API_URL, OMNIGROWTH_ENDPOINT_KEY, OMNIGROWTH_INBOUND_SECRET, OMNIGROWTH_BRAND_ID, NODE_FUNCTION_ALLOW_BUILTIN=crypto.\nThe endpoint can only ingest sources / start planning for its brands.",
+        "height": 200,
+        "width": 460
+      },
+      "id": "b2e1d4f3-0000-4000-8000-000000000001",
+      "name": "Setup notes",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        -260
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "b2e1d4f3-0000-4000-8000-000000000002",
+      "name": "Run manually",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "title",
+              "name": "title",
+              "type": "string",
+              "value": "Notes from n8n"
+            },
+            {
+              "id": "content",
+              "name": "content",
+              "type": "string",
+              "value": "Replace this with the text to send (an article, notes, a transcript)."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b2e1d4f3-0000-4000-8000-000000000003",
+      "name": "Example text",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// n8n → OmniGrowth: build and sign an inbound request (API_PLAN §6.6).\n// Needs: NODE_FUNCTION_ALLOW_BUILTIN=crypto and, as environment variables (never in the\n// workflow): OMNIGROWTH_INBOUND_SECRET (the endpoint secret), OMNIGROWTH_BRAND_ID.\n// The endpoint may only run the operations and brands it was created for; it can never\n// approve, schedule or publish.\nconst crypto = require(\"crypto\");\n\nconst secret = $env.OMNIGROWTH_INBOUND_SECRET || \"\";\nif (!secret) throw new Error(\"OMNIGROWTH_INBOUND_SECRET is not set\");\nconst item = $input.first().json;\n\nconst envelope = {\n  operation: \"source.text_ingest\",\n  payload: {\n    brand_id: $env.OMNIGROWTH_BRAND_ID,\n    title: item.title || \"From n8n\",\n    content: item.content,\n  },\n};\nconst body = JSON.stringify(envelope);\nconst timestamp = String(Math.floor(Date.now() / 1000));\n// A stable delivery id per logical request makes retries safe (the API replays, not re-runs).\nconst deliveryId = item.delivery_id || `n8n-${crypto.createHash(\"sha256\").update(body).digest(\"hex\").slice(0, 32)}`;\n// Signed: \"<timestamp>.<delivery id>.<body>\" — the id cannot be swapped on a captured request.\nconst signature =\n  \"v1=\" + crypto.createHmac(\"sha256\", secret).update(`${timestamp}.${deliveryId}.${body}`).digest(\"hex\");\n\nreturn [{ json: { body, timestamp, signature, deliveryId } }];\n"
+      },
+      "id": "b2e1d4f3-0000-4000-8000-000000000004",
+      "name": "Sign request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.OMNIGROWTH_API_URL }}/api/v1/webhooks/inbound/{{ $env.OMNIGROWTH_ENDPOINT_KEY }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-OmniGrowth-Timestamp",
+              "value": "={{ $json.timestamp }}"
+            },
+            {
+              "name": "X-OmniGrowth-Signature",
+              "value": "={{ $json.signature }}"
+            },
+            {
+              "name": "X-OmniGrowth-Delivery-ID",
+              "value": "={{ $json.deliveryId }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ $json.body }}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "b2e1d4f3-0000-4000-8000-000000000005",
+      "name": "Send to OmniGrowth",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        660,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Run manually": {
+      "main": [
+        [
+          {
+            "node": "Example text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Example text": {
+      "main": [
+        [
+          {
+            "node": "Sign request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sign request": {
+      "main": [
+        [
+          {
+            "node": "Send to OmniGrowth",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}

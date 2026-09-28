@@ -124,6 +124,9 @@ class ActorType(StrEnum):
     SYSTEM = "SYSTEM"
     SCHEDULER = "SCHEDULER"
     AGENT = "AGENT"
+    # Phase 12: an n8n inbound endpoint. Allowed only on the transitions its operations need
+    # (SA1, C2, C5, JB1); never approval, scheduling, publishing or reconciliation.
+    INTEGRATION = "INTEGRATION"
 
 
 class UserRole(StrEnum):
@@ -354,3 +357,28 @@ class Environment(StrEnum):
     DEV = "dev"
     TEST = "test"
     PROD = "prod"
+
+
+# ------------------------------------------------------------------ Phase 12 integrations (n8n)
+class IntegrationEventType(StrEnum):
+    """Outbound events (stored as text + CHECK; values are part of the webhook contract)."""
+
+    CONTENT_APPROVAL_REQUESTED = "content.approval_requested"
+    PUBLICATION_FAILED = "publication.failed"
+    PUBLICATION_UNCERTAIN = "publication.uncertain"
+    INTEGRATION_PING = "integration.ping"  # sent on demand to test a subscription
+
+
+class IntegrationOperation(StrEnum):
+    """What an inbound integration endpoint may do; nothing else is reachable through it."""
+
+    SOURCE_TEXT_INGEST = "source.text_ingest"
+    SOURCE_URL_INGEST = "source.url_ingest"
+    CAMPAIGN_GENERATE = "campaign.generate"
+
+
+class WebhookDeliveryStatus(StrEnum):
+    PENDING = "PENDING"  # waiting for its next attempt
+    DELIVERING = "DELIVERING"  # leased by a dispatcher
+    SUCCEEDED = "SUCCEEDED"  # the receiver answered 2xx
+    FAILED = "FAILED"  # attempts exhausted or receiver said 410 Gone; redeliver manually

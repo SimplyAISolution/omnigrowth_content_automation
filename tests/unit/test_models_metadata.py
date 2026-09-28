@@ -52,6 +52,11 @@ EXPECTED_TABLES = frozenset(
         "jobs",
         "idempotency_keys",
         "app_settings",
+        # Phase 12 (API_PLAN §2.18; GLOSSARY §4a names webhook_endpoints/_subscriptions)
+        "webhook_endpoints",
+        "webhook_subscriptions",
+        "integration_events",
+        "webhook_deliveries",
     }
 )
 

@@ -45,13 +45,19 @@ Left open (each is explained in the UI where the action would be):
   screen are presentation copies of backend rules (the API still decides); exposing
   `is_real_evidence` per publication from the API would remove the copy.
 - `/content` returns at most 200 items (no pagination in the UI yet).
-- The frontend gate (`poe ui-check`, `poe ui-e2e`) is separate from `poe check`, whose
-  composition AGENTS.md §4 defines; CI wiring decides whether to chain them.
+- ~~The frontend gate is separate from `poe check`.~~ Decided 2026-09-27 (Phase 12 kickoff):
+  `poe ui-check` is part of `poe check` (AGENTS.md §4); `poe ui-e2e` stays separate and is
+  required at gates that change frontend journeys, auth, authorization or UI API contracts.
 - Publication screens follow the server's publish mode; only MOCK exists today.
 
-### 5. Phase 12 — n8n integration
-- HMAC-verified inbound webhooks (`WEBHOOK_ENDPOINT` principals for Idempotency-Key),
-  outbound event notifications, example workflows in `n8n/`.
+### 5. ~~Phase 12 — n8n integration~~ Done 2026-09-27 (A16, `n8n/README.md`). Left open:
+- `publish_mode` is null on publication jobs that fail before dispatch (events say "unknown").
+- The P8 manual "not published" outcome emits no event.
+- The example workflow acknowledges before its notify step; a failing notify step is not
+  retried by OmniGrowth (n8n's execution log shows it).
+- `analytics.snapshots` inbound is not offered (would let an integration inject evidence);
+  needs a decision before it is added.
+- One subscription secret per workflow; the workflow's duplicate filter lives in its static data.
 
 ### 6. Phase 13 — Real connectors (one platform per session)
 - Verify API capability from official docs → PLATFORM_CAPABILITIES.md VERIFIED → adapter behind

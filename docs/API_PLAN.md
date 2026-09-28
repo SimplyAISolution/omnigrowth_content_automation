@@ -345,17 +345,25 @@ Legend — **[IK]** = `Idempotency-Key` required · **async** = returns 202 + jo
 | GET | `/settings` | — | `SettingsRead` | VIEWER | 200 | Effective settings. Env-derived values are read-only and flagged `source: ENV` (e.g. `publish_mode`, `env`, upload limits). |
 | PATCH | `/settings` | `SettingsUpdate` | `SettingsRead` | OWNER | 200, 422 | DB-backed tunables only. `publish_mode` / `approval_required` are **not** in `SettingsUpdate` (422 if sent: unknown fields forbidden). |
 
-### 2.18 Webhooks — A7, Phase 12
+### 2.18 Webhooks — A7, Phase 12 (as built; A16, n8n/README.md)
+The **INTEGRATION principal** is an inbound endpoint: HMAC only (a bearer token is never accepted on the inbound route), scoped to `brand_ids` and `allowed_operations`, acting as `actor_type=INTEGRATION` (its own state-machine actor, allowed only on C2, C5, SA1 and JB1), `actor_id=integration:<key>` through the same services and safeguards as people. It has no path to approval, rejection, scheduling, publishing, reconciliation, content reads, accounts, credentials or settings. Managing integrations is OWNER-only and audited (`webhook_endpoint.*`, `webhook_subscription.*`, `webhook_delivery.redelivered`, `integration.inbound`). Webhooks are off until `OMNIGROWTH_WEBHOOK_KEY` is set (`CONFIGURATION_ERROR`).
+
 | Method | Path | Request | Response | Min role | Status | Notes |
 |---|---|---|---|---|---|---|
-| POST | `/webhooks/inbound/{endpoint_key}` | `WebhookInboundEnvelope` (raw body signed) | `WebhookAcceptedRead` | HMAC (no bearer) | 202, 200 (replay), 401, 413, 422 | §6.6 verification. `event_type ∈ {source.text_ingest, source.url_ingest, analytics.snapshots, campaign.generate}` limited by the endpoint's `allowed_event_types`. Dispatches to the same services as the bearer routes with `actor_type=SYSTEM`, `actor_id=webhook:<endpoint_key>`. Cannot trigger approval, scheduling, or publishing. |
-| GET | `/webhooks/endpoints` | — | `Page[WebhookEndpointRead]` | OWNER | 200 | Never returns secrets. |
-| POST | `/webhooks/endpoints` | `WebhookEndpointCreate` | `WebhookEndpointCreatedRead` | OWNER | 201 | Secret (≥ 32 bytes, random) shown **once**. |
-| POST | `/webhooks/endpoints/{endpoint_id}/rotate-secret` | — | `WebhookEndpointCreatedRead` | OWNER | 200 | New secret shown once; old secret valid for grace period (default 24 h). |
-| DELETE | `/webhooks/endpoints/{endpoint_id}` | — | — | OWNER | 204 | Disables (config row). |
-| GET | `/webhooks/subscriptions` | — | `Page[WebhookSubscriptionRead]` | OWNER | 200 | Phase 12 outbound notifications. |
-| POST | `/webhooks/subscriptions` | `WebhookSubscriptionCreate` | `WebhookSubscriptionCreatedRead` | OWNER | 201, 422 `SSRF_BLOCKED` | Target URL passes the §26 SSRF guard (n8n on a private network needs explicit `OMNIGROWTH_WEBHOOK_TARGET_ALLOWLIST`, §9 Q11). Outbound payloads signed with the same HMAC scheme. |
-| DELETE | `/webhooks/subscriptions/{subscription_id}` | — | — | OWNER | 204 | |
+| POST | `/webhooks/inbound/{endpoint_key}` | `WebhookInboundEnvelope` {`operation`, `payload`} (raw body signed) | `WebhookAcceptedRead` | HMAC (no bearer) | 202, 200 (replay), 401, 403, 404, 409, 422, 429 | §6.6. `operation ∈ {source.text_ingest, source.url_ingest, campaign.generate}` (A16: `analytics.snapshots` is not offered). 401 is identical for unknown key, revoked endpoint, stale timestamp and bad signature. 403 `BRAND_OUT_OF_SCOPE` / `OPERATION_NOT_ALLOWED`; a campaign outside the endpoint's brands is 404. `X-OmniGrowth-Delivery-ID` required: a repeat replays the stored answer (`replayed: true`, 200); the same id with a different body is 409. 60 req/min per endpoint + address. |
+| GET | `/webhooks/endpoints` | — | `Page[WebhookEndpointRead]` | OWNER | 200 | No secrets; `secret_fingerprint` (8 hex of sha256) identifies the version. |
+| POST | `/webhooks/endpoints` | `WebhookEndpointCreate` {`key`, `brand_ids` ≥ 1, `allowed_operations` ≥ 1} | `WebhookEndpointCreatedRead` | OWNER | 201, 409, 422 | Secret shown **once**. |
+| POST | `/webhooks/endpoints/{endpoint_id}/rotate-secret` | — | `WebhookEndpointCreatedRead` | OWNER | 200, 409 | New secret shown once; the previous one stays valid for `OMNIGROWTH_WEBHOOK_SECRET_GRACE_HOURS` (24). |
+| DELETE | `/webhooks/endpoints/{endpoint_id}` | — | — | OWNER | 204 | Revokes at once (all secrets); the row stays for audit. |
+| GET | `/webhooks/subscriptions` | — | `Page[WebhookSubscriptionRead]` | OWNER | 200 | |
+| POST | `/webhooks/subscriptions` | `WebhookSubscriptionCreate` {`target_url`, `brand_ids` ≥ 1, `event_types` ≥ 1} | `WebhookSubscriptionCreatedRead` | OWNER | 201, 422 `SSRF_BLOCKED` | Public targets: HTTPS on 443 with public addresses only; hosts in `OMNIGROWTH_WEBHOOK_TARGET_ALLOWLIST` (`host:port` entries, e.g. `localhost:5678`, `[::1]:5678`) may be private/HTTP (self-hosted n8n); link-local/metadata never. Secret shown once. |
+| POST | `/webhooks/subscriptions/{subscription_id}/rotate-secret` | — | `WebhookSubscriptionCreatedRead` | OWNER | 200, 409 | As for endpoints. |
+| POST | `/webhooks/subscriptions/{subscription_id}/test` | — | `WebhookDeliveryRead` | OWNER | 202, 409 | Queues an `integration.ping` to this subscription only. |
+| DELETE | `/webhooks/subscriptions/{subscription_id}` | — | — | OWNER | 204 | Revokes; queued deliveries end FAILED "subscription revoked" without being sent. |
+| GET | `/webhooks/deliveries` | `?status=&subscription_id=` | `Page[WebhookDeliveryRead]` | OWNER | 200 | Inspectable attempts: state, attempt count, last HTTP status or reason code (never the URL or a body). |
+| POST | `/webhooks/deliveries/{delivery_id}/redeliver` | — | `WebhookDeliveryRead` | OWNER | 200, 409 | FAILED only; fresh attempt budget; same event id. |
+
+**Outbound events** (written by DB triggers in the transaction of the state change; delivered at least once by the scheduler's own webhook loop): `content.approval_requested` (asset → AWAITING_APPROVAL), `publication.failed` (publication job → FAILED), `publication.uncertain` (→ UNCERTAIN). Body: `{id, type, api_version, occurred_at, brand_id, data, links}` — ids, platform/format labels, status, attempt count, error code, `publish_mode` and `simulated` (true = mock publisher, false = real, null = unknown); no text, sources or credentials. Retries: 2xx ends, 410 stops, anything else is retried with backoff (30 s … 8 h, ±10 %) up to `OMNIGROWTH_WEBHOOK_MAX_ATTEMPTS` (8), 10 s timeout, no redirects.
 
 ---
 
@@ -596,10 +604,12 @@ Authoritative definition: STATE_MACHINES §3.3 (four conditions + `ENV=test` har
 `PUBLISH_MODE` itself is never writable through the API.
 
 ### 6.6 Inbound webhook verification (A7)
-- Headers: `X-OmniGrowth-Timestamp` (unix seconds), `X-OmniGrowth-Delivery-ID` (unique, ≤ 128 chars), `X-OmniGrowth-Signature: v1=<hex>` where `hex = HMAC_SHA256(secret, "{timestamp}.{raw_body}")`.
-- Reject (`401 UNAUTHORIZED`, generic message) if: header missing, `|now − timestamp| > 300 s`, or signature mismatch under every active secret (constant-time `hmac.compare_digest`; current + previous secret during rotation grace).
+- Headers: `X-OmniGrowth-Timestamp` (unix seconds), `X-OmniGrowth-Delivery-ID` (unique, ≤ 128 chars), `X-OmniGrowth-Signature: v1=<hex>` where `hex = HMAC_SHA256(secret, "{timestamp}.{delivery_id}.{raw_body}")`: the delivery id is signed, so a captured request cannot be replayed under a new id. Up to 4 comma-separated `v1=` values are accepted.
+- Reject (`401 UNAUTHORIZED`, generic message) if: header missing (including the delivery id), `|now − timestamp| > 300 s`, or signature mismatch under every active secret (constant-time `hmac.compare_digest`; current + previous secret during rotation grace).
 - Replay: `delivery_id` stored 24 h per endpoint; duplicate ⇒ `200` with original `WebhookAcceptedRead` and `replayed=true`, no re-execution.
-- Webhook-triggered actions are limited to `allowed_event_types` and can never approve, schedule, publish, or touch credentials/settings.
+- Webhook-triggered actions are limited to the endpoint's `allowed_operations` and `brand_ids` and can never approve, schedule, publish, or touch credentials/settings.
+- Outbound deliveries use the same headers (+ `X-OmniGrowth-Event-ID`, `X-OmniGrowth-Event-Type`, `X-OmniGrowth-Attempt`), signed the same way with the subscription secret; during a rotation grace period the header carries one `v1=` per active secret (comma-separated) and a receiver accepts any match. Receivers verify the 300 s window and deduplicate on the event id.
+- Secrets are derived (`HMAC(OMNIGROWTH_WEBHOOK_KEY, kind/id/version)`), never stored; see A16.
 
 ### 6.7 Transport & headers
 - TLS terminated at the reverse proxy in any non-local deployment; API refuses to start with `ENV=production` and `OMNIGROWTH_CORS_ORIGINS=*`.

@@ -149,7 +149,8 @@ async def create_job(
     ``max_open_model_jobs`` open jobs. System/scheduler follow-ups (e.g. a QA re-queue) are
     never refused, so no work is stranded half-way.
     """
-    if actor.type is ActorType.HUMAN:
+    # Requests from people and from integrations share the bounded model-job backlog.
+    if actor.type in (ActorType.HUMAN, ActorType.INTEGRATION):
         await _check_backlog(session, kind, max_open_jobs)
     job_id = uuid7()
     await create_with_state(

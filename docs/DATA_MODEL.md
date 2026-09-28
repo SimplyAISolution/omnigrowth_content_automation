@@ -1302,7 +1302,7 @@ DB-backed tunables and §23 routing overrides. Key/value; ENV-sourced settings (
 Constraints: `UNIQUE NULLS NOT DISTINCT (brand_id, key)`. Every change writes `audit_events`.
 
 ### 6a.4 Deferred to Phase 12
-`webhook_endpoints` (inbound HMAC secrets, hashed + rotation grace) and `webhook_subscriptions` (outbound targets, allowlisted) are named here and designed in Phase 12.
+Phase 12 (migration c12a0d5e7f31, `omnigrowth/models/integrations.py`, A16): `webhook_endpoints` (inbound INTEGRATION principals: `key`, `brand_ids[]`, `allowed_operations[]`, `secret_version`, previous version + grace, `revoked_at`), `webhook_subscriptions` (outbound targets: `target_url`, `brand_ids[]`, `event_types[]`, secret versions, `revoked_at`, last success/failure), `integration_events` (append-only outbox, stable `id`, written by the triggers `content_assets_emit_events` / `publication_jobs_emit_events` in the same transaction as the state change; ids and labels only) and `webhook_deliveries` (one row per event × subscription, unique; `state` PENDING/DELIVERING/SUCCEEDED/FAILED as text + CHECK like `idempotency_keys.state`; `attempt_count` ≤ `max_attempts`; lease). No secret is stored: secrets are derived from `OMNIGROWTH_WEBHOOK_KEY`.
 
 ---
 

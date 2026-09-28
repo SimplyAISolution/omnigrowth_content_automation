@@ -84,6 +84,7 @@ sequence = [
     { cmd = "mypy omnigrowth" },
     { cmd = "lint-imports" },
     { cmd = "pytest -m \"not live_llm and not integration\"" },
+    { ref = "ui-check" },
 ]
 
 # ---------------------------------------------------------------- ruff

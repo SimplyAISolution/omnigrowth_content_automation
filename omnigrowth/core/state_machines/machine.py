@@ -52,6 +52,7 @@ def human(*roles: UserRole) -> ActorRule:
 SYSTEM = ActorRule(ActorType.SYSTEM)
 SCHEDULER = ActorRule(ActorType.SCHEDULER)
 AGENT = ActorRule(ActorType.AGENT)
+INTEGRATION = ActorRule(ActorType.INTEGRATION)  # Phase 12 least-privilege n8n principal
 OWNER_EDITOR = human(UserRole.OWNER, UserRole.EDITOR)
 OWNER_ONLY = human(UserRole.OWNER)
 

@@ -1467,6 +1467,184 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/webhooks/deliveries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Deliveries */
+        get: operations["list_deliveries_api_v1_webhooks_deliveries_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/webhooks/deliveries/{delivery_id}/redeliver": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Redeliver */
+        post: operations["redeliver_api_v1_webhooks_deliveries__delivery_id__redeliver_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/webhooks/endpoints": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Endpoints */
+        get: operations["list_endpoints_api_v1_webhooks_endpoints_get"];
+        put?: never;
+        /** Create Endpoint */
+        post: operations["create_endpoint_api_v1_webhooks_endpoints_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/webhooks/endpoints/{endpoint_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Revoke Endpoint
+         * @description Revokes at once (every secret stops working); the row stays for the audit trail.
+         */
+        delete: operations["revoke_endpoint_api_v1_webhooks_endpoints__endpoint_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/webhooks/endpoints/{endpoint_id}/rotate-secret": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Rotate Endpoint Secret */
+        post: operations["rotate_endpoint_secret_api_v1_webhooks_endpoints__endpoint_id__rotate_secret_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/webhooks/inbound/{endpoint_key}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Inbound */
+        post: operations["inbound_api_v1_webhooks_inbound__endpoint_key__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/webhooks/subscriptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Subscriptions */
+        get: operations["list_subscriptions_api_v1_webhooks_subscriptions_get"];
+        put?: never;
+        /** Create Subscription */
+        post: operations["create_subscription_api_v1_webhooks_subscriptions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/webhooks/subscriptions/{subscription_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Revoke Subscription */
+        delete: operations["revoke_subscription_api_v1_webhooks_subscriptions__subscription_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/webhooks/subscriptions/{subscription_id}/rotate-secret": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Rotate Subscription Secret */
+        post: operations["rotate_subscription_secret_api_v1_webhooks_subscriptions__subscription_id__rotate_secret_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/webhooks/subscriptions/{subscription_id}/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Send Test Event
+         * @description Queue an ``integration.ping`` to this subscription only (delivered by the scheduler).
+         */
+        post: operations["send_test_event_api_v1_webhooks_subscriptions__subscription_id__test_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1475,7 +1653,7 @@ export interface components {
          * ActorType
          * @enum {string}
          */
-        ActorType: "HUMAN" | "SYSTEM" | "SCHEDULER" | "AGENT";
+        ActorType: "HUMAN" | "SYSTEM" | "SCHEDULER" | "AGENT" | "INTEGRATION";
         /** AnalyticsPullRequest */
         AnalyticsPullRequest: {
             /**
@@ -2824,6 +3002,18 @@ export interface components {
          */
         HealthStatus: "OK" | "DEGRADED" | "DOWN";
         /**
+         * IntegrationEventType
+         * @description Outbound events (stored as text + CHECK; values are part of the webhook contract).
+         * @enum {string}
+         */
+        IntegrationEventType: "content.approval_requested" | "publication.failed" | "publication.uncertain" | "integration.ping";
+        /**
+         * IntegrationOperation
+         * @description What an inbound integration endpoint may do; nothing else is reachable through it.
+         * @enum {string}
+         */
+        IntegrationOperation: "source.text_ingest" | "source.url_ingest" | "campaign.generate";
+        /**
          * JobKind
          * @enum {string}
          */
@@ -3135,6 +3325,27 @@ export interface components {
         Page_SourceAssetRead_: {
             /** Items */
             items: components["schemas"]["SourceAssetRead"][];
+            /** Next Cursor */
+            next_cursor?: string | null;
+        };
+        /** Page[WebhookDeliveryRead] */
+        Page_WebhookDeliveryRead_: {
+            /** Items */
+            items: components["schemas"]["WebhookDeliveryRead"][];
+            /** Next Cursor */
+            next_cursor?: string | null;
+        };
+        /** Page[WebhookEndpointRead] */
+        Page_WebhookEndpointRead_: {
+            /** Items */
+            items: components["schemas"]["WebhookEndpointRead"][];
+            /** Next Cursor */
+            next_cursor?: string | null;
+        };
+        /** Page[WebhookSubscriptionRead] */
+        Page_WebhookSubscriptionRead_: {
+            /** Items */
+            items: components["schemas"]["WebhookSubscriptionRead"][];
             /** Next Cursor */
             next_cursor?: string | null;
         };
@@ -3893,6 +4104,263 @@ export interface components {
             sample_size: number | null;
             /** Units */
             units: number;
+        };
+        /** WebhookAcceptedRead */
+        WebhookAcceptedRead: {
+            /** Delivery Id */
+            delivery_id: string;
+            job?: components["schemas"]["JobRead"] | null;
+            operation: components["schemas"]["IntegrationOperation"];
+            /**
+             * Replayed
+             * @default false
+             */
+            replayed: boolean;
+            /** Result Ref */
+            result_ref?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /** WebhookDeliveryRead */
+        WebhookDeliveryRead: {
+            /** Attempt Count */
+            attempt_count: number;
+            /**
+             * Brand Id
+             * Format: uuid
+             */
+            brand_id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Delivered At */
+            delivered_at: string | null;
+            /**
+             * Event Id
+             * Format: uuid
+             */
+            event_id: string;
+            event_type: components["schemas"]["IntegrationEventType"];
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Last Error */
+            last_error: string | null;
+            /** Last Status Code */
+            last_status_code: number | null;
+            /** Max Attempts */
+            max_attempts: number;
+            /**
+             * Next Attempt At
+             * Format: date-time
+             */
+            next_attempt_at: string;
+            /**
+             * Occurred At
+             * Format: date-time
+             */
+            occurred_at: string;
+            status: components["schemas"]["WebhookDeliveryStatus"];
+            /**
+             * Subscription Id
+             * Format: uuid
+             */
+            subscription_id: string;
+        };
+        /**
+         * WebhookDeliveryStatus
+         * @enum {string}
+         */
+        WebhookDeliveryStatus: "PENDING" | "DELIVERING" | "SUCCEEDED" | "FAILED";
+        /** WebhookEndpointCreate */
+        WebhookEndpointCreate: {
+            /** Allowed Operations */
+            allowed_operations: components["schemas"]["IntegrationOperation"][];
+            /** Brand Ids */
+            brand_ids: string[];
+            /** Description */
+            description?: string | null;
+            /**
+             * Key
+             * @description URL slug of the endpoint.
+             */
+            key: string;
+        };
+        /** WebhookEndpointCreatedRead */
+        WebhookEndpointCreatedRead: {
+            /** Allowed Operations */
+            allowed_operations: components["schemas"]["IntegrationOperation"][];
+            /** Brand Ids */
+            brand_ids: string[];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Created By */
+            created_by: string;
+            /** Description */
+            description: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Inbound Path */
+            inbound_path: string;
+            /** Key */
+            key: string;
+            /** Last Used At */
+            last_used_at: string | null;
+            /** Previous Secret Valid Until */
+            previous_secret_valid_until: string | null;
+            /** Revoked At */
+            revoked_at: string | null;
+            /**
+             * Secret
+             * @description Shown once. Store it in n8n credentials, never in a workflow.
+             */
+            secret: string;
+            /** Secret Fingerprint */
+            secret_fingerprint: string;
+            /** Secret Rotated At */
+            secret_rotated_at: string | null;
+            /** Secret Version */
+            secret_version: number;
+        };
+        /** WebhookEndpointRead */
+        WebhookEndpointRead: {
+            /** Allowed Operations */
+            allowed_operations: components["schemas"]["IntegrationOperation"][];
+            /** Brand Ids */
+            brand_ids: string[];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Created By */
+            created_by: string;
+            /** Description */
+            description: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Inbound Path */
+            inbound_path: string;
+            /** Key */
+            key: string;
+            /** Last Used At */
+            last_used_at: string | null;
+            /** Previous Secret Valid Until */
+            previous_secret_valid_until: string | null;
+            /** Revoked At */
+            revoked_at: string | null;
+            /** Secret Fingerprint */
+            secret_fingerprint: string;
+            /** Secret Rotated At */
+            secret_rotated_at: string | null;
+            /** Secret Version */
+            secret_version: number;
+        };
+        /** WebhookSubscriptionCreate */
+        WebhookSubscriptionCreate: {
+            /** Brand Ids */
+            brand_ids: string[];
+            /** Description */
+            description?: string | null;
+            /** Event Types */
+            event_types: components["schemas"]["IntegrationEventType"][];
+            /**
+             * Target Url
+             * Format: uri
+             */
+            target_url: string;
+        };
+        /** WebhookSubscriptionCreatedRead */
+        WebhookSubscriptionCreatedRead: {
+            /** Brand Ids */
+            brand_ids: string[];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Created By */
+            created_by: string;
+            /** Description */
+            description: string | null;
+            /** Event Types */
+            event_types: components["schemas"]["IntegrationEventType"][];
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Last Failure At */
+            last_failure_at: string | null;
+            /** Last Success At */
+            last_success_at: string | null;
+            /** Previous Secret Valid Until */
+            previous_secret_valid_until: string | null;
+            /** Revoked At */
+            revoked_at: string | null;
+            /**
+             * Secret
+             * @description Shown once. Used by the receiver to verify signatures.
+             */
+            secret: string;
+            /** Secret Fingerprint */
+            secret_fingerprint: string;
+            /** Secret Rotated At */
+            secret_rotated_at: string | null;
+            /** Secret Version */
+            secret_version: number;
+            /** Target Url */
+            target_url: string;
+        };
+        /** WebhookSubscriptionRead */
+        WebhookSubscriptionRead: {
+            /** Brand Ids */
+            brand_ids: string[];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Created By */
+            created_by: string;
+            /** Description */
+            description: string | null;
+            /** Event Types */
+            event_types: components["schemas"]["IntegrationEventType"][];
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Last Failure At */
+            last_failure_at: string | null;
+            /** Last Success At */
+            last_success_at: string | null;
+            /** Previous Secret Valid Until */
+            previous_secret_valid_until: string | null;
+            /** Revoked At */
+            revoked_at: string | null;
+            /** Secret Fingerprint */
+            secret_fingerprint: string;
+            /** Secret Rotated At */
+            secret_rotated_at: string | null;
+            /** Secret Version */
+            secret_version: number;
+            /** Target Url */
+            target_url: string;
         };
         /** CancelRequest */
         omnigrowth__api__routes__experiments__CancelRequest: {
@@ -7238,6 +7706,406 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["JobRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_deliveries_api_v1_webhooks_deliveries_get: {
+        parameters: {
+            query?: {
+                status?: components["schemas"]["WebhookDeliveryStatus"] | null;
+                subscription_id?: string | null;
+            };
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_WebhookDeliveryRead_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    redeliver_api_v1_webhooks_deliveries__delivery_id__redeliver_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                delivery_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebhookDeliveryRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_endpoints_api_v1_webhooks_endpoints_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_WebhookEndpointRead_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_endpoint_api_v1_webhooks_endpoints_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WebhookEndpointCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebhookEndpointCreatedRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    revoke_endpoint_api_v1_webhooks_endpoints__endpoint_id__delete: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                endpoint_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rotate_endpoint_secret_api_v1_webhooks_endpoints__endpoint_id__rotate_secret_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                endpoint_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebhookEndpointCreatedRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    inbound_api_v1_webhooks_inbound__endpoint_key__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                endpoint_key: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Replay of an earlier delivery */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebhookAcceptedRead"];
+                };
+            };
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebhookAcceptedRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_subscriptions_api_v1_webhooks_subscriptions_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_WebhookSubscriptionRead_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_subscription_api_v1_webhooks_subscriptions_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WebhookSubscriptionCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebhookSubscriptionCreatedRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    revoke_subscription_api_v1_webhooks_subscriptions__subscription_id__delete: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                subscription_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rotate_subscription_secret_api_v1_webhooks_subscriptions__subscription_id__rotate_secret_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                subscription_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebhookSubscriptionCreatedRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    send_test_event_api_v1_webhooks_subscriptions__subscription_id__test_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                subscription_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebhookDeliveryRead"];
                 };
             };
             /** @description Validation Error */

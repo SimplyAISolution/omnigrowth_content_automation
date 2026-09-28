@@ -1,0 +1,207 @@
+{
+  "name": "OmniGrowth — event notifications (example)",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## OmniGrowth events\n1. Set env: OMNIGROWTH_WEBHOOK_SECRET (the subscription secret), NODE_FUNCTION_ALLOW_BUILTIN=crypto.\n2. Create an OmniGrowth subscription to this Webhook's production URL.\n3. Replace the No-Op 'Notify' steps with your channel, then activate.\nEvents inform people; approving and publishing happen in OmniGrowth only.",
+        "height": 220,
+        "width": 460
+      },
+      "id": "a1f0c3e2-0000-4000-8000-000000000001",
+      "name": "Setup notes",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        -260
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "omnigrowth-events",
+        "responseMode": "responseNode",
+        "options": {
+          "rawBody": true
+        }
+      },
+      "id": "a1f0c3e2-0000-4000-8000-000000000002",
+      "name": "OmniGrowth event",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "omnigrowth-events"
+    },
+    {
+      "parameters": {
+        "jsCode": "// OmniGrowth → n8n: verify the signature, reject stale or replayed deliveries, deduplicate\n// on the event id (delivery is at-least-once), and prepare a message per event type.\n// Needs: NODE_FUNCTION_ALLOW_BUILTIN=crypto, and the subscription secret in the\n// OMNIGROWTH_WEBHOOK_SECRET environment variable (never paste it into the workflow).\n// Output: one item { httpStatus, route, message, event } — route 0..2 notify, 3 ignore.\nconst crypto = require(\"crypto\");\n\nconst TOLERANCE_S = 300;\nconst KEEP_IDS_S = 7 * 24 * 3600;\n\nconst secret = $env.OMNIGROWTH_WEBHOOK_SECRET || \"\";\nconst input = $input.first();\nconst headers = Object.fromEntries(\n  Object.entries(input.json.headers || {}).map(([k, v]) => [k.toLowerCase(), String(v)]),\n);\nconst raw = input.binary && input.binary.data ? Buffer.from(input.binary.data.data, \"base64\") : Buffer.from(\"\");\n\nfunction reject(reason) {\n  return [{ json: { httpStatus: 401, route: 3, message: `rejected: ${reason}`, event: null } }];\n}\n\nif (!secret) return reject(\"OMNIGROWTH_WEBHOOK_SECRET is not set\");\nconst timestamp = headers[\"x-omnigrowth-timestamp\"] || \"\";\nconst deliveryId = headers[\"x-omnigrowth-delivery-id\"] || \"\";\nconst signatures = (headers[\"x-omnigrowth-signature\"] || \"\").split(\",\").map((s) => s.trim()).filter(Boolean);\nif (!/^\\d+$/.test(timestamp) || Math.abs(Date.now() / 1000 - Number(timestamp)) > TOLERANCE_S) {\n  return reject(\"stale or missing timestamp\");\n}\nif (!deliveryId) return reject(\"missing delivery id\");\n// Signed: \"<timestamp>.<delivery id>.<raw body>\". During a secret rotation OmniGrowth sends one\n// v1= per active secret; any match is enough.\nconst expected = Buffer.from(\n  \"v1=\" + crypto.createHmac(\"sha256\", secret).update(`${timestamp}.${deliveryId}.`).update(raw).digest(\"hex\"),\n);\nconst valid = signatures.some((s) => {\n  const b = Buffer.from(s);\n  return b.length === expected.length && crypto.timingSafeEqual(expected, b);\n});\nif (!valid) return reject(\"bad signature\");\n\nconst event = JSON.parse(raw.toString(\"utf8\"));\nif (headers[\"x-omnigrowth-event-id\"] !== event.id) return reject(\"event id mismatch\");\n\n// At-least-once delivery: acknowledge duplicates (200) but do not notify twice.\nconst store = $getWorkflowStaticData(\"global\");\nstore.seen = store.seen || {};\nconst now = Math.floor(Date.now() / 1000);\nfor (const [id, at] of Object.entries(store.seen)) if (now - at > KEEP_IDS_S) delete store.seen[id];\nif (store.seen[event.id]) {\n  return [{ json: { httpStatus: 200, route: 3, message: \"duplicate event, already handled\", event } }];\n}\nstore.seen[event.id] = now;\n\nconst d = event.data || {};\nconst MODES = {\n  MOCK: \"SIMULATED (mock publisher: no real post, no real audience)\",\n  LIVE: \"REAL publication (live platform API)\",\n  MANUAL: \"MANUAL publication (a person posts it)\",\n};\nconst mode = MODES[d.publish_mode] || (d.simulated === true ? MODES.MOCK : \"publication mode unknown\");\nconst links = event.links || {};\nlet route = 3;\nlet message = `OmniGrowth ${event.type} (${event.id})`;\nif (event.type === \"content.approval_requested\") {\n  route = 0;\n  message =\n    `Content needs human approval: ${d.platform} ${d.format}. ` +\n    `Review and decide in OmniGrowth: ${links.content || links.approvals || \"\"}`;\n} else if (event.type === \"publication.failed\") {\n  route = 1;\n  message =\n    `Publication failed [${mode}] on ${d.platform} after ${d.attempt_count} attempt(s)` +\n    `${d.last_error_code ? ` (${d.last_error_code})` : \"\"}. Open: ${links.publishing || \"\"}`;\n} else if (event.type === \"publication.uncertain\") {\n  route = 2;\n  message =\n    `Publication outcome UNKNOWN [${mode}] on ${d.platform}: reconcile it in OmniGrowth before ` +\n    `this account publishes again. Open: ${links.publishing || \"\"}`;\n}\nreturn [{ json: { httpStatus: 200, route, message, event } }];\n"
+      },
+      "id": "a1f0c3e2-0000-4000-8000-000000000003",
+      "name": "Verify signature and deduplicate",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { accepted: $json.httpStatus === 200 } }}",
+        "options": {
+          "responseCode": "={{ $json.httpStatus }}"
+        }
+      },
+      "id": "a1f0c3e2-0000-4000-8000-000000000004",
+      "name": "Acknowledge",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        480,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "expression",
+        "numberOutputs": 4,
+        "output": "={{ $json.route }}"
+      },
+      "id": "a1f0c3e2-0000-4000-8000-000000000005",
+      "name": "Route by event",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [
+        720,
+        0
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "a1f0c3e2-0000-4000-8000-000000000010",
+      "name": "Notify reviewers (replace me)",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        980,
+        -180
+      ],
+      "notes": "Content needs human approval. Message: {{ $json.message }}"
+    },
+    {
+      "parameters": {},
+      "id": "a1f0c3e2-0000-4000-8000-000000000011",
+      "name": "Notify on publication failure (replace me)",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        980,
+        -60
+      ],
+      "notes": "Publication failed. Message: {{ $json.message }}"
+    },
+    {
+      "parameters": {},
+      "id": "a1f0c3e2-0000-4000-8000-000000000012",
+      "name": "Ask an editor to reconcile (replace me)",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        980,
+        60
+      ],
+      "notes": "Publication outcome uncertain. Message: {{ $json.message }}"
+    },
+    {
+      "parameters": {},
+      "id": "a1f0c3e2-0000-4000-8000-000000000013",
+      "name": "Ignore (duplicate, invalid or test)",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        980,
+        180
+      ],
+      "notes": "Nothing to do. Message: {{ $json.message }}"
+    }
+  ],
+  "connections": {
+    "OmniGrowth event": {
+      "main": [
+        [
+          {
+            "node": "Verify signature and deduplicate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify signature and deduplicate": {
+      "main": [
+        [
+          {
+            "node": "Acknowledge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Acknowledge": {
+      "main": [
+        [
+          {
+            "node": "Route by event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by event": {
+      "main": [
+        [
+          {
+            "node": "Notify reviewers (replace me)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Notify on publication failure (replace me)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ask an editor to reconcile (replace me)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ignore (duplicate, invalid or test)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}

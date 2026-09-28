@@ -6,7 +6,8 @@
           "HUMAN",
           "SYSTEM",
           "SCHEDULER",
-          "AGENT"
+          "AGENT",
+          "INTEGRATION"
         ],
         "title": "ActorType",
         "type": "string"
@@ -4156,6 +4157,27 @@
         "title": "HealthStatus",
         "type": "string"
       },
+      "IntegrationEventType": {
+        "description": "Outbound events (stored as text + CHECK; values are part of the webhook contract).",
+        "enum": [
+          "content.approval_requested",
+          "publication.failed",
+          "publication.uncertain",
+          "integration.ping"
+        ],
+        "title": "IntegrationEventType",
+        "type": "string"
+      },
+      "IntegrationOperation": {
+        "description": "What an inbound integration endpoint may do; nothing else is reachable through it.",
+        "enum": [
+          "source.text_ingest",
+          "source.url_ingest",
+          "campaign.generate"
+        ],
+        "title": "IntegrationOperation",
+        "type": "string"
+      },
       "JobKind": {
         "enum": [
           "SOURCE_INGEST",
@@ -5293,6 +5315,87 @@
           "items"
         ],
         "title": "Page[SourceAssetRead]",
+        "type": "object"
+      },
+      "Page_WebhookDeliveryRead_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/WebhookDeliveryRead"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "Page[WebhookDeliveryRead]",
+        "type": "object"
+      },
+      "Page_WebhookEndpointRead_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/WebhookEndpointRead"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "Page[WebhookEndpointRead]",
+        "type": "object"
+      },
+      "Page_WebhookSubscriptionRead_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/WebhookSubscriptionRead"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "Page[WebhookSubscriptionRead]",
         "type": "object"
       },
       "Page_dict_str__Any__": {
@@ -7344,6 +7447,796 @@
           "observed_value"
         ],
         "title": "VariantRead",
+        "type": "object"
+      },
+      "WebhookAcceptedRead": {
+        "properties": {
+          "delivery_id": {
+            "title": "Delivery Id",
+            "type": "string"
+          },
+          "job": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/JobRead"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "operation": {
+            "$ref": "#/components/schemas/IntegrationOperation"
+          },
+          "replayed": {
+            "default": false,
+            "title": "Replayed",
+            "type": "boolean"
+          },
+          "result_ref": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Result Ref"
+          }
+        },
+        "required": [
+          "delivery_id",
+          "operation"
+        ],
+        "title": "WebhookAcceptedRead",
+        "type": "object"
+      },
+      "WebhookDeliveryRead": {
+        "properties": {
+          "attempt_count": {
+            "title": "Attempt Count",
+            "type": "integer"
+          },
+          "brand_id": {
+            "format": "uuid",
+            "title": "Brand Id",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "delivered_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delivered At"
+          },
+          "event_id": {
+            "format": "uuid",
+            "title": "Event Id",
+            "type": "string"
+          },
+          "event_type": {
+            "$ref": "#/components/schemas/IntegrationEventType"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "last_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Error"
+          },
+          "last_status_code": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Status Code"
+          },
+          "max_attempts": {
+            "title": "Max Attempts",
+            "type": "integer"
+          },
+          "next_attempt_at": {
+            "format": "date-time",
+            "title": "Next Attempt At",
+            "type": "string"
+          },
+          "occurred_at": {
+            "format": "date-time",
+            "title": "Occurred At",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/WebhookDeliveryStatus"
+          },
+          "subscription_id": {
+            "format": "uuid",
+            "title": "Subscription Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "event_id",
+          "event_type",
+          "brand_id",
+          "subscription_id",
+          "status",
+          "attempt_count",
+          "max_attempts",
+          "next_attempt_at",
+          "last_status_code",
+          "last_error",
+          "delivered_at",
+          "occurred_at",
+          "created_at"
+        ],
+        "title": "WebhookDeliveryRead",
+        "type": "object"
+      },
+      "WebhookDeliveryStatus": {
+        "enum": [
+          "PENDING",
+          "DELIVERING",
+          "SUCCEEDED",
+          "FAILED"
+        ],
+        "title": "WebhookDeliveryStatus",
+        "type": "string"
+      },
+      "WebhookEndpointCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "allowed_operations": {
+            "items": {
+              "$ref": "#/components/schemas/IntegrationOperation"
+            },
+            "maxItems": 10,
+            "minItems": 1,
+            "title": "Allowed Operations",
+            "type": "array"
+          },
+          "brand_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 50,
+            "minItems": 1,
+            "title": "Brand Ids",
+            "type": "array"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "key": {
+            "description": "URL slug of the endpoint.",
+            "pattern": "^[a-z0-9][a-z0-9-]{2,63}$",
+            "title": "Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "brand_ids",
+          "allowed_operations"
+        ],
+        "title": "WebhookEndpointCreate",
+        "type": "object"
+      },
+      "WebhookEndpointCreatedRead": {
+        "properties": {
+          "allowed_operations": {
+            "items": {
+              "$ref": "#/components/schemas/IntegrationOperation"
+            },
+            "title": "Allowed Operations",
+            "type": "array"
+          },
+          "brand_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Brand Ids",
+            "type": "array"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "created_by": {
+            "title": "Created By",
+            "type": "string"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "inbound_path": {
+            "title": "Inbound Path",
+            "type": "string"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "last_used_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Used At"
+          },
+          "previous_secret_valid_until": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previous Secret Valid Until"
+          },
+          "revoked_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revoked At"
+          },
+          "secret": {
+            "description": "Shown once. Store it in n8n credentials, never in a workflow.",
+            "title": "Secret",
+            "type": "string"
+          },
+          "secret_fingerprint": {
+            "title": "Secret Fingerprint",
+            "type": "string"
+          },
+          "secret_rotated_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Secret Rotated At"
+          },
+          "secret_version": {
+            "title": "Secret Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "key",
+          "description",
+          "brand_ids",
+          "allowed_operations",
+          "inbound_path",
+          "secret_version",
+          "secret_fingerprint",
+          "secret_rotated_at",
+          "previous_secret_valid_until",
+          "revoked_at",
+          "last_used_at",
+          "created_by",
+          "created_at",
+          "secret"
+        ],
+        "title": "WebhookEndpointCreatedRead",
+        "type": "object"
+      },
+      "WebhookEndpointRead": {
+        "properties": {
+          "allowed_operations": {
+            "items": {
+              "$ref": "#/components/schemas/IntegrationOperation"
+            },
+            "title": "Allowed Operations",
+            "type": "array"
+          },
+          "brand_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Brand Ids",
+            "type": "array"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "created_by": {
+            "title": "Created By",
+            "type": "string"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "inbound_path": {
+            "title": "Inbound Path",
+            "type": "string"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "last_used_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Used At"
+          },
+          "previous_secret_valid_until": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previous Secret Valid Until"
+          },
+          "revoked_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revoked At"
+          },
+          "secret_fingerprint": {
+            "title": "Secret Fingerprint",
+            "type": "string"
+          },
+          "secret_rotated_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Secret Rotated At"
+          },
+          "secret_version": {
+            "title": "Secret Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "key",
+          "description",
+          "brand_ids",
+          "allowed_operations",
+          "inbound_path",
+          "secret_version",
+          "secret_fingerprint",
+          "secret_rotated_at",
+          "previous_secret_valid_until",
+          "revoked_at",
+          "last_used_at",
+          "created_by",
+          "created_at"
+        ],
+        "title": "WebhookEndpointRead",
+        "type": "object"
+      },
+      "WebhookSubscriptionCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "brand_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 50,
+            "minItems": 1,
+            "title": "Brand Ids",
+            "type": "array"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "event_types": {
+            "items": {
+              "$ref": "#/components/schemas/IntegrationEventType"
+            },
+            "maxItems": 10,
+            "minItems": 1,
+            "title": "Event Types",
+            "type": "array"
+          },
+          "target_url": {
+            "format": "uri",
+            "maxLength": 2083,
+            "minLength": 1,
+            "title": "Target Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "target_url",
+          "brand_ids",
+          "event_types"
+        ],
+        "title": "WebhookSubscriptionCreate",
+        "type": "object"
+      },
+      "WebhookSubscriptionCreatedRead": {
+        "properties": {
+          "brand_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Brand Ids",
+            "type": "array"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "created_by": {
+            "title": "Created By",
+            "type": "string"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "event_types": {
+            "items": {
+              "$ref": "#/components/schemas/IntegrationEventType"
+            },
+            "title": "Event Types",
+            "type": "array"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "last_failure_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Failure At"
+          },
+          "last_success_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Success At"
+          },
+          "previous_secret_valid_until": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previous Secret Valid Until"
+          },
+          "revoked_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revoked At"
+          },
+          "secret": {
+            "description": "Shown once. Used by the receiver to verify signatures.",
+            "title": "Secret",
+            "type": "string"
+          },
+          "secret_fingerprint": {
+            "title": "Secret Fingerprint",
+            "type": "string"
+          },
+          "secret_rotated_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Secret Rotated At"
+          },
+          "secret_version": {
+            "title": "Secret Version",
+            "type": "integer"
+          },
+          "target_url": {
+            "title": "Target Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "target_url",
+          "description",
+          "brand_ids",
+          "event_types",
+          "secret_version",
+          "secret_fingerprint",
+          "secret_rotated_at",
+          "previous_secret_valid_until",
+          "revoked_at",
+          "last_success_at",
+          "last_failure_at",
+          "created_by",
+          "created_at",
+          "secret"
+        ],
+        "title": "WebhookSubscriptionCreatedRead",
+        "type": "object"
+      },
+      "WebhookSubscriptionRead": {
+        "properties": {
+          "brand_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Brand Ids",
+            "type": "array"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "created_by": {
+            "title": "Created By",
+            "type": "string"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "event_types": {
+            "items": {
+              "$ref": "#/components/schemas/IntegrationEventType"
+            },
+            "title": "Event Types",
+            "type": "array"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "last_failure_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Failure At"
+          },
+          "last_success_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Success At"
+          },
+          "previous_secret_valid_until": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previous Secret Valid Until"
+          },
+          "revoked_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revoked At"
+          },
+          "secret_fingerprint": {
+            "title": "Secret Fingerprint",
+            "type": "string"
+          },
+          "secret_rotated_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Secret Rotated At"
+          },
+          "secret_version": {
+            "title": "Secret Version",
+            "type": "integer"
+          },
+          "target_url": {
+            "title": "Target Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "target_url",
+          "description",
+          "brand_ids",
+          "event_types",
+          "secret_version",
+          "secret_fingerprint",
+          "secret_rotated_at",
+          "previous_secret_valid_until",
+          "revoked_at",
+          "last_success_at",
+          "last_failure_at",
+          "created_by",
+          "created_at"
+        ],
+        "title": "WebhookSubscriptionRead",
         "type": "object"
       },
       "omnigrowth__api__routes__experiments__CancelRequest": {
@@ -14202,6 +15095,694 @@
         "summary": "Retry Source",
         "tags": [
           "sources"
+        ]
+      }
+    },
+    "/api/v1/webhooks/deliveries": {
+      "get": {
+        "operationId": "list_deliveries_api_v1_webhooks_deliveries_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/WebhookDeliveryStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "subscription_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Subscription Id"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_WebhookDeliveryRead_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Deliveries",
+        "tags": [
+          "webhooks"
+        ]
+      }
+    },
+    "/api/v1/webhooks/deliveries/{delivery_id}/redeliver": {
+      "post": {
+        "operationId": "redeliver_api_v1_webhooks_deliveries__delivery_id__redeliver_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "delivery_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Delivery Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookDeliveryRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Redeliver",
+        "tags": [
+          "webhooks"
+        ]
+      }
+    },
+    "/api/v1/webhooks/endpoints": {
+      "get": {
+        "operationId": "list_endpoints_api_v1_webhooks_endpoints_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_WebhookEndpointRead_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Endpoints",
+        "tags": [
+          "webhooks"
+        ]
+      },
+      "post": {
+        "operationId": "create_endpoint_api_v1_webhooks_endpoints_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WebhookEndpointCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookEndpointCreatedRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Endpoint",
+        "tags": [
+          "webhooks"
+        ]
+      }
+    },
+    "/api/v1/webhooks/endpoints/{endpoint_id}": {
+      "delete": {
+        "description": "Revokes at once (every secret stops working); the row stays for the audit trail.",
+        "operationId": "revoke_endpoint_api_v1_webhooks_endpoints__endpoint_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "endpoint_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Endpoint Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Revoke Endpoint",
+        "tags": [
+          "webhooks"
+        ]
+      }
+    },
+    "/api/v1/webhooks/endpoints/{endpoint_id}/rotate-secret": {
+      "post": {
+        "operationId": "rotate_endpoint_secret_api_v1_webhooks_endpoints__endpoint_id__rotate_secret_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "endpoint_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Endpoint Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookEndpointCreatedRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Rotate Endpoint Secret",
+        "tags": [
+          "webhooks"
+        ]
+      }
+    },
+    "/api/v1/webhooks/inbound/{endpoint_key}": {
+      "post": {
+        "operationId": "inbound_api_v1_webhooks_inbound__endpoint_key__post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "endpoint_key",
+            "required": true,
+            "schema": {
+              "title": "Endpoint Key",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookAcceptedRead"
+                }
+              }
+            },
+            "description": "Replay of an earlier delivery"
+          },
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookAcceptedRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Inbound",
+        "tags": [
+          "webhooks"
+        ]
+      }
+    },
+    "/api/v1/webhooks/subscriptions": {
+      "get": {
+        "operationId": "list_subscriptions_api_v1_webhooks_subscriptions_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_WebhookSubscriptionRead_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Subscriptions",
+        "tags": [
+          "webhooks"
+        ]
+      },
+      "post": {
+        "operationId": "create_subscription_api_v1_webhooks_subscriptions_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WebhookSubscriptionCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookSubscriptionCreatedRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Subscription",
+        "tags": [
+          "webhooks"
+        ]
+      }
+    },
+    "/api/v1/webhooks/subscriptions/{subscription_id}": {
+      "delete": {
+        "operationId": "revoke_subscription_api_v1_webhooks_subscriptions__subscription_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "subscription_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Subscription Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Revoke Subscription",
+        "tags": [
+          "webhooks"
+        ]
+      }
+    },
+    "/api/v1/webhooks/subscriptions/{subscription_id}/rotate-secret": {
+      "post": {
+        "operationId": "rotate_subscription_secret_api_v1_webhooks_subscriptions__subscription_id__rotate_secret_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "subscription_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Subscription Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookSubscriptionCreatedRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Rotate Subscription Secret",
+        "tags": [
+          "webhooks"
+        ]
+      }
+    },
+    "/api/v1/webhooks/subscriptions/{subscription_id}/test": {
+      "post": {
+        "description": "Queue an ``integration.ping`` to this subscription only (delivered by the scheduler).",
+        "operationId": "send_test_event_api_v1_webhooks_subscriptions__subscription_id__test_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "subscription_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Subscription Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookDeliveryRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Send Test Event",
+        "tags": [
+          "webhooks"
         ]
       }
     }

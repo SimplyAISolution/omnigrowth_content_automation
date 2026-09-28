@@ -21,7 +21,7 @@ The API sends no CORS headers and never uses cookies, so the dev and preview ser
 
 | Command | What it runs |
 |---|---|
-| `uv run poe ui-check` | `tsc` typecheck + Vitest component tests (mocked API) |
+| `uv run poe ui-check` | `tsc` typecheck + Vitest component tests (mocked API); also part of `uv run poe check` |
 | `uv run poe ui-e2e` | Playwright journeys in the installed Microsoft Edge against the **real API** |
 | `uv run poe openapi` then `npm --prefix frontend run gen:api` | refresh the OpenAPI snapshot and the generated client |
 

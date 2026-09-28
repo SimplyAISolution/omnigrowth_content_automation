@@ -1,7 +1,7 @@
 """OmniGrowth ORM models.
 
 Importing this package registers every table on ``Base.metadata`` (used by Alembic).
-Webhook tables (``webhook_endpoints``, ``webhook_subscriptions``) are deferred to Phase 12.
+Phase 12 integration tables live in ``models/integrations.py``.
 """
 
 from omnigrowth.models.ai import AgentRun, Embedding, ModelRun, PromptVersion
@@ -26,6 +26,12 @@ from omnigrowth.models.content import (
 )
 from omnigrowth.models.experiments import Experiment, ExperimentUnit, ExperimentVariant
 from omnigrowth.models.identity import ApiToken, AuditEvent, User
+from omnigrowth.models.integrations import (
+    IntegrationEvent,
+    WebhookDelivery,
+    WebhookEndpoint,
+    WebhookSubscription,
+)
 from omnigrowth.models.jobs import IdempotencyKey, Job
 from omnigrowth.models.publishing import Publication, PublicationJob
 from omnigrowth.models.research import ResearchClaim, ResearchPacket, SourceAsset
@@ -53,6 +59,7 @@ __all__ = [
     "ExperimentUnit",
     "ExperimentVariant",
     "IdempotencyKey",
+    "IntegrationEvent",
     "Job",
     "ModelRun",
     "Offer",
@@ -68,4 +75,7 @@ __all__ = [
     "ResearchPacket",
     "SourceAsset",
     "User",
+    "WebhookDelivery",
+    "WebhookEndpoint",
+    "WebhookSubscription",
 ]

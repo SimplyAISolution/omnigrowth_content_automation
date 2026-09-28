@@ -8,6 +8,7 @@ import { BrandProvider, useBrand } from "./lib/brand";
 import { usePublishMode } from "./lib/queries";
 import { ApprovalsPage } from "./pages/Approvals";
 import { AnalyticsPage } from "./pages/Analytics";
+import { AutomationsPage } from "./pages/Automations";
 import { BrandPage } from "./pages/Brand";
 import { CalendarPage } from "./pages/Calendar";
 import { CampaignDetailPage } from "./pages/CampaignDetail";
@@ -204,14 +205,7 @@ export function App() {
             </UnavailablePage>
           }
         />
-        <Route
-          path="automations"
-          element={
-            <UnavailablePage title="Automations">
-              Automations (n8n webhooks and notifications) arrive in the next phase.
-            </UnavailablePage>
-          }
-        />
+        <Route path="automations" element={<AutomationsPage />} />
         <Route
           path="settings"
           element={

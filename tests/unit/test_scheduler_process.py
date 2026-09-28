@@ -84,8 +84,12 @@ async def test_run_honours_stop(monkeypatch: pytest.MonkeyPatch) -> None:
         async def dispose(self) -> None:
             return None
 
+    async def idle_webhooks(stop: asyncio.Event) -> None:
+        await stop.wait()
+
     monkeypatch.setattr(sched, "ping_database", ok)
     monkeypatch.setattr(sched, "get_engine", lambda: _Engine())
+    monkeypatch.setattr(sched, "webhook_loop", idle_webhooks)
     stop = asyncio.Event()
     task = asyncio.create_task(sched.run(stop, tick_seconds=0.01))
     await asyncio.sleep(0.05)

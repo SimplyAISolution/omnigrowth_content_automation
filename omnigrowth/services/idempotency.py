@@ -46,14 +46,20 @@ def validate_key(key: str) -> None:
 
 
 async def begin(
-    *, principal_id: uuid.UUID, method: str, route: str, key: str, body_hash: str
+    *,
+    principal_id: uuid.UUID,
+    method: str,
+    route: str,
+    key: str,
+    body_hash: str,
+    principal_type: str = "USER",
 ) -> Replay | uuid.UUID:
     """Claim the key. Returns the stored response to replay, or the new row id to complete."""
     validate_key(key)
     now = datetime.now(UTC)
     async with get_sessionmaker()() as session:
         scope = (
-            IdempotencyKey.principal_type == "USER",
+            IdempotencyKey.principal_type == principal_type,
             IdempotencyKey.principal_id == principal_id,
             IdempotencyKey.method == method,
             IdempotencyKey.route == route,
@@ -66,7 +72,7 @@ async def begin(
             pg_insert(IdempotencyKey)
             .values(
                 id=row_id,
-                principal_type="USER",
+                principal_type=principal_type,
                 principal_id=principal_id,
                 method=method,
                 route=route,

@@ -172,3 +172,28 @@ test("analytics explain simulated provenance and missing inputs", async ({ page 
   await expect(page.getByText("Based on simulated data").first()).toBeVisible();
   await expect(page.getByText(/nothing changes in your campaigns automatically/)).toBeVisible();
 });
+
+test("an owner connects n8n: secrets are shown once, and editors cannot manage integrations", async ({ page }) => {
+  const env = uiEnv();
+  await signIn(page, env.users.OWNER);
+  await page.goto("/automations");
+  await expect(page.getByRole("heading", { name: "Automations", level: 1 })).toBeVisible();
+  await page.getByLabel("Key (part of the URL)").fill("n8n-sources");
+  await page.getByRole("button", { name: "Add integration" }).click();
+  const dialog = page.getByRole("dialog", { name: "Copy this secret now" });
+  await expect(dialog.getByLabel("Secret")).toHaveValue(/^whsec_/);
+  await page.screenshot({ path: `${SHOTS}/desktop-automations-secret.png` });
+  await dialog.getByRole("button", { name: "I have stored it" }).click();
+  await expect(page.getByRole("cell", { name: /n8n-sources/ })).toBeVisible();
+  await expect(page.getByText(/whsec_/)).toHaveCount(0); // never shown again
+  await expectAccessible(page, "/automations");
+  await page.screenshot({ path: `${SHOTS}/desktop-automations.png`, fullPage: true });
+
+  await page.getByRole("button", { name: "Sign out" }).click();
+  await signIn(page, env.users.EDITOR);
+  await page.goto("/automations");
+  await expect(page.getByText("Owners only.")).toBeVisible();
+  const token = await page.evaluate(() => window.sessionStorage.getItem("og.token"));
+  const refused = await page.request.get("/api/v1/webhooks/endpoints", { headers: { Authorization: `Bearer ${token}` } });
+  expect(refused.status()).toBe(403);
+});

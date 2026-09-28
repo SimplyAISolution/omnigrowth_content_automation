@@ -37,6 +37,8 @@ REPO = Path(__file__).resolve().parents[1]
 STATE = REPO / ".pytest-tmp" / "ui-env.json"
 PORT = int(os.environ.get("OG_UI_API_PORT", "8012"))
 DEMO_LABEL = "Demo data (fixture replay)"
+# Per-process random key (the throwaway API derives webhook secrets from it); never persisted.
+_THROWAWAY_WEBHOOK_KEY = secrets.token_urlsafe(48)
 
 
 def _server_url() -> str:
@@ -80,6 +82,9 @@ def _env(db_url: str) -> dict[str, str]:
         # on; production defaults (5/minute, 20/hour) are unchanged.
         "OMNIGROWTH_RATE_LIMIT_BACKEND": "memory",
         "OMNIGROWTH_RATE_LIMIT_LOGIN": "60/minute;600/hour",
+        # Phase 12: webhooks on, with a key that exists only for this throwaway environment.
+        "OMNIGROWTH_WEBHOOK_KEY": _THROWAWAY_WEBHOOK_KEY,
+        "OMNIGROWTH_WEBHOOK_TARGET_ALLOWLIST": "127.0.0.1:5678",
     }
 
 

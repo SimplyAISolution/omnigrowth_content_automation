@@ -26,7 +26,8 @@ This file is injected into every turn. It holds rules only. The spec lives in `d
 
 ## 4. Engineering rules
 - Tooling is pinned: `uv` for env/deps, `poe` tasks in `pyproject.toml` as the single command surface (identical in PowerShell and bash).
-- Canonical gate: `uv run poe check` = ruff format --check + ruff lint + mypy (strict on `omnigrowth/`) + pytest excluding `live_llm` and `integration` markers.
+- Canonical gate: `uv run poe check` = ruff format --check + ruff lint + mypy (strict on `omnigrowth/`) + import contracts + pytest excluding `live_llm` and `integration` markers + `poe ui-check` (frontend typecheck + component tests).
+- Browser E2E (`uv run poe ui-e2e`) is a separate command, required at a phase gate whenever the phase changes frontend journeys, authentication, authorization or API contracts used by the UI.
 - Tests never hit a real LLM or the internet by default. Use `FakeProvider` fixtures (recorded JSON). Live tests are opt-in: `-m live_llm`.
 - LLM structured output: JSON schema request → Pydantic validation → max 2 repair attempts → `LLM_OUTPUT_INVALID` failure with the raw payload persisted to `model_runs`.
 - Alembic: ONLY the primary agent creates revisions. `uv run alembic heads` must always print exactly one head.

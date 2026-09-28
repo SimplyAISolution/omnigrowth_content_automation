@@ -832,3 +832,76 @@ LIMITATIONS: see FOLLOW_UPS Phase 11 (missing APIs explained in the UI; experime
   200). All earlier limitations stand (publication mocked everywhere; five Phase 10 writers not
   live-validated; platform limits UNVERIFIED; some formats unsupported).
 ```
+
+## 2026-09-27 — Phase 12: n8n integration — gate PASSED
+
+Human decisions (Phase 12 kickoff): (1) `poe ui-check` joins `poe check`; `poe ui-e2e` separate,
+required at gates touching UI journeys/auth/authorization/UI API contracts (AGENTS.md §4).
+(2) A dedicated least-privilege INTEGRATION principal, not EDITOR. (3) Initial events: approval
+needed, publication failed, publication outcome uncertain; simulated vs real distinguished;
+minimal payloads. Recorded as A16.
+
+Built:
+- `ActorType.INTEGRATION` (migration adds the enum value) allowed only on C2/C5/SA1/JB1 and under
+  the human backlog cap; inbound endpoints (`webhook_endpoints`) scoped to `brand_ids` and
+  `allowed_operations` (text ingest, URL ingest, campaign planning); 403 BRAND_OUT_OF_SCOPE /
+  OPERATION_NOT_ALLOWED, out-of-scope campaigns 404; identical 401 for every auth failure;
+  delivery-id idempotency (replay 200, reuse with another body 409); 60/min per key+client and
+  120/min per client.
+- Secrets derived from `OMNIGROWTH_WEBHOOK_KEY` (nothing secret stored), shown once, fingerprinted;
+  rotation with a 24 h grace (second rotation inside it 409), revocation, all audited.
+- Signature `v1=HMAC(secret, "<ts>.<delivery id>.<raw body>")`, 300 s window; outbound carries one
+  `v1=` per active secret during rotation.
+- Outbox: triggers on content_assets / publication_jobs write `integration_events` in the same
+  transaction; fan-out per matching subscription (type + brand, created before the event);
+  approval events for auto-approved assets are consumed without deliveries. Delivery: SKIP LOCKED
+  claims with leases, attempts counted at claim, backoff 30 s..8 h +/-10 %, max 8, 10 s timeout,
+  no redirects, 2xx done, 410 stop, fenced completion (a slow sender cannot overwrite a newer
+  attempt), exhausted leases reaped to FAILED, 30-day purge; errors stored as reason codes only.
+  Its own scheduler loop with a supervisor (restart + error log) and a bounded shutdown wait.
+- SSRF: public targets HTTPS/443/public IPs (pinned); `OMNIGROWTH_WEBHOOK_TARGET_ALLOWLIST`
+  host:port entries for self-hosted n8n; link-local/metadata never.
+- OWNER UI "Automations" (targets, inbound integrations, deliveries, send test, redeliver; secret
+  shown once). Example workflows (exported inactive, No-Op notify placeholders, env-based
+  secrets) + `n8n/README.md`; their Code-node JavaScript runs in the unit tests.
+
+Debug loop (root causes): MissingGreenlet after rollback in `deliver` (ORM attributes read after
+rollback -> plain values captured first); status-write detector (column named `state`, explicit
+`.values`); shared-DB backlog in the full integration run (bounded drain in `dispatch_once`,
+tests loop dispatch); `test_run_honours_stop` timed out after the review fixes (the unconfigured
+webhook loop touched the DB for purging and shutdown awaited it without bound -> key check first,
+`SHUTDOWN_GRACE_S`, hermetic test). Each fixed at the first attempt.
+
+Reviewer (read-only): 0 BLOCKER, 6 MAJOR, 9 MINOR. Fixed all MAJOR: M1 replay bypass (delivery
+id not signed -> signed); M2/M3 integration acted as SYSTEM (could satisfy SYSTEM-only
+transitions) -> own actor type, success-path test; M4 auto-approved content announced as
+needing approval -> consumed at fan-out; M5 last attempt with dead sender stuck DELIVERING ->
+reaper; M6 webhook loop could die silently (and InvalidURL escaped) -> supervisor + caught.
+MINOR fixed: m1 mode labels (LIVE/MANUAL), m2 multi-signature + 409 double rotation, m3 fence +
+per-send lease, m4 retention purge, m5 allowlist host:port, m8 per-client limit, m9 order-free
+assertion. Documented, not changed: m1 null mode before dispatch, m6 P8 emits no event, m7 the
+example workflow acknowledges before notifying (A16, n8n/README, FOLLOW_UPS).
+
+```
+PHASE 12 — n8n integration — GATE_PASSED (all run this session, 2026-09-27)
+  uv run poe check (now incl. ui-check) -> All checks passed! / Success: no issues found in 161
+    source files / Contracts: 4 kept, 0 broken. / 750 passed, 142 deselected / tsc clean /
+    Vitest Test Files 9 passed (9), Tests 27 passed (27)
+  uv run poe test-int -> 136 passed, 756 deselected in 138.39s
+  uv run poe ui-e2e (Playwright, Edge, fixture-seeded throwaway API) -> 7 passed (32.0s),
+    incl. the owner Automations journey
+  Webhook gate evidence (local 127.0.0.1 receiver, no real n8n/email/chat/social):
+    docs/audit/phase12_webhook_gate.txt -> 34 passed: authorization + brand isolation,
+    revocation, rotation grace + 409, invalid auth (bad/stale/missing/bearer/tampered/swapped
+    delivery id), replay, duplicate delivery (same event id), retry exhaustion, receiver
+    downtime + redelivery recovery, lease-exhausted -> FAILED, fenced slow sender, auto-approve
+    suppression, simulated labelling, core approval unaffected while the receiver is down,
+    example n8n JavaScript verifies real deliveries.
+  uv run alembic heads -> c12a0d5e7f31 (head); downgrade -1 / upgrade head OK; alembic check ->
+    No new upgrade operations detected.
+  Live inference: NOT RUN (not required: no inference, routing or token-budget behaviour changed).
+LIMITATIONS: publication is simulated (MockPublisher only); platform limits UNVERIFIED; the
+  Phase 12 items in FOLLOW_UPS §5; no real n8n instance was exercised (the local receiver and the
+  workflows' own JavaScript stand in); earlier limitations stand.
+```
+

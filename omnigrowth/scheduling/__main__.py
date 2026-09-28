@@ -28,6 +28,7 @@ from omnigrowth.publishing.base import PlatformPublisher
 from omnigrowth.publishing.config import cached_publishing_config
 from omnigrowth.publishing.mock import MockPublisher
 from omnigrowth.publishing.scheduler import run_once
+from omnigrowth.services import webhook_delivery
 from omnigrowth.services.analytics import schedule_due_pulls
 from omnigrowth.services.experiments import sync_experiments
 from omnigrowth.services.idempotency import purge_expired as purge_idempotency_keys
@@ -133,17 +134,67 @@ async def enqueue_analytics_pulls(now: datetime) -> int:
     return len(created)
 
 
+WEBHOOK_TICK_SECONDS = 5.0
+
+
+SHUTDOWN_GRACE_S = 15.0
+
+
+async def webhook_loop(stop: asyncio.Event, *, tick_seconds: float = WEBHOOK_TICK_SECONDS) -> None:
+    """Outbound webhooks (Phase 12) in their OWN loop: a slow or unreachable receiver only
+    delays other webhook deliveries, never the publication outbox or approvals."""
+    while not stop.is_set():
+        with bind_context(correlation_id=new_correlation_id()):
+            try:
+                counts = await webhook_delivery.dispatch_once(get_sessionmaker())
+            except (OmniGrowthError, SQLAlchemyError) as exc:
+                log.error("webhook loop failed", extra={"error": type(exc).__name__})
+            else:
+                if counts["claimed"] or counts["fanned_out"]:
+                    log.info("webhook loop", extra=counts)
+        try:
+            await asyncio.wait_for(stop.wait(), timeout=tick_seconds)
+        except TimeoutError:
+            continue
+
+
+def supervise_webhooks(task: asyncio.Task[None], stop: asyncio.Event) -> asyncio.Task[None]:
+    """Restart the webhook loop if it died (the error is logged, never swallowed silently).
+
+    The loop itself survives only OmniGrowth/database errors; anything unexpected ends the
+    task, is reported here with its type, and a fresh loop starts on the next tick. Leased
+    deliveries of the dead loop are retried when their lease expires.
+    """
+    if not task.done() or stop.is_set():
+        return task
+    exc = task.exception() if not task.cancelled() else None
+    log.error(
+        "webhook loop stopped unexpectedly; restarting",
+        extra={"error": type(exc).__name__ if exc else "cancelled"},
+    )
+    return asyncio.create_task(webhook_loop(stop))
+
+
 async def run(stop: asyncio.Event, *, tick_seconds: float = TICK_SECONDS) -> None:
     log.info("scheduler started", extra={"tick_seconds": tick_seconds})
+    webhooks = asyncio.create_task(webhook_loop(stop))
     try:
         while not stop.is_set():
             with bind_context(correlation_id=new_correlation_id()):
                 await tick()
+                webhooks = supervise_webhooks(webhooks, stop)
             try:
                 await asyncio.wait_for(stop.wait(), timeout=tick_seconds)
             except TimeoutError:
                 continue
     finally:
+        stop.set()
+        try:
+            # A send in flight gets a short grace; if cancelled, its lease expires and the
+            # delivery is retried (at-least-once), so shutdown never hangs on a receiver.
+            await asyncio.wait_for(webhooks, timeout=SHUTDOWN_GRACE_S)
+        except (TimeoutError, asyncio.CancelledError):
+            log.warning("webhook loop cancelled at shutdown")
         await get_engine().dispose()
         log.info("scheduler stopped")
 

@@ -78,6 +78,25 @@ class Settings(BaseSettings):
     require_idempotency_key: bool = Field(
         default=True, validation_alias="OMNIGROWTH_REQUIRE_IDEMPOTENCY_KEY"
     )
+    # ---- Phase 12 integrations (n8n). Webhooks are disabled until a key is configured.
+    # Server key every webhook signing secret is derived from (>= 32 characters); never logged.
+    webhook_key: SecretStr | None = Field(default=None, validation_alias="OMNIGROWTH_WEBHOOK_KEY")
+    # Hosts (or host:port) that outbound webhooks may reach even though they are private or
+    # local, for a self-hosted n8n. Everything else must be a public HTTPS address.
+    webhook_target_allowlist: str = Field(
+        default="", validation_alias="OMNIGROWTH_WEBHOOK_TARGET_ALLOWLIST"
+    )
+    webhook_max_attempts: int = Field(
+        default=8, ge=1, le=20, validation_alias="OMNIGROWTH_WEBHOOK_MAX_ATTEMPTS"
+    )
+    webhook_timeout_s: float = Field(
+        default=10.0, gt=0, le=60, validation_alias="OMNIGROWTH_WEBHOOK_TIMEOUT_S"
+    )
+    webhook_secret_grace_hours: int = Field(
+        default=24, ge=0, le=168, validation_alias="OMNIGROWTH_WEBHOOK_SECRET_GRACE_HOURS"
+    )
+    # Base URL of the web app, for links in notifications (no secrets, no data in the URL).
+    app_url: str = Field(default="http://127.0.0.1:5173", validation_alias="OMNIGROWTH_APP_URL")
 
     @field_validator("publish_mode", mode="before")
     @classmethod

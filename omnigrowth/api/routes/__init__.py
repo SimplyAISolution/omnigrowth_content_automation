@@ -20,6 +20,7 @@ from omnigrowth.api.routes import (
     platforms,
     publications,
     sources,
+    webhooks,
 )
 
 API_PREFIX = "/api/v1"
@@ -41,5 +42,6 @@ api_router.include_router(calendar.router)
 api_router.include_router(experiments.router)
 api_router.include_router(audit.router)
 api_router.include_router(jobs.router)
+api_router.include_router(webhooks.router)
 
 __all__ = ["API_PREFIX", "api_router"]
