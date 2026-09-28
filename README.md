@@ -1,28 +1,46 @@
 # OmniGrowth
 
-Local-first, multi-platform content operating system (FastAPI + PostgreSQL/pgvector + Redis/RQ + local OpenAI-compatible LLM).
+Local-first, multi-platform content creation and automation for individual influencers, companies, and groups. OmniGrowth supports brainstorming, strategic planning, content creation, review, scheduling, and publishing workflows designed to improve reach and engagement in targeted niches.
 
-Status: **Phase 2 — skeleton + core backend.** See `docs/STATUS.md` for the current phase and `docs/PHASES.md` for the plan.
-Full installation instructions (PowerShell and bash) are written in the documentation phase; until then see `DEVELOPMENT` notes below.
+Built with FastAPI, PostgreSQL/pgvector, Redis/RQ, and local LLM inference through LM Studio.
 
-## Quick start (development)
+## Project status
 
-PowerShell:
+See [Development Status](docs/STATUS.md) for current progress and [Development Phases](docs/PHASES.md) for the roadmap.
+
+Real-platform publishing requires connector configuration and explicit activation. Mock publication does not send content to a real platform.
+
+## Quick start for development
+
+Configure secrets locally in `.env`. Never commit that file.
+
+### PowerShell
+
 ```powershell
 uv sync
-Copy-Item .env.example .env   # then edit secrets
+Copy-Item .env.example .env
+# Edit .env before continuing.
 docker compose -p omnigrowth up -d --wait
 uv run poe migrate
 uv run poe check
 ```
 
-bash:
+### Bash
+
 ```bash
 uv sync
-cp .env.example .env   # then edit secrets
+cp .env.example .env
+# Edit .env before continuing.
 docker compose -p omnigrowth up -d --wait
 uv run poe migrate
 uv run poe check
 ```
 
-Architecture: `ARCHITECTURE.md`. Decisions: `docs/adr/`.
+These commands prepare the development environment and run checks. Consult the project documentation for application startup and connector configuration.
+
+## Documentation
+
+- [Architecture](ARCHITECTURE.md)
+- [Current status](docs/STATUS.md)
+- [Development roadmap](docs/PHASES.md)
+- [Architecture decisions](docs/adr/)
