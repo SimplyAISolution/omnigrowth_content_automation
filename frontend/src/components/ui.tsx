@@ -24,10 +24,18 @@ export function StatusBadge({ info }: { info: StatusInfo }) {
 
 /** Shown wherever results come from the mock publisher or simulated analytics. */
 export function SimulatedNotice({ children }: { children?: ReactNode }) {
-  // Follows the server's publish mode (GET /platforms) instead of assuming it.
+  // Follows the server's publish mode per platform (GET /platforms) instead of assuming it.
   const catalog = useQuery({ queryKey: ["platforms"], queryFn: () => call(api.GET("/api/v1/platforms")), staleTime: 5 * 60_000 });
-  const mode = catalog.data ? (catalog.data.items[0]?.effective_publisher ?? null) : undefined;
-  if (mode === null)
+  const items = catalog.data?.items ?? [];
+  const live = items.filter((p) => p.effective_publisher === "LIVE").map((p) => p.platform);
+  if (catalog.data && live.length)
+    return (
+      <div className="notice notice-warning" role="note">
+        <strong>Live publishing mode.</strong> Only accounts switched to live on a verified connector ({live.join(", ")}) can publish, and each
+        post is checked again before it is sent. Every other platform is off in this mode: its scheduled posts are refused, not simulated.
+      </div>
+    );
+  if (catalog.data && items.every((p) => p.effective_publisher === null))
     return (
       <div className="notice notice-danger" role="note">
         <strong>Publishing is off.</strong> No publisher is available on this server, so scheduled posts fail instead of being published.

@@ -23,6 +23,7 @@ dependencies = [
     "python-multipart>=0.0.9",
     "lmstudio>=1.5.0",
     "numpy>=2.5.3",
+    "cryptography>=43",
 ]
 
 [dependency-groups]

@@ -32,9 +32,12 @@ async def test_catalog_matches_qa_config_and_reports_simulated_publishing(
     for platform, item in items.items():
         assert item["has_writer"] is True
         assert item["formats"] == [f.value for f in rules[Platform(platform)].formats]
-        assert item["capability_status"] == "UNVERIFIED"
+        # Phase 13 (A17): only Mastodon has a VERIFIED live connector; in MOCK mode every
+        # platform, Mastodon included, is still published by the mock publisher.
+        verified = item["platform"] == "MASTODON"
+        assert item["capability_status"] == ("VERIFIED" if verified else "UNVERIFIED")
         assert item["effective_publisher"] == "MOCK"
-        assert item["live_publishing_available"] is False
+        assert item["live_publishing_available"] is verified
     assert items["FACEBOOK"]["formats"] == ["TEXT_POST", "IMAGE_POST"]
     assert items["RUMBLE"]["formats"] == ["LONG_VIDEO_OUTLINE", "LONG_VIDEO_SCRIPT", "SHORT"]
     assert items["MASTODON"]["formats"] == ["TEXT_POST", "THREAD"]

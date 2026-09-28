@@ -19,6 +19,7 @@ Every timestamp comparison uses the ``now`` passed in, so tests can freeze the c
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import uuid
 from collections.abc import Mapping, Sequence
@@ -32,9 +33,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from omnigrowth.agents.writers import VersionFields, build_draft
 from omnigrowth.core.enums import (
     ActorType,
+    ApprovalActionType,
     CampaignStatus,
     ContentAssetStatus,
     Environment,
+    EvidenceClass,
     PublicationJobStatus,
     PublicationStatus,
     PublishMode,
@@ -51,6 +54,7 @@ from omnigrowth.core.state_machines import (
     create_with_state,
 )
 from omnigrowth.models import (
+    ApprovalAction,
     AuditEvent,
     Campaign,
     ContentAsset,
@@ -60,8 +64,14 @@ from omnigrowth.models import (
     PublicationJob,
 )
 from omnigrowth.observability.audit import record_audit
-from omnigrowth.publishing.base import PlatformPublisher, PublishError, PublishRequest
+from omnigrowth.publishing.base import (
+    FailureKind,
+    PlatformPublisher,
+    PublishError,
+    PublishRequest,
+)
 from omnigrowth.publishing.config import PublishingConfig, backoff_seconds
+from omnigrowth.publishing.registry import LiveFactory, LiveUnavailableError
 from omnigrowth.storage.db import get_sessionmaker
 
 log = logging.getLogger(__name__)
@@ -290,6 +300,35 @@ def _request(
     )
 
 
+def evidence_class(mode: PublishMode, account: PlatformAccount) -> EvidenceClass:
+    """A17: fixed on the publication when the dispatch starts, never recomputed."""
+    if mode is PublishMode.MOCK:
+        return EvidenceClass.SIMULATED
+    return EvidenceClass.SANDBOX if account.sandbox else EvidenceClass.REAL
+
+
+async def human_approved(session: AsyncSession, asset_id: uuid.UUID, version_id: uuid.UUID) -> bool:
+    """Live guard 3 (STATE_MACHINES Q6): the approval of this version was made by a person.
+    The most recent APPROVE of the version decides; an auto-approval (SYSTEM) never does."""
+    actor_type = (
+        await session.execute(
+            select(ApprovalAction.actor_type)
+            .where(
+                ApprovalAction.content_asset_id == asset_id,
+                ApprovalAction.action == ApprovalActionType.APPROVE,
+                ApprovalAction.to_status == ContentAssetStatus.APPROVED,
+                func.coalesce(
+                    ApprovalAction.resulting_version_id, ApprovalAction.content_version_id
+                )
+                == version_id,
+            )
+            .order_by(ApprovalAction.created_at.desc())
+            .limit(1)
+        )
+    ).scalar_one_or_none()
+    return actor_type is ActorType.HUMAN
+
+
 async def _start(
     session: AsyncSession,
     job_id: uuid.UUID,
@@ -300,7 +339,8 @@ async def _start(
     config: PublishingConfig,
     actor: Actor,
     result: TickResult,
-) -> PublishRequest | None:
+    live_factory: LiveFactory | None = None,
+) -> tuple[PublishRequest, PlatformPublisher, float] | None:
     """Guards + J4 + P1, committed before the call. None = nothing to send."""
     job = await session.get(PublicationJob, job_id, populate_existing=True)
     if job is None or job.status is not PublicationJobStatus.CLAIMED or job.claim_token != token:
@@ -347,7 +387,11 @@ async def _start(
     settings = get_settings()
     mode = settings.publish_mode
     refusal: str | None = None
-    if mode is PublishMode.LIVE:
+    use: PlatformPublisher = publisher
+    if account.brand_id != job.brand_id or asset.brand_id != job.brand_id:
+        # Brand isolation (every mode): a job only ever posts with an account of its brand.
+        refusal = "BRAND_MISMATCH"
+    elif mode is PublishMode.LIVE:
         # §3.3 authoritative re-check; the ENV=test block is independent of settings validation.
         if settings.env is Environment.TEST:
             refusal = "ENV_TEST"
@@ -355,8 +399,15 @@ async def _start(
             refusal = "ACCOUNT_NOT_LIVE_ENABLED"
         elif asset.approved_version_id != job.content_version_id:
             refusal = "VERSION_NOT_APPROVED"
+        elif not await human_approved(session, asset.id, job.content_version_id):
+            refusal = "NOT_HUMAN_APPROVED"
+        elif live_factory is None:
+            refusal = "NO_VERIFIED_ADAPTER"
         else:
-            refusal = "NO_VERIFIED_ADAPTER"  # no live adapter exists before Phase 13
+            try:
+                use = await live_factory(session, account)
+            except LiveUnavailableError as exc:
+                refusal = exc.reason  # NO_VERIFIED_ADAPTER, NO_CREDENTIAL, ...
     elif mode is not publisher.mode:
         await _fail_job(
             session,
@@ -386,7 +437,7 @@ async def _start(
 
     request = _request(job, asset, version, account.handle)
     try:
-        publisher.validate(request)
+        use.validate(request)
     except PublishError as exc:
         await _fail_job(
             session, job, actor, code=exc.code, now=now, detail={"reason": str(exc)}, token=token
@@ -394,6 +445,45 @@ async def _start(
         await session.commit()
         result.failed += 1
         return None
+
+    # A17: a retry must be made the way the first attempt was recorded. If the publish mode
+    # or the account's sandbox flag changed since (and nothing was proven sent), the
+    # publication's evidence would lie: refuse and let a person schedule it again.
+    evidence = evidence_class(use.mode, account)
+    earlier = (
+        await session.execute(
+            select(Publication.publish_mode, Publication.evidence_class).where(
+                Publication.publication_job_id == job.id
+            )
+        )
+    ).one_or_none()
+    if earlier is not None and (earlier.publish_mode, earlier.evidence_class) != (
+        use.mode,
+        evidence,
+    ):
+        detail = {
+            "guard": "MODE_CHANGED",
+            "recorded": f"{earlier.publish_mode.value}/{earlier.evidence_class.value}",
+            "now": f"{use.mode.value}/{evidence.value}",
+        }
+        await _fail_job(
+            session,
+            job,
+            actor,
+            code=ErrorCode.LIVE_PUBLISH_BLOCKED,
+            now=now,
+            detail=detail,
+            token=token,
+        )
+        await session.commit()
+        result.failed += 1
+        return None
+
+    # One budget for the whole send (a thread is several sequential requests); the lease
+    # is extended to cover it, and dispatch_one stops the send when it runs out.
+    budget = timedelta(
+        seconds=config.scheduler.request_timeout_seconds * max(1, len(request.segments)) + 15
+    )
 
     await _job(
         session,
@@ -404,7 +494,8 @@ async def _start(
         values={
             "dispatch_started_at": now,
             "attempt_count": job.attempt_count + 1,
-            "publish_mode": publisher.mode,
+            "publish_mode": use.mode,
+            "lease_expires_at": func.greatest(_JOBS.c.lease_expires_at, func.now() + budget),
         },
         # §3.4 step 2: the database decides whether enough lease is left (its clock, not
         # the tick's start time), so a slow batch can never send on an expired lease.
@@ -429,7 +520,8 @@ async def _start(
                 "content_version_id": job.content_version_id,
                 "platform_account_id": job.platform_account_id,
                 "platform": asset.platform,
-                "publish_mode": publisher.mode,
+                "publish_mode": use.mode,
+                "evidence_class": evidence,
                 "scheduled_at": job.due_at,
             },
             trigger="dispatch_start",
@@ -438,7 +530,7 @@ async def _start(
             brand_id=job.brand_id,
         )
     await session.commit()
-    return request
+    return request, use, budget.total_seconds() - 5
 
 
 async def _record_success(
@@ -580,11 +672,12 @@ async def dispatch_one(
     config: PublishingConfig,
     scheduler_id: str,
     result: TickResult,
+    live_factory: LiveFactory | None = None,
 ) -> None:
     actor = Actor(ActorType.SCHEDULER, scheduler_id)
     try:
         async with get_sessionmaker()() as session:
-            request = await _start(
+            started = await _start(
                 session,
                 job_id,
                 token,
@@ -593,6 +686,7 @@ async def dispatch_one(
                 config=config,
                 actor=actor,
                 result=result,
+                live_factory=live_factory,
             )
     except OmniGrowthError as exc:
         if exc.code is not ErrorCode.CONFLICT:
@@ -600,10 +694,18 @@ async def dispatch_one(
         # Lease lost / job moved before dispatch started: nothing was sent.
         log.warning("dispatch start lost its claim", extra={"job_id": str(job_id)})
         return
-    if request is None:
+    if started is None:
         return
+    request, use, budget_s = started
     try:
-        outcome = await publisher.publish(request)  # outside any transaction
+        try:
+            async with asyncio.timeout(budget_s):
+                outcome = await use.publish(request)  # outside any transaction
+        except TimeoutError as exc:
+            # Stopped mid-send: the platform may have acted on it. Never retried (A3).
+            raise PublishError(
+                FailureKind.AFTER_SEND, "the send ran out of its time budget"
+            ) from exc
     except PublishError as exc:
         log.warning(
             "publish failed",
@@ -714,6 +816,7 @@ async def run_once(
     config: PublishingConfig,
     now: datetime,
     scheduler_id: str = "scheduler",
+    live_factory: LiveFactory | None = None,
 ) -> TickResult:
     """One scheduler tick: recover leases, claim due jobs, dispatch each."""
     result = TickResult()
@@ -730,6 +833,7 @@ async def run_once(
             config=config,
             scheduler_id=scheduler_id,
             result=result,
+            live_factory=live_factory,
         )
     return result
 
@@ -737,6 +841,7 @@ async def run_once(
 # Shared with the API-side services (cancel, human reconciliation): one implementation of
 # "job + publication + asset move together" (§3.8).
 transition_job = _job
+build_request = _request
 transition_publication = _publication
 asset_follows_publication = _asset
 RELEASE_CLAIM = _RELEASE

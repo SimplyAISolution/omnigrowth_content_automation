@@ -24,23 +24,31 @@ const METRIC_LABEL: Record<string, string> = {
 const REAL_SOURCES = new Set(["API", "MANUAL"]);
 
 /**
- * A number is real evidence only when it describes a post that was NOT mock-published and
- * came from a platform API or manual entry (the rule experiments use, A14). Manual numbers
- * typed in for a mock-published post are still simulated.
+ * A number is real evidence only when it describes a post with evidence class REAL (not
+ * mock-published, not a sandbox account) and came from a platform API or manual entry (the
+ * rule experiments use, A14/A17). Manual numbers for a mock or sandbox post are not real.
  */
-export function isRealRow(row: Record<string, unknown>, publishMode: Map<string, Schemas["PublishMode"]>): boolean {
-  const mode = publishMode.get(String(row["publication_id"]));
-  return Boolean(row["snapshot_id"]) && REAL_SOURCES.has(String(row["source"])) && mode !== undefined && mode !== "MOCK";
+export function isRealRow(row: Record<string, unknown>, evidence: Map<string, Schemas["EvidenceClass"]>): boolean {
+  const cls = evidence.get(String(row["publication_id"]));
+  return Boolean(row["snapshot_id"]) && REAL_SOURCES.has(String(row["source"])) && cls === "REAL";
 }
 
-function ProvenanceBanner({ rows, publishMode }: { rows: Record<string, unknown>[]; publishMode: Map<string, Schemas["PublishMode"]> }) {
+function ProvenanceBanner({ rows, evidence }: { rows: Record<string, unknown>[]; evidence: Map<string, Schemas["EvidenceClass"]> }) {
   const measured = rows.filter((r) => r["snapshot_id"]);
-  const real = measured.filter((r) => isRealRow(r, publishMode)).length;
-  const simulated = measured.length - real;
+  const real = measured.filter((r) => isRealRow(r, evidence)).length;
+  const sandbox = measured.filter((r) => evidence.get(String(r["publication_id"])) === "SANDBOX").length;
+  const simulated = measured.length - real - sandbox;
   if (!measured.length)
     return (
       <div className="notice notice-neutral" role="note">
         <strong>No metrics yet.</strong> Nothing has been measured for this campaign, so there is nothing to analyse.
+      </div>
+    );
+  if (!real && sandbox && !simulated)
+    return (
+      <div className="notice notice-warning" role="note">
+        <strong>Sandbox data.</strong> Every number below comes from posts sent to a sandbox (test) account ({sandbox} post{sandbox === 1 ? "" : "s"}).
+        The platform really measured them, but no real audience is behind them; do not base decisions on it.
       </div>
     );
   if (!real)
@@ -50,11 +58,11 @@ function ProvenanceBanner({ rows, publishMode }: { rows: Record<string, unknown>
         audience is behind it — even numbers entered by hand. It shows how the analysis works; do not base decisions on it.
       </div>
     );
-  if (simulated)
+  if (simulated || sandbox)
     return (
       <div className="notice notice-warning" role="note">
-        <strong>Mixed data.</strong> {real} post(s) have real measurements and {simulated} are simulated. Real and simulated evidence are
-        kept apart in experiments; treat totals here with care.
+        <strong>Mixed data.</strong> {real} post(s) have real measurements, {simulated} are simulated and {sandbox} come from a sandbox
+        account. Only real evidence is used in experiments; treat totals here with care.
       </div>
     );
   return (
@@ -96,7 +104,7 @@ export function AnalyticsPage() {
     queryFn: () => call(api.GET("/api/v1/publications", { params: { query: { campaign_id: campaignId } } })),
     enabled: Boolean(campaignId),
   });
-  const publishMode = new Map((publications.data?.items ?? []).map((p) => [p.id, p.publish_mode]));
+  const evidence = new Map((publications.data?.items ?? []).map((p) => [p.id, p.evidence_class]));
 
   const r = report.data;
   const derived = (r?.derived ?? {}) as Record<string, Derived>;
@@ -133,7 +141,7 @@ export function AnalyticsPage() {
       {report.error ? <ErrorPanel error={report.error} onRetry={() => void report.refetch()} /> : null}
       {r ? (
         <>
-          <ProvenanceBanner rows={pubs} publishMode={publishMode} />
+          <ProvenanceBanner rows={pubs} evidence={evidence} />
           {r.coverage["published"] === 0 ? (
             <EmptyState title="Nothing published in this campaign yet">Metrics appear after content is published (simulated) and metrics are collected.</EmptyState>
           ) : (
@@ -200,7 +208,7 @@ export function AnalyticsPage() {
                           <td>
                             {!p["snapshot_id"] ? (
                               "No metrics yet"
-                            ) : isRealRow(p, publishMode) ? (
+                            ) : isRealRow(p, evidence) ? (
                               <Badge tone="neutral">Real ({humanize(String(p["source"]))})</Badge>
                             ) : (
                               <Badge tone="simulated">Simulated</Badge>
@@ -218,7 +226,7 @@ export function AnalyticsPage() {
           )}
         </>
       ) : null}
-      <Recommendations query={recs} campaignId={campaignId} anyReal={pubs.some((p) => isRealRow(p, publishMode))} />
+      <Recommendations query={recs} campaignId={campaignId} anyReal={pubs.some((p) => isRealRow(p, evidence))} />
     </>
   );
 }
@@ -256,9 +264,18 @@ function Recommendations({
       {!items.length && !query.isLoading ? <p className="muted">No suggestions yet.</p> : null}
       <ul className="card-grid">
         {items.map((rec) => {
-          const flag = (rec.evidence_query as Record<string, unknown>)["simulated_evidence"];
-          // Real only if the API says so AND the campaign has real (non-mock) measurements.
-          const provenance = flag === true || !anyReal ? "simulated" : flag === false ? "real" : "unknown";
+          const q = rec.evidence_query as Record<string, unknown>;
+          const flag = q["simulated_evidence"];
+          // Real only if the API says every cited number is real evidence (REAL post, API or
+          // manual number) AND the campaign has real measurements. Sandbox is never real.
+          const provenance =
+            q["sandbox_evidence"] === true
+              ? "sandbox"
+              : flag === true || !anyReal || q["real_evidence"] === false
+                ? "simulated"
+                : flag === false
+                  ? "real"
+                  : "unknown";
           const labels = ((rec.evidence_query as Record<string, unknown>)["labels"] ?? []) as string[];
           return (
             <li key={rec.id} className="card">
@@ -272,6 +289,8 @@ function Recommendations({
               <div className="cal-badges">
                 {provenance === "simulated" ? (
                   <Badge tone="simulated">Based on simulated data</Badge>
+                ) : provenance === "sandbox" ? (
+                  <Badge tone="warning">Based on sandbox data</Badge>
                 ) : provenance === "real" ? (
                   <Badge tone="neutral">Based on real data</Badge>
                 ) : (

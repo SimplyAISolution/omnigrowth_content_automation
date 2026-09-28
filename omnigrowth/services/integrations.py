@@ -17,7 +17,6 @@ import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Any
-from urllib.parse import urlsplit
 
 from pydantic import ValidationError
 from sqlalchemy import select
@@ -55,7 +54,7 @@ from omnigrowth.schemas.webhooks import (
     WebhookSubscriptionRead,
 )
 from omnigrowth.security import webhooks as sig
-from omnigrowth.security.http import check_webhook_target
+from omnigrowth.security.http import check_webhook_target, parse_host_allowlist
 from omnigrowth.services import campaigns as campaign_service
 from omnigrowth.services import idempotency as idem_store
 from omnigrowth.services import sources as source_service
@@ -70,29 +69,10 @@ def _not_found(what: str) -> OmniGrowthError:
 
 
 def target_allowlist() -> frozenset[str]:
-    """``OMNIGROWTH_WEBHOOK_TARGET_ALLOWLIST`` as normalised ``host:port`` entries.
-
-    A port is required (a bare host would open every port on it, e.g. a database). IPv6 may be
-    written ``[::1]:5678``. A malformed entry is a configuration error, never silently ignored.
-    """
-    entries: set[str] = set()
-    for raw in get_settings().webhook_target_allowlist.split(","):
-        item = raw.strip().lower()
-        if not item:
-            continue
-        try:
-            parts = urlsplit(f"//{item}")
-            host, port = parts.hostname, parts.port
-        except ValueError:
-            host, port = None, None
-        if not host or port is None or parts.path or parts.username:
-            raise OmniGrowthError(
-                ErrorCode.CONFIGURATION_ERROR,
-                "OMNIGROWTH_WEBHOOK_TARGET_ALLOWLIST entries must be host:port",
-                details={"entry": item},
-            )
-        entries.add(f"{host}:{port}")
-    return frozenset(entries)
+    """``OMNIGROWTH_WEBHOOK_TARGET_ALLOWLIST`` as normalised ``host:port`` entries."""
+    return parse_host_allowlist(
+        get_settings().webhook_target_allowlist, "OMNIGROWTH_WEBHOOK_TARGET_ALLOWLIST"
+    )
 
 
 def active_secrets(

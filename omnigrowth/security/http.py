@@ -365,6 +365,32 @@ def _never_allowed(ip: IPAddress) -> bool:
     return ip.is_link_local or ip.is_unspecified or ip.is_multicast
 
 
+def parse_host_allowlist(raw: str, setting: str) -> frozenset[str]:
+    """A comma-separated ``host:port`` allowlist, normalised (``[::1]:5678`` -> ``::1:5678``).
+
+    A port is required (a bare host would open every port on it, e.g. a database). A
+    malformed entry is a configuration error, never silently ignored.
+    """
+    entries: set[str] = set()
+    for chunk in raw.split(","):
+        item = chunk.strip().lower()
+        if not item:
+            continue
+        try:
+            parts = urlsplit(f"//{item}")
+            host, port = parts.hostname, parts.port
+        except ValueError:
+            host, port = None, None
+        if not host or port is None or parts.path or parts.username:
+            raise OmniGrowthError(
+                ErrorCode.CONFIGURATION_ERROR,
+                f"{setting} entries must be host:port",
+                details={"entry": item},
+            )
+        entries.add(f"{host}:{port}")
+    return frozenset(entries)
+
+
 def check_webhook_target(url: str, allowlist: frozenset[str]) -> None:
     """Validate a webhook target when it is configured (no DNS; ``safe_post`` re-checks).
 
@@ -447,3 +473,116 @@ async def safe_post(
             "webhook request failed",
             details={"reason": type(exc).__name__},
         ) from exc
+
+
+# ------------------------------------------------------------------ platform APIs (Phase 13)
+PLATFORM_MAX_RESPONSE_BYTES = 1024 * 1024
+
+
+@dataclass(frozen=True, slots=True)
+class PlatformResponse:
+    status_code: int
+    headers: dict[str, str]  # lower-case names
+    body: bytes
+
+
+class PlatformTransportError(Exception):
+    """A platform call failed without an HTTP answer.
+
+    ``sent`` is False only when the request provably never left (DNS, refused or timed-out
+    connect, pool wait): the caller may retry. When True the platform may have acted on it
+    (read/write timeout, dropped connection, oversized or cut response): the outcome is
+    unknown and must be reconciled before anything is retried (A3). The message never holds
+    headers (tokens) or bodies.
+    """
+
+    def __init__(self, reason: str, *, sent: bool) -> None:
+        super().__init__(reason)
+        self.reason = reason
+        self.sent = sent
+
+
+_NOT_SENT = (
+    httpx.ConnectError,
+    httpx.ConnectTimeout,
+    httpx.PoolTimeout,
+    httpx.UnsupportedProtocol,
+    httpx.InvalidURL,
+)
+
+
+async def platform_request(
+    method: str,
+    url: str,
+    *,
+    headers: dict[str, str],
+    allowlist: frozenset[str],
+    timeout_s: float,
+    json_body: dict[str, object] | None = None,
+    params: dict[str, str] | None = None,
+    resolver: Resolver = system_resolver,
+    transport: httpx.AsyncBaseTransport | None = None,
+) -> PlatformResponse:
+    """One pinned request to a platform API (same SSRF guard as webhooks: public = HTTPS on
+    443 with public addresses; ``host:port`` allowlist entries for self-hosted or sandbox
+    instances; link-local/metadata never). No proxies, cookies or redirects."""
+    check_webhook_target(url, allowlist)
+    target = parse_target(url, FetchPolicy(allowed_ports=ALL_PORTS))
+    trusted = _allowlisted(target, allowlist)
+    try:
+        literal: IPAddress | None = ipaddress.ip_address(target.host)
+    except ValueError:
+        literal = None
+    try:
+        async with asyncio.timeout(timeout_s):
+            addresses = (
+                [literal] if literal is not None else await resolver(target.host, target.port)
+            )
+    except (TimeoutError, OSError) as exc:
+        raise PlatformTransportError("DNS_FAILURE", sent=False) from exc
+    if not addresses:
+        raise PlatformTransportError("DNS_FAILURE", sent=False)
+    for ip in addresses:
+        if _never_allowed(ip) or (not trusted and is_blocked_ip(ip)):
+            raise _blocked("destination address not allowed", url, address=str(ip))
+    ip = addresses[0]
+    try:
+        async with httpx.AsyncClient(
+            transport=transport,
+            timeout=httpx.Timeout(timeout_s),
+            follow_redirects=False,
+            trust_env=False,
+        ) as client:
+            request = client.build_request(
+                method,
+                _pinned_url(target, ip),
+                json=json_body,
+                params=params,
+                headers={
+                    **headers,
+                    "Host": _host_header(target),
+                    "User-Agent": "OmniGrowth/1",
+                    "Accept": "application/json",
+                },
+                extensions={"sni_hostname": target.host} if target.scheme == "https" else {},
+            )
+            response = await client.send(request, stream=True)
+            try:
+                chunks: list[bytes] = []
+                total = 0
+                async for chunk in response.aiter_bytes():
+                    total += len(chunk)
+                    if total > PLATFORM_MAX_RESPONSE_BYTES:
+                        raise PlatformTransportError("RESPONSE_TOO_LARGE", sent=True)
+                    chunks.append(chunk)
+            finally:
+                await response.aclose()
+            return PlatformResponse(
+                status_code=response.status_code,
+                headers={k.lower(): v for k, v in response.headers.items()},
+                body=b"".join(chunks),
+            )
+    except _NOT_SENT as exc:
+        raise PlatformTransportError(type(exc).__name__, sent=False) from exc
+    except httpx.HTTPError as exc:
+        raise PlatformTransportError(type(exc).__name__, sent=True) from exc

@@ -51,6 +51,7 @@ def events_workflow() -> dict[str, Any]:
         ("Notify on publication failure (replace me)", "Publication failed"),
         ("Ask an editor to reconcile (replace me)", "Publication outcome uncertain"),
         ("Ignore (duplicate, invalid or test)", "Nothing to do"),
+        ("Tell the team it was not published (replace me)", "Confirmed not published"),
     ]
     nodes = [
         _node(
@@ -112,7 +113,7 @@ def events_workflow() -> dict[str, Any]:
             "n8n-nodes-base.switch",
             3,
             (720, 0),
-            {"mode": "expression", "numberOutputs": 4, "output": "={{ $json.route }}"},
+            {"mode": "expression", "numberOutputs": 5, "output": "={{ $json.route }}"},
         ),
     ]
     for i, (name, note) in enumerate(notify):

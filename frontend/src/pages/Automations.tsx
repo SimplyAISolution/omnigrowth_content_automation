@@ -14,6 +14,11 @@ const EVENTS: { value: EventType; label: string; help: string }[] = [
   { value: "content.approval_requested", label: "Content needs approval", help: "A piece of content passed its checks and waits for a person." },
   { value: "publication.failed", label: "Publication failed", help: "Every attempt failed; nothing was published by that job." },
   { value: "publication.uncertain", label: "Publication outcome uncertain", help: "Someone must reconcile it before the account publishes again." },
+  {
+    value: "publication.not_published_confirmed",
+    label: "Confirmed not published",
+    help: "A person recorded that a post did not go out. Nothing is retried automatically.",
+  },
 ];
 
 const OPERATIONS: { value: Operation; label: string }[] = [

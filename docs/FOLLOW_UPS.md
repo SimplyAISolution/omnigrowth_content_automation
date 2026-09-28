@@ -60,10 +60,24 @@ Left open (each is explained in the UI where the action would be):
 - One subscription secret per workflow; the workflow's duplicate filter lives in its static data.
 
 ### 6. Phase 13 — Real connectors (one platform per session)
-- Verify API capability from official docs → PLATFORM_CAPABILITIES.md VERIFIED → adapter behind
-  the A6 live guard → credentials (encrypted, `OMNIGROWTH_CREDENTIAL_KEK`) → first live post run
-  by the human.
-- Unblocks the items below that need a real platform.
+- **Mastodon, agent part done 2026-09-27** (A17, docs/connectors/mastodon.md). Waiting for the
+  human: account + server, token, `ENABLE LIVE PUBLISHING FOR MASTODON`, first live post, then
+  one metrics pull compared with PLATFORM_CAPABILITIES §4.9.
+- Left open:
+  - Text only: no media upload (UNVERIFIED), polls, content warnings or delete action.
+  - No "verify token" action: the token's real grants are first exercised by the first live
+    dispatch or lookup. Required scopes are checked as declared.
+  - Instance limits come from account settings. They are not fetched from the server.
+  - P8 (manual export not posted) has its event trigger but no service or UI. No
+    `ManualExportPublisher` exists yet.
+  - Only tested against a local fake server. No real Mastodon or real n8n instance was used;
+    the n8n workflow passed offline schema validation.
+  - Pre-existing flaky test: `test_phase9_experiments.py::test_two_treatments_beating_control_need_a_pairwise_difference`
+    draws a random allocation seed (`secrets.randbits`), so this borderline case occasionally
+    yields WINNER (seen once in 4 full runs on 2026-09-27; it passed on the rerun and 7 times
+    in isolation). Pin the seed in the test.
+- Next platforms need their own session, docs verification and human decisions. X costs money
+  (pay-per-use); LinkedIn needs a developer app product.
 - Human: API access and credentials per platform; the phrase
   `ENABLE LIVE PUBLISHING FOR <platform>` before any live post (AGENTS.md).
 

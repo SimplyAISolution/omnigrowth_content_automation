@@ -15,16 +15,19 @@ signed by OmniGrowth.
 
 ## What n8n can and cannot do
 
-- **Outbound (OmniGrowth → n8n):** three events, each delivered at least once:
+- **Outbound (OmniGrowth → n8n):** four events, each delivered at least once:
   - `content.approval_requested`
   - `publication.failed`
   - `publication.uncertain`
+  - `publication.not_published_confirmed` (Phase 13): a person confirmed a post did not go out.
+    Carries `will_retry: false`; nothing is retried because of it.
 
-  Publication events carry `data.simulated`:
-  - `true` means the mock publisher handled it: no real post, no real audience.
-  - `false` means a real publication.
-  - `null` means the mode is unknown.
-- **Inbound (n8n → OmniGrowth):** only what an owner allowed for that integration, and only for its brands:
+  Publication events carry `data.evidence_class` (Phase 13) and `data.simulated`:
+  - `SIMULATED` (`simulated: true`): the mock publisher handled it, so there was no real post and no real audience.
+  - `SANDBOX`: a real API call to an account the owner marked as a test account. There was no real audience.
+  - `REAL`: a real publication.
+  - `null`: unknown (for example a job that failed before it was sent).
+- **Inbound (n8n → OmniGrowth):** only what an owner allowed for that integration, and only for its brands. Analytics numbers are never accepted: integration-supplied numbers must not become platform evidence (A17):
   - `source.text_ingest`
   - `source.url_ingest`
   - `campaign.generate`

@@ -84,7 +84,7 @@ test("an editor reviews the queue: rejects, requests a revision, approves and sc
   await page.screenshot({ path: `${SHOTS}/desktop-published-simulated.png`, fullPage: true });
 
   await page.getByRole("link", { name: "Publishing" }).click();
-  await expect(page.getByRole("cell", { name: "Simulated (mock publisher)" }).first()).toBeVisible();
+  await expect(page.getByRole("cell", { name: "Simulated", exact: true }).first()).toBeVisible();
   await page.screenshot({ path: `${SHOTS}/desktop-publishing.png`, fullPage: true });
 
   expect(problems).toEqual([]);
@@ -197,3 +197,56 @@ test("an owner connects n8n: secrets are shown once, and editors cannot manage i
   const refused = await page.request.get("/api/v1/webhooks/endpoints", { headers: { Authorization: `Bearer ${token}` } });
   expect(refused.status()).toBe(403);
 });
+
+test("an owner connects a Mastodon account: the token is write-only and live is refused in a test environment", async ({ page }) => {
+  const env = uiEnv();
+  // A test value generated here; this environment publishes in MOCK mode and contacts nothing.
+  const testToken = `e2e-${Math.random().toString(36).slice(2)}${Date.now().toString(36)}`;
+  await signIn(page, env.users.OWNER);
+  await page.goto("/platforms");
+  const mastodonRow = page.getByRole("row", { name: /^Mastodon/ }).first();
+  await expect(mastodonRow.getByText("Verified")).toBeVisible();
+  await page.getByLabel("Platform").selectOption("MASTODON");
+  await page.getByLabel("Account type").selectOption("INSTANCE_USER");
+  const handle = `e2e${Date.now().toString(36)}@social.example`;
+  await page.getByLabel("Handle").fill(handle);
+  await page.getByLabel("Instance address (for live publishing)").fill("https://social.example");
+  await page.getByRole("button", { name: "Add account" }).click();
+  const row = page.getByRole("row", { name: new RegExp(handle) });
+  await row.getByRole("button", { name: "Manage connection" }).click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.getByText("No access token is stored.")).toBeVisible();
+  await dialog.getByLabel("Access token").fill(testToken);
+  await dialog.getByRole("button", { name: "Store token" }).click();
+  await expect(dialog.getByRole("button", { name: "Revoke" })).toBeVisible();
+  await expect(dialog.getByLabel(/token/)).toHaveValue("");
+  await expect(page.getByText(testToken)).toHaveCount(0);
+  const enable = dialog.getByRole("button", { name: "Enable live publishing" });
+  await expect(enable).toBeDisabled();
+  await expect(dialog.getByText(/server runs in test mode/)).toBeVisible();
+  await dialog.getByLabel("Confirmation").fill("ENABLE LIVE PUBLISHING FOR MASTODON");
+  await enable.click();
+  // This environment runs ENV=test: the server refuses to switch live publishing on (A6).
+  await expect(dialog.getByRole("alert")).toBeVisible();
+  await expect(dialog.getByRole("button", { name: "Switch live publishing off" })).toHaveCount(0);
+  await page.screenshot({ path: `${SHOTS}/desktop-platform-connection.png`, fullPage: true });
+  await page.keyboard.press("Escape");
+  await expectAccessible(page, "/platforms");
+
+  // The API never returns the token, and an editor cannot read credential metadata.
+  const ownerToken = await page.evaluate(() => window.sessionStorage.getItem("og.token"));
+  const accounts = await page.request.get("/api/v1/platform-accounts", { headers: { Authorization: `Bearer ${ownerToken}` } });
+  const mine = (await accounts.json()).items.find((a: { handle: string }) => a.handle === handle);
+  const creds = await page.request.get(`/api/v1/platform-accounts/${mine.id}/credentials`, {
+    headers: { Authorization: `Bearer ${ownerToken}` },
+  });
+  expect(await creds.text()).not.toContain(testToken);
+  await page.getByRole("button", { name: "Sign out" }).click();
+  await signIn(page, env.users.EDITOR);
+  const editorToken = await page.evaluate(() => window.sessionStorage.getItem("og.token"));
+  const refused = await page.request.get(`/api/v1/platform-accounts/${mine.id}/credentials`, {
+    headers: { Authorization: `Bearer ${editorToken}` },
+  });
+  expect(refused.status()).toBe(403);
+});
+

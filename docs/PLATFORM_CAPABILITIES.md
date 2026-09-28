@@ -1,6 +1,6 @@
 # PLATFORM_CAPABILITIES.md — platform API capability register
 
-> **Document status:** Phase 1 draft, written 2026-09-22 **without any internet access and without consulting any platform documentation**. Every capability in this file is **UNVERIFIED**. Nothing here is a statement of fact about any platform's API.
+> **Document status:** Phase 1 draft (2026-09-22, no documentation consulted). **Phase 13 update (2026-09-27):** `MASTODON` verified against the official documentation at docs.joinmastodon.org (§4.9, every claim with URL + date); cost / access facts recorded for `X` and `LINKEDIN` (§4.1, §4.2) to justify the choice of the first connector. Everything not explicitly marked VERIFIED below is still **UNVERIFIED**.
 >
 > **Governing rules:** AGENTS.md §3 (no network calls to social platforms; no `PUBLISH_MODE=live` without the exact human phrase), AGENTS.md §6 (unknown capability → UNVERIFIED; never implement against guessed endpoints), SPEC_AMENDMENTS A6 (publishing safety, `ManualExportPublisher`), A7 (MVP scope), PHASES.md Phase 13 (real connectors, one platform per session). Names follow `docs/GLOSSARY.md`.
 
@@ -20,13 +20,13 @@ Each capability cell (publish, schedule, delete, metrics, media upload, auth, ra
 
 **Wording rule for this file:** claims are phrased as "to verify: …". Anything commonly reported but not checked is tagged **[hearsay — unverified]** and must never be treated as a requirement or design input until verified.
 
-**In this version, every row and every cell is `UNVERIFIED`.**
+**In this version only `MASTODON` is `VERIFIED` (publish, auth, rate limits); every other row stays `UNVERIFIED`.** Official documentation was read with the human's authorization of 2026-09-27 ("current official API documentation"); no platform API was called.
 
 ---
 
 ## 2. Summary table
 
-Legend: `U` = `UNVERIFIED`. "MVP publisher" is what runs in the MVP (Phase 7) and until Phase 13 verifies that platform. "Planned fallback" applies if the publish capability is later found `UNAVAILABLE` or unusable for our account type. Phase = writer phase / connector phase (PHASES.md).
+Legend: `U` = `UNVERIFIED`, `V` = `VERIFIED` (see the platform section for URL + date). "MVP publisher" is what runs in the MVP (Phase 7) and until Phase 13 verifies that platform. "Planned fallback" applies if the publish capability is later found `UNAVAILABLE` or unusable for our account type. Phase = writer phase / connector phase (PHASES.md).
 
 | Platform | Publish API | Schedule API | Delete API | Metrics API | Media upload | Auth model | Rate limits | Status | MVP publisher | Planned fallback | Phase (writer / connector) |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -38,7 +38,7 @@ Legend: `U` = `UNVERIFIED`. "MVP publisher" is what runs in the MVP (Phase 7) an
 | `REDDIT` | U | U | U | U | U | U | U | `UNVERIFIED` | `MockPublisher` | `ManualExportPublisher` | 10 / 13 |
 | `SUBSTACK` | U | U | U | U | U | U | U | `UNVERIFIED` | `MockPublisher` | `ManualExportPublisher` (expected primary path — to verify) | 10 / 13 |
 | `RUMBLE` | U | U | U | U | U | U | U | `UNVERIFIED` | `MockPublisher` | `ManualExportPublisher` (expected primary path — to verify) | 10 / 13 |
-| `MASTODON` | U | U | U | U | U | U | U | `UNVERIFIED` | `MockPublisher` | `ManualExportPublisher` per instance if needed | 10 / 13 |
+| `MASTODON` | **V** | V (not used) | V | V (partial) | U (not implemented) | **V** | **V** | **`VERIFIED`** | `MockPublisher`; `MastodonLivePublisher` behind A6 | `ManualExportPublisher` per instance if needed | 10 / 13 (connector built) |
 
 Notes:
 - Per A7, only `LINKEDIN` and `X` writers were in MVP scope. Since Phase 10 (A15) every platform has a writer; publishing for all of them is still `MockPublisher` and every capability here stays `UNVERIFIED`.
@@ -101,6 +101,8 @@ Account-type-dependent capabilities below refer to `platform_accounts.account_ty
 
 **Fallback:** `ManualExportPublisher` (copy + document/media checklist; human marks published and pastes URL) + manual metrics entry. Likely needed for any format found unpublishable via API.
 
+**Verified 2026-09-27 (access only):** member posting needs the `w_member_social` permission from the "Share on LinkedIn" product added to a developer app; the documented endpoint is `POST /v2/ugcPosts`; throttles 150 requests/day per member and 100,000/day per application (https://learn.microsoft.com/en-us/linkedin/consumer/integrations/self-serve/share-on-linkedin, page last updated 2023-12-14, checked 2026-09-27). Whether that endpoint is still the current one is UNVERIFIED; publishing stays UNVERIFIED.
+
 ### 4.2 `X`
 
 **Formats (§8):** `TEXT_POST` (standalone; long-form posts "when supported"), `THREAD`, `COMMENT_DRAFT` (replies), `QUOTE_POST` (quote-post drafts).
@@ -116,6 +118,8 @@ Account-type-dependent capabilities below refer to `platform_accounts.account_ty
 **Metrics we want:** `impressions`, `likes`, `comments` (replies), `shares` (reposts + quotes — decide whether combined), `saves` (bookmarks), `clicks`, `profile_visits`, `followers_gained`, `views` (video), `ctr`, `conversion_count`, `revenue` (own attribution).
 
 **Fallback:** `ManualExportPublisher` (thread rendered as numbered segments) + manual metrics entry. Tier cost may make this the practical default — a human decision (see Open questions).
+
+**Verified 2026-09-27 (cost only):** API access is pay-per-use with no free tier; creating a post costs $0.015 per request and a post with a URL $0.200 (https://docs.x.com/x-api/getting-started/pricing, checked 2026-09-27). Every other X capability stays UNVERIFIED.
 
 ### 4.3 `INSTAGRAM`
 
@@ -229,7 +233,7 @@ Account-type-dependent capabilities below refer to `platform_accounts.account_ty
 |---|---|
 | `instance_base_url` | Each account lives on a specific server; all API calls are per-instance. |
 | `instance_software` / `instance_version` | Fediverse servers vary (Mastodon versions and forks); feature support differs. |
-| `max_characters` | Post length limit — to verify per instance (commonly reported default of 500 [hearsay — unverified], configurable by instance). |
+| `max_characters` | Post length limit — to verify per instance (instance setting `configuration.statuses.max_characters`; VERIFIED field, see the table below). |
 | `max_media_attachments`, `media_size_limits`, `supported_mime_types` | Per-instance media config. |
 | `poll_limits` | Max options, option length, duration bounds. |
 | `rate_limits` | Per-instance; may differ from defaults. |
@@ -237,12 +241,30 @@ Account-type-dependent capabilities below refer to `platform_accounts.account_ty
 | `content_warning_norms` | Community expectations on CW usage. |
 | `rules_checked_at` | Staleness tracking. |
 
-**Questions:**
+**Questions (Phase 1; answered in the verified table below where marked VERIFIED, the rest stay open):**
 - To verify: app registration and OAuth flow per instance, scopes, scheduled-status support, delete/edit, media upload flow.
 - To verify: whether the instance exposes per-instance limits via an API endpoint (so the fields above can be refreshed automatically rather than hand-entered).
 - To verify: which counts are available (favourites, boosts, replies); impressions/reach are expected unavailable in a federated system — to verify.
 
 **Metrics we want:** `likes` (favourites), `shares` (boosts), `comments` (replies), `followers_gained`, `clicks` (own attribution). `impressions`/`reach`/`views` likely `NULL`.
+
+**Verified 2026-09-27 (Phase 13; all from docs.joinmastodon.org, checked 2026-09-27):**
+
+| Capability | Status | Official source | Paraphrase |
+|---|---|---|---|
+| Publish | VERIFIED | https://docs.joinmastodon.org/methods/statuses/ | `POST /api/v1/statuses`, scope `write:statuses`; `status`, `visibility` (public / unlisted / private / direct), `language`, `in_reply_to_id` (threads are reply chains), `media_ids[]`; 200 returns the Status (`id`, `url`, `uri`, `created_at`); 401 bad token, 422 validation. `Idempotency-Key` header prevents duplicate submission; keys are kept for up to one hour. |
+| Schedule | VERIFIED (not used) | same page | `scheduled_at` at least 5 minutes ahead returns a ScheduledStatus. OmniGrowth keeps publishing from its own outbox at due time (A3), so this is not used. |
+| Delete | VERIFIED (not implemented) | same page | `DELETE /api/v1/statuses/:id`, scope `write:statuses`; 404 when not owned. No delete action exists in OmniGrowth yet. |
+| Reconciliation | VERIFIED | https://docs.joinmastodon.org/methods/accounts/ and statuses page | `GET /api/v1/accounts/verify_credentials` (`read:accounts` or `profile`); `GET /api/v1/accounts/:id/statuses` (max 40 per page, `max_id` paging, `exclude_reblogs`); `GET /api/v1/statuses/:id/source` (`read:statuses`, since 3.5.0) returns the plain text, so a post can be found by its exact text without re-posting. |
+| Metrics | VERIFIED (partial) | https://docs.joinmastodon.org/entities/Status/ | Status has `favourites_count`, `reblogs_count`, `replies_count` (and `quotes_count` since 4.5.0). There is no impressions / reach / views count: those stay NULL. |
+| Instance limits | VERIFIED (fields) | https://docs.joinmastodon.org/methods/instance/ | `GET /api/v2/instance` (public) `configuration.statuses.max_characters` (example 500), `max_media_attachments`, `characters_reserved_per_url` (example 23); media and poll limits. Values are per instance; OmniGrowth stores them in the account settings (it does not fetch them). |
+| Auth | VERIFIED | https://docs.joinmastodon.org/client/authorized/, https://docs.joinmastodon.org/methods/oauth/ | App registration, `GET /oauth/authorize` + `POST /oauth/token` (`authorization_code`), PKCE (S256) since 4.3.0, granular scopes recommended; token sent as `Authorization: Bearer`. The docs state no token lifetime and no refresh grant: tokens are treated as valid until revoked (`POST /oauth/revoke`). |
+| Rate limits | VERIFIED | https://docs.joinmastodon.org/api/rate-limits/ | Default 300 requests / 5 min per account and per IP; media uploads 30 / 30 min; deletes 30 / 30 min; headers `X-RateLimit-Limit`, `-Remaining`, `-Reset` (timestamp); administrators may configure other values. The HTTP status for an exceeded limit is **not stated** on that page: the connector treats 429 as rate limited (retry after `X-RateLimit-Reset`) and any other unexpected answer after sending as uncertain. |
+| Media upload | UNVERIFIED | — | Not researched in this session and not implemented: the connector is text-only; media requirements are listed in the preview as "not attached". |
+| Cost | VERIFIED (by nature) | https://docs.joinmastodon.org/ | Open API of free server software; no paid tier. Instance rules (automation, bot flag) vary per server and must be checked by the human for the chosen account. |
+| Web UI token creation | UNVERIFIED | — | Many servers offer "Preferences > Development > New application"; not found in the official docs, so the setup guide documents the verified OAuth flow and mentions the UI path as unverified. |
+
+Adapter: `omnigrowth/publishing/mastodon.py` (`TEXT_POST`, `THREAD`), behind the A6 live guard, per-account encrypted credential, `docs/connectors/mastodon.md` for setup. Required scopes: `write:statuses read:statuses read:accounts`.
 
 **Fallback:** `ManualExportPublisher` per instance (e.g., if an instance bans bots) + manual metrics entry.
 
@@ -281,9 +303,9 @@ One platform per session. The agent never calls platform endpoints on its own in
 4. **RESOLVED (GLOSSARY §4a):** metrics without a dedicated field (LinkedIn dwell proxies, Substack email open rate, Reddit upvote ratio) go in `analytics_snapshots.platform_metrics` (jsonb).
 5. **RESOLVED (GLOSSARY §4a):** snapshot provenance is `MetricSource` (`MOCK, FIXTURE, API, MANUAL`).
 6. **Facebook, Rumble, Mastodon formats** are not defined in spec §8; the proposed lists above need human confirmation. Phase 10 writers support these subsets (`config/qa.yaml`): FACEBOOK `TEXT_POST`, `IMAGE_POST`; RUMBLE `LONG_VIDEO_OUTLINE`, `LONG_VIDEO_SCRIPT`, `SHORT`; MASTODON `TEXT_POST`, `THREAD`. `COMMENT_DRAFT`, Facebook `REEL_SCRIPT`/`STORY`/`LONG_VIDEO_OUTLINE`, Mastodon `IMAGE_POST`/`POLL` and Reddit `COMMENT_DRAFT` are not written yet.
-7. **Mastodon** is in the `Platform` enum and §7E but not in §15's required-connector list — confirm Phase 13 scope.
+7. **RESOLVED (2026-09-27):** Mastodon is in Phase 13 scope; it was chosen as the first connector (free, self-serve, idempotent posting, verifiable reconciliation; see §4.9).
 8. **Video/image platforms** (`INSTAGRAM`, `YOUTUBE`, `RUMBLE`, `FACEBOOK` video): we generate scripts, not media. Is a live adapter ever in scope, or is the flow always "human attaches finished media, then publish"? Affects the `ContentAsset.media_requirements` contract.
 9. **Paid API tiers** (possibly X, Reddit — unverified): the human must approve any spend (AGENTS.md §7). Budget owner and ceiling?
 10. **RESOLVED (GLOSSARY §4a):** `platform_accounts.account_type` (`PlatformAccountType`: `PERSONAL, ORGANIZATION, PAGE, CHANNEL, SUBREDDIT_POSTER, INSTANCE_USER`). Remaining sub-question: Instagram professional (business/creator) accounts have no exact value — map to `ORGANIZATION`, or add one?
 11. **Re-verification interval** for `VERIFIED` claims — suggest a `verified_at` staleness threshold; human to set.
-12. **Documentation network access in Phase 13:** AGENTS.md §3 bans network calls to social platforms; confirm that reading official developer-doc sites is permitted in Phase 13 sessions (and on which domains).
+12. **RESOLVED (2026-09-27):** the human authorized reading current official API documentation in Phase 13. Read: docs.joinmastodon.org, docs.x.com, learn.microsoft.com (LinkedIn). No platform API endpoint was called.

@@ -187,6 +187,9 @@ class PlatformAccount(UUIDPkMixin, TimestampMixin, ArchivableMixin, Base):
     external_account_id: Mapped[str | None] = mapped_column(Text, nullable=True)
     timezone: Mapped[str | None] = mapped_column(Text, nullable=True)
     live_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=false())
+    # A17: a sandbox account (test instance / test account) makes LIVE posts that are not
+    # real audience evidence (publications get evidence_class SANDBOX). Changing it is audited.
+    sandbox: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=false())
     settings: Mapped[dict[str, Any]] = mapped_column(
         JSONB, nullable=False, server_default=EMPTY_JSON_OBJECT
     )
@@ -226,6 +229,10 @@ class PlatformCredential(UUIDPkMixin, TimestampMixin, Base):
     )
     expires_at: Mapped[datetime | None] = mapped_column(TZ, nullable=True)
     revoked_at: Mapped[datetime | None] = mapped_column(TZ, nullable=True)
+    # Non-secret identifiers for humans (vault.fingerprint) and who stored / revoked it.
+    fingerprint: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_by: Mapped[str | None] = mapped_column(Text, nullable=True)
+    revoked_by: Mapped[str | None] = mapped_column(Text, nullable=True)
 
 
 class AppSetting(UUIDPkMixin, Base):

@@ -201,6 +201,35 @@ def test_n8n_verification_accepts_signed_events_and_rejects_forgeries_stale_and_
     assert "MANUAL publication (a person posts it)" in manual["message"]
 
 
+def test_n8n_routes_confirmed_not_published_and_labels_sandbox_evidence() -> None:
+    """Phase 13 (A17): the reconciliation event gets its own route (4) and says nothing is
+    retried; a live post to a sandbox account is labelled SANDBOX, not real."""
+    secret = "whsec_" + "c" * 43
+    confirmed = _event(
+        "publication.not_published_confirmed",
+        platform="MASTODON",
+        publish_mode="LIVE",
+        evidence_class="REAL",
+        simulated=False,
+        will_retry=False,
+    )
+    sandbox_fail = _event(
+        "publication.failed",
+        platform="MASTODON",
+        publish_mode="LIVE",
+        evidence_class="SANDBOX",
+        simulated=False,
+        attempt_count=1,
+    )
+    out = _run(
+        "verify-and-route.js", [_delivery(secret, confirmed), _delivery(secret, sandbox_fail)]
+    )
+    assert (out[0]["httpStatus"], out[0]["route"]) == (200, 4)
+    assert "Confirmed NOT published [REAL publication" in out[0]["message"]
+    assert "will not be retried automatically" in out[0]["message"]
+    assert out[1]["route"] == 1 and "SANDBOX (live API call to a test account" in out[1]["message"]
+
+
 def test_n8n_inbound_signing_is_accepted_by_omnigrowth_verification() -> None:
     secret = "whsec_" + "c" * 43
     brand = str(uuid.uuid4())

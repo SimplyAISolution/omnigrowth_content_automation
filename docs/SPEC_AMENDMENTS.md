@@ -136,3 +136,41 @@ A component may be labeled production-ready only if: gates pass, failure tests e
 - **Outbound targets:** public = HTTPS/443/public addresses (SSRF guard, pinned IP); private/local only via `OMNIGROWTH_WEBHOOK_TARGET_ALLOWLIST` (`host:port` entries; a bare host is a configuration error); link-local/metadata never.
 - **Validation (decision 1):** `poe ui-check` joined `poe check` (AGENTS.md §4); `poe ui-e2e` is required at gates touching UI journeys, auth, authorization or UI API contracts.
 
+## A17 — Real connectors: Mastodon first (amends A6, API_PLAN §2.9/§2.14, STATE_MACHINES §3.3; Phase 13, human decisions 2026-09-27)
+- **First platform: MASTODON** (chosen by the agent under the human's authorization). No platform accounts were configured. It was chosen for its verified documentation, free access, `Idempotency-Key` posting, text-based reconciliation (`/source`) and testability. X is pay-per-use ($0.015 per post, $0.20 with a URL); LinkedIn needs a developer app product and caps members at 150 requests a day. Evidence is in PLATFORM_CAPABILITIES §4.1, §4.2 and §4.9.
+- **Registry:** a platform gets a live publisher only when its adapter exists and its publish, auth and rate-limit capabilities are VERIFIED (`publishing/registry.py`). Everything else is refused with `NO_VERIFIED_ADAPTER`. In `PUBLISH_MODE=LIVE`, unverified platforms are refused, not simulated.
+- **Live guard (dispatcher, every job, in this order; all before any network call):**
+  0. Existing hold: an open uncertain post on the account holds the job (checked first, every mode).
+  1. `BRAND_MISMATCH` (every mode)
+  2. `ENV_TEST`
+  3. `ACCOUNT_NOT_LIVE_ENABLED`
+  4. `VERSION_NOT_APPROVED`
+  5. `NOT_HUMAN_APPROVED` (Q6: the latest APPROVE of the version must be by a HUMAN)
+  6. `NO_VERIFIED_ADAPTER` / `ACCOUNT_NOT_CONFIGURED` / `NO_CREDENTIAL` / `CREDENTIAL_EXPIRED` / `CREDENTIAL_UNREADABLE`
+  7. `MODE_CHANGED`: a retry whose publish mode or evidence class differs from the first attempt's record is refused.
+
+  Each send has a time budget (request timeout × parts + 15 s); the lease is extended to cover it, and running out of budget mid-send is UNCERTAIN.
+- **Credentials:**
+  - AES-256-GCM envelope encryption. A per-credential data key is wrapped by `OMNIGROWTH_CREDENTIAL_KEK`, with associated data binding the account and kind.
+  - Write-only and OWNER-only. One active credential per account and kind.
+  - Rotation revokes the previous credential. Revocation destroys the ciphertext and switches live off.
+  - Audited with a non-secret fingerprint.
+  - Required scopes are checked against what the owner declares (Mastodon: `write:statuses read:statuses read:accounts`). This is declarative: the token's real grants are first exercised at the first live dispatch or lookup.
+  - Bound to the account's server: the vault's associated data includes the instance address. A live account's settings cannot change (409). Changing the server of a non-live account revokes its tokens (audited).
+  - Decrypted only in the registry, for one dispatch, lookup or metrics pull.
+- **Live switch:** `POST /platform-accounts/{id}/live` (`enabled`, `confirmation`). Enabling requires the exact phrase `ENABLE LIVE PUBLISHING FOR <PLATFORM>`, a verified connector, valid settings and a stored credential. It is refused under `ENV=test`. Audited. It does not change `PUBLISH_MODE` (env only).
+- **Evidence classes:** SIMULATED (MOCK), SANDBOX (LIVE from an account the owner marked `sandbox`), REAL (LIVE or MANUAL otherwise).
+  - Stored on `publications.evidence_class` at dispatch start.
+  - Shown in the API, UI, webhooks and audit.
+  - Only REAL counts as real evidence: `experiments.is_real_evidence`, experiment baselines, analytics provenance.
+  - SANDBOX units are excluded from both real and simulated experiment analyses (`SANDBOX_PUBLICATION`).
+  - The sandbox flag cannot change while an account is live.
+- **Uncertain outcomes:**
+  - Timeout after send, 5xx, redirect, unreadable answer, or a thread cut part-way → `UNCERTAIN`. Never retried; the account is held.
+  - `POST /publications/{id}/lookup` (EDITOR) searches by exact text, read-only and bounded, skipping posts already recorded on other publications. FOUND → J12/P5 by SYSTEM `platform-lookup`. PARTIAL, AMBIGUOUS (the same text more than once) or NOT_FOUND → no change.
+  - Only documented rejections (404, 422) and 401/403 are proven failures; any other 4xx is uncertain.
+  - Proven failures: a request that never left is retryable; 429 is retryable after the reset; 401/403/4xx are failed.
+- **Decision 3 — confirmed not published:** J13 (UNCERTAIN → FAILED by an OWNER) emits `publication.not_published_confirmed` (with `will_retry: false` and the evidence class) instead of `publication.failed`. It is audited as `publication.reconciled_not_published` and delivered through the Phase 12 outbox. The database trigger for P8 (MANUAL_PENDING → FAILED) is in place too, but no manual-export publisher or `mark_not_published` action exists yet, so P8 is unreachable and untested. Nothing retries: publishing again needs a new SCHEDULE by a person.
+- **Decision 2 — inbound analytics from n8n: NO.** `analytics.snapshots` stays unavailable to integrations. Integration-supplied numbers never become platform evidence.
+- **Preview:** `GET /publications/jobs/{id}/preview` shows exactly what would be sent (account, server, text, visibility, media not attached, timing, evidence class) and the current blockers. It decrypts nothing.
+

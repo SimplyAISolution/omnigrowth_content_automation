@@ -20,6 +20,7 @@ from sqlalchemy.exc import IntegrityError
 
 from omnigrowth.analytics.experiment_stats import compare
 from omnigrowth.core.enums import (
+    EvidenceClass,
     ExperimentStatus,
     MetricSource,
     Platform,
@@ -162,6 +163,7 @@ async def _start_publish_measure(
     effect: float | dict[str, float],
     seed: int = 11,
     mode: PublishMode = PublishMode.MANUAL,
+    evidence: EvidenceClass | None = None,
 ) -> None:
     """Start, publish every unit, record one snapshot per unit at the design age (plus
     decoy pulls at other ages), move to COLLECTING."""
@@ -185,6 +187,7 @@ async def _start_publish_measure(
                 platform=Platform.LINKEDIN,
                 published_at=published_at,
                 mode=mode,
+                evidence=evidence,
             )
             run.published[unit["content_asset_id"]] = pub
             impressions = rng.randint(800, 5_000)  # impressions vary: not samples
@@ -559,6 +562,30 @@ async def test_manual_numbers_on_a_mock_post_are_not_real_evidence(env: Env) -> 
         },
     )
     assert resp.status_code == 422 and resp.json()["details"]["field"] == "source"
+
+
+async def test_sandbox_posts_are_neither_real_nor_simulated_evidence(env: Env) -> None:
+    """Phase 13 (A17): API numbers from live posts to a sandbox (test) account came from a
+    real platform call but no real audience: excluded from the real AND the simulated
+    analysis, so they can never select a winner."""
+    run = await _setup(env, per_variant=32)
+    await _start_publish_measure(
+        env,
+        run,
+        source=MetricSource.API,
+        effect=0.02,
+        mode=PublishMode.LIVE,
+        evidence=EvidenceClass.SANDBOX,
+    )
+    outcome = await _evaluate(run)
+    assert outcome["verdict"] == "NO_REAL_DATA"
+    results = await _results(env, run)
+    assert results["winner_variant_id"] is None and results["evidence_snapshot_ids"] == []
+    excluded = [v["excluded"] for v in results["real"]["per_variant"]]
+    assert sum(e.get("SANDBOX_PUBLICATION", 0) for e in excluded) == 64  # every unit
+    simulated = results["simulated"]
+    if simulated is not None:
+        assert all(v.get("n", 0) == 0 for v in simulated["per_variant"])
 
 
 THREE = [

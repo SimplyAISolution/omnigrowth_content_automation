@@ -19,6 +19,7 @@ from omnigrowth.core.enums import (
     ContentAssetStatus,
     ContentFormat,
     ContentVersionOrigin,
+    EvidenceClass,
     MetricSource,
     Platform,
     PublicationJobStatus,
@@ -71,9 +72,14 @@ async def publish(
     platform: Platform,
     published_at: datetime,
     mode: PublishMode = PublishMode.MANUAL,
+    evidence: EvidenceClass | None = None,
 ) -> uuid.UUID:
     """``mode=MANUAL``: a post a human actually published (real audience); ``MOCK``: the
-    mock publisher (no audience; its metrics are simulated whatever their source)."""
+    mock publisher (no audience; its metrics are simulated whatever their source).
+    ``evidence`` defaults like the dispatcher/backfill (MOCK -> SIMULATED, else REAL);
+    pass SANDBOX for a live post to a test account (A17)."""
+    if evidence is None:
+        evidence = EvidenceClass.SIMULATED if mode is PublishMode.MOCK else EvidenceClass.REAL
     version_id, job_id, publication_id = uuid7(), uuid7(), uuid7()
     body = f"post {asset_id}"
     session.add(
@@ -119,6 +125,7 @@ async def publish(
             platform_account_id=account_id,
             platform=platform,
             publish_mode=mode,
+            evidence_class=evidence,
             scheduled_at=published_at,
             published_at=published_at,
             status=PublicationStatus.PUBLISHED,

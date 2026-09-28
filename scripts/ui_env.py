@@ -21,6 +21,7 @@ Nothing here touches a real LLM, a real platform or the dev database:
 
 from __future__ import annotations
 
+import base64
 import json
 import os
 import secrets
@@ -39,6 +40,8 @@ PORT = int(os.environ.get("OG_UI_API_PORT", "8012"))
 DEMO_LABEL = "Demo data (fixture replay)"
 # Per-process random key (the throwaway API derives webhook secrets from it); never persisted.
 _THROWAWAY_WEBHOOK_KEY = secrets.token_urlsafe(48)
+# Per-process credential KEK (Phase 13) so the UI can store a test token; never persisted.
+_THROWAWAY_CREDENTIAL_KEK = base64.urlsafe_b64encode(secrets.token_bytes(32)).decode().rstrip("=")
 
 
 def _server_url() -> str:
@@ -85,6 +88,9 @@ def _env(db_url: str) -> dict[str, str]:
         # Phase 12: webhooks on, with a key that exists only for this throwaway environment.
         "OMNIGROWTH_WEBHOOK_KEY": _THROWAWAY_WEBHOOK_KEY,
         "OMNIGROWTH_WEBHOOK_TARGET_ALLOWLIST": "127.0.0.1:5678",
+        # Phase 13: credentials can be stored (encrypted with a throwaway key); publishing
+        # stays MOCK, so nothing ever contacts a platform from this environment.
+        "OMNIGROWTH_CREDENTIAL_KEK": _THROWAWAY_CREDENTIAL_KEK,
     }
 
 

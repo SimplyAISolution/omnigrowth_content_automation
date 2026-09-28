@@ -37,6 +37,22 @@ class PublishResult:
     published_at: datetime
 
 
+class LookupStatus(StrEnum):
+    FOUND = "FOUND"  # every part of the post exists on the platform
+    PARTIAL = "PARTIAL"  # some parts exist (a thread cut short): a human decides
+    NOT_FOUND = "NOT_FOUND"  # not among the posts searched: absence is NEVER proof (A3)
+    AMBIGUOUS = "AMBIGUOUS"  # more than one unclaimed post matches: a human decides
+
+
+@dataclass(frozen=True, slots=True)
+class LookupOutcome:
+    status: LookupStatus
+    result: PublishResult | None = None
+    found_post_ids: tuple[str, ...] = ()
+    searched: int = 0  # how many platform posts were compared
+    detail: str = ""
+
+
 class FailureKind(StrEnum):
     RATE_LIMIT = "RATE_LIMIT"  # proven not published, retryable
     CONNECT_TIMEOUT = "CONNECT_TIMEOUT"  # before the request was sent: retryable
@@ -94,7 +110,17 @@ class PlatformPublisher(Protocol):
 
     async def publish(self, request: PublishRequest) -> PublishResult: ...
 
-    async def lookup(self, request: PublishRequest) -> PublishResult | None: ...
+    async def lookup(
+        self,
+        request: PublishRequest,
+        *,
+        since: datetime | None = None,
+        exclude_ids: frozenset[str] = frozenset(),
+    ) -> LookupOutcome: ...
+
+    def preview(self, request: PublishRequest) -> dict[str, Any]:
+        """Exactly what ``publish`` would send (no secrets): shown before a live post."""
+        ...
 
     async def fetch_metrics(
         self, platform: Platform, external_post_id: str, *, seed: str

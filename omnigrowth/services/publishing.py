@@ -50,6 +50,7 @@ from omnigrowth.models import (
 )
 from omnigrowth.observability.audit import record_audit
 from omnigrowth.publishing.config import cached_publishing_config
+from omnigrowth.publishing.registry import LIVE_PLATFORMS
 from omnigrowth.publishing.scheduler import (
     RELEASE_CLAIM,
     asset_follows_publication,
@@ -69,6 +70,7 @@ from omnigrowth.schemas.publishing import (
     PublicationReconcileRequest,
     ReconcileMethod,
 )
+from omnigrowth.services import connectors
 from omnigrowth.services import content as content_service
 from omnigrowth.services.jobs import JobQueue
 from omnigrowth.storage import content as content_repo
@@ -104,12 +106,23 @@ async def _account_read(session: AsyncSession, account: PlatformAccount) -> Plat
         )
     ).scalar_one_or_none()
     read = PlatformAccountRead.model_validate(account)
-    # Only the MockPublisher exists before Phase 13: other modes publish nothing (the
-    # dispatcher refuses them), so they have no effective publisher.
+    # MOCK mode: the MockPublisher. LIVE mode: this account's live connector when nothing
+    # blocks it (the dispatcher re-checks every guard); otherwise nothing is published.
     mode = get_settings().publish_mode
-    effective = PublishMode.MOCK if mode is PublishMode.MOCK else None
+    blockers = await connectors.live_blockers(session, account)
+    effective: PublishMode | None = None
+    if mode is PublishMode.MOCK:
+        effective = PublishMode.MOCK
+    elif mode is PublishMode.LIVE and not blockers:
+        effective = PublishMode.LIVE
     return read.model_copy(
-        update={"has_open_uncertain": uncertain is not None, "effective_publisher": effective}
+        update={
+            "has_open_uncertain": uncertain is not None,
+            "effective_publisher": effective,
+            "live_connector_available": account.platform in LIVE_PLATFORMS,
+            "has_credential": await connectors.has_credential(session, account),
+            "live_blockers": blockers,
+        }
     )
 
 
@@ -150,8 +163,31 @@ async def update_account(
     if account is None or account.archived_at is not None:
         raise _not_found("platform account")
     changes = body.model_dump(exclude_unset=True)
+    if changes.get("sandbox") is None:
+        changes.pop("sandbox", None)
+    elif changes["sandbox"] != account.sandbox and account.live_enabled:
+        # The evidence class of live posts must not change under a live account.
+        raise OmniGrowthError(
+            ErrorCode.CONFLICT,
+            "turn live publishing off before changing the sandbox setting",
+            details={"field": "sandbox"},
+        )
     if "settings" in changes:
         changes["settings"] = validate_settings(account.platform, body.settings)
+        if changes["settings"] != (account.settings or {}):
+            if account.live_enabled:
+                # Server, visibility or limits must not change under a live account (A17).
+                raise OmniGrowthError(
+                    ErrorCode.CONFLICT,
+                    "turn live publishing off before changing the account settings",
+                    details={"field": "settings"},
+                )
+            before_url = (account.settings or {}).get("instance_base_url")
+            if changes["settings"].get("instance_base_url") != before_url:
+                # A token is bound to its server: a new server needs a new token.
+                await connectors.destroy_credentials(
+                    session, actor, account, reason="instance address changed"
+                )
     if "handle" in changes and changes["handle"] is None:
         del changes["handle"]
     before = {k: getattr(account, k) for k in changes}
@@ -586,6 +622,22 @@ async def reconcile(
             actor,
             values={"completed_at": now},
             reason=body.note,
+        )
+        # A17: its own audited decision; the trigger emits publication.not_published_confirmed
+        # (not publication.failed). Nothing is retried: publishing it needs a new SCHEDULE.
+        await record_audit(
+            session,
+            actor=actor,
+            action="publication.reconciled_not_published",
+            entity_type="publications",
+            entity_id=pub.id,
+            brand_id=pub.brand_id,
+            metadata={
+                "publication_job_id": str(job.id),
+                "publish_mode": pub.publish_mode.value,
+                "evidence_class": pub.evidence_class.value,
+                "will_retry": False,
+            },
         )
         await transition_publication(
             session,

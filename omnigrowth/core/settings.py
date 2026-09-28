@@ -95,6 +95,11 @@ class Settings(BaseSettings):
     webhook_secret_grace_hours: int = Field(
         default=24, ge=0, le=168, validation_alias="OMNIGROWTH_WEBHOOK_SECRET_GRACE_HOURS"
     )
+    # Self-hosted / sandbox platform hosts reachable over HTTP or private addresses
+    # (host:port, comma-separated). Public platform APIs must be HTTPS on 443 (Phase 13).
+    platform_host_allowlist: str = Field(
+        default="", validation_alias="OMNIGROWTH_PLATFORM_HOST_ALLOWLIST"
+    )
     # Base URL of the web app, for links in notifications (no secrets, no data in the URL).
     app_url: str = Field(default="http://127.0.0.1:5173", validation_alias="OMNIGROWTH_APP_URL")
 

@@ -12,10 +12,13 @@ from __future__ import annotations
 import hashlib
 from collections.abc import Iterable
 from datetime import UTC, datetime
+from typing import Any
 
 from omnigrowth.core.enums import Platform, PublishMode
 from omnigrowth.publishing.base import (
     FailureKind,
+    LookupOutcome,
+    LookupStatus,
     MetricsResult,
     PublishError,
     PublishRequest,
@@ -86,8 +89,29 @@ class MockPublisher:
             raise PublishError(FailureKind.AFTER_SEND, "mock timeout after send")
         return result
 
-    async def lookup(self, request: PublishRequest) -> PublishResult | None:
-        return self.sent.get(request.idempotency_key)
+    async def lookup(
+        self,
+        request: PublishRequest,
+        *,
+        since: datetime | None = None,
+        exclude_ids: frozenset[str] = frozenset(),
+    ) -> LookupOutcome:
+        found = self.sent.get(request.idempotency_key)
+        if found is None:
+            return LookupOutcome(LookupStatus.NOT_FOUND, detail="not in this mock's memory")
+        return LookupOutcome(
+            LookupStatus.FOUND, result=found, found_post_ids=(found.external_post_id,)
+        )
+
+    def preview(self, request: PublishRequest) -> dict[str, Any]:
+        return {
+            "publisher": "MockPublisher",
+            "simulated": True,
+            "account": request.account_handle,
+            "segments": list(request.segments),
+            "media_attached": [],
+            "media_not_attached": list(request.media_requirements),
+        }
 
     async def fetch_metrics(
         self, platform: Platform, external_post_id: str, *, seed: str

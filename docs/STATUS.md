@@ -1,11 +1,14 @@
 ```
-phase: 12
-task: phase-12 gate (n8n integration)
-gate: GATE_PASSED (2026-09-27; see ENGINEERING_LOG)
-last_green_commit: f25a15a (phase 11, signed)
-next_phase: 13 — real connectors (needs human decisions + credentials)
+phase: 13
+task: phase-13 real connectors (Mastodon first)
+gate: BLOCKED on human-only steps — agent-side implementation and all gates green (2026-09-27;
+  see ENGINEERING_LOG). PHASES.md Phase 13 ends with "human provides credentials -> human runs
+  first live post"; neither has happened, so Phase 13 is NOT marked passed.
+last_green_commit: 8fdf486 (phase 12, signed)
+next_phase: finish 13 (human: account + token + first live post), then 14 — acceptance review
 shell: PowerShell Core 7.6.6 (Git Bash also available)
-blockers: phase 12 commit pending (staged; human signs)
+blockers: human must choose the Mastodon server/account (sandbox or real), store the token,
+  and type ENABLE LIVE PUBLISHING FOR MASTODON before the first live post
 ```
 
 ## Notes
@@ -25,3 +28,5 @@ blockers: phase 12 commit pending (staged; human signs)
 - Phase 10: writers for every platform (A15; D2 retired), per-subreddit/per-instance account settings, repurposing graph (`/content/{id}/repurpose`, `/derivatives`) with DB-enforced lineage and 409 on recursive duplicates. Live §55 (real local inference, mock publication) passed with YouTube + Instagram written.
 - Phase 11: Vite + React + TS frontend over /api/v1 (approvals, content, calendar, publishing, campaigns, analytics, experiments, sources, brand, platforms), generated typed client + OpenAPI drift tests, GET /platforms catalog, fixture-seeded throwaway environment for Playwright journeys (Edge). Publication shown as simulated everywhere.
 - Phase 12: n8n integration. INTEGRATION principal (own actor type; HMAC; brand + operation scoped; rotate with 24 h grace, revoke, audited) for text/URL ingestion and campaign planning only. Outbound `content.approval_requested`, `publication.failed`, `publication.uncertain` via DB-trigger outbox, signed at-least-once delivery in the scheduler's own loop (bounded retries, backoff, inspectable/redeliverable failures). SSRF-guarded targets with a host:port allowlist for self-hosted n8n. Owner "Automations" page. Importable inactive workflows + setup in `n8n/`. `poe ui-check` joined `poe check`. Publication still simulated.
+- Phase 13 (agent part): Mastodon live connector (verified from official docs), envelope-encrypted write-only credentials bound to the account's server, the live switch with the exact phrase, full A6 live guard incl. human approval and brand match, per-send time budget, uncertain outcomes reconciled by read-only lookup (never re-posted), SIMULATED / SANDBOX / REAL evidence everywhere, preview of exactly what will be sent, `publication.not_published_confirmed` event. Publication is still simulated until the human completes the first live post.
+

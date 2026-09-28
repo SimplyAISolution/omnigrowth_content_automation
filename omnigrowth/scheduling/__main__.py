@@ -27,6 +27,7 @@ from omnigrowth.core.settings import get_settings
 from omnigrowth.publishing.base import PlatformPublisher
 from omnigrowth.publishing.config import cached_publishing_config
 from omnigrowth.publishing.mock import MockPublisher
+from omnigrowth.publishing.registry import live_publisher_for
 from omnigrowth.publishing.scheduler import run_once
 from omnigrowth.services import webhook_delivery
 from omnigrowth.services.analytics import schedule_due_pulls
@@ -79,6 +80,8 @@ async def tick() -> bool:
             config=cached_publishing_config(get_settings().config_dir),
             now=datetime.now(UTC),
             scheduler_id=SCHEDULER_ID,
+            # Used only when PUBLISH_MODE=LIVE passes the live guard (publishing/registry.py).
+            live_factory=live_publisher_for,
         )
     except (OmniGrowthError, SQLAlchemyError) as exc:
         log.error("scheduler tick: outbox failed", extra={"error": type(exc).__name__})

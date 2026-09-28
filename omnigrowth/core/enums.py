@@ -194,6 +194,19 @@ class ContentAssetStatus(StrEnum):
     ARCHIVED = "ARCHIVED"
 
 
+class EvidenceClass(StrEnum):
+    """What a publication's numbers can prove (A17), fixed when the dispatch starts.
+
+    SIMULATED = mock publisher, no audience. SANDBOX = a real API call to an account the
+    owner marked as a sandbox (test instance / test account), not a real audience. REAL = a
+    real account and audience. Only REAL publications feed real analyses and experiments.
+    """
+
+    SIMULATED = "SIMULATED"
+    SANDBOX = "SANDBOX"
+    REAL = "REAL"
+
+
 class PublicationJobStatus(StrEnum):
     PENDING = "PENDING"
     CLAIMED = "CLAIMED"
@@ -366,6 +379,9 @@ class IntegrationEventType(StrEnum):
     CONTENT_APPROVAL_REQUESTED = "content.approval_requested"
     PUBLICATION_FAILED = "publication.failed"
     PUBLICATION_UNCERTAIN = "publication.uncertain"
+    # A person confirmed an uncertain (J13) or manual-export (P8) post did NOT go out.
+    # Informational: nothing is retried because of it (A17).
+    PUBLICATION_NOT_PUBLISHED_CONFIRMED = "publication.not_published_confirmed"
     INTEGRATION_PING = "integration.ping"  # sent on demand to test a subscription
 
 

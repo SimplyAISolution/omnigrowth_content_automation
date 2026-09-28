@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, type FormEvent } from "react";
 import { useAuth } from "../auth/auth";
 import { Link } from "react-router-dom";
@@ -8,7 +8,7 @@ import { useBrand } from "../lib/brand";
 import { explainError, formatDateTime } from "../lib/format";
 import { useAction } from "../lib/hooks";
 import { useCampaigns } from "../lib/queries";
-import { JOB_STATUS, PLATFORM_LABEL, humanize, publicationInfo } from "../lib/status";
+import { EVIDENCE, JOB_STATUS, PLATFORM_LABEL, humanize, publicationInfo } from "../lib/status";
 
 type Job = Schemas["PublicationJobRead"];
 
@@ -83,7 +83,7 @@ export function PublicationsPage() {
                 <th scope="col">Platform</th>
                 <th scope="col">When</th>
                 <th scope="col">Outcome</th>
-                <th scope="col">Mode</th>
+                <th scope="col">Evidence</th>
                 <th scope="col">Resolve</th>
               </tr>
             </thead>
@@ -98,7 +98,17 @@ export function PublicationsPage() {
                   <td>
                     <StatusBadge info={publicationInfo(p)} />
                   </td>
-                  <td>{p.publish_mode === "MOCK" ? "Simulated (mock publisher)" : humanize(p.publish_mode)}</td>
+                  <td>
+                    <StatusBadge info={EVIDENCE[p.evidence_class]} />
+                    {p.canonical_url && p.evidence_class !== "SIMULATED" ? (
+                      <>
+                        {" "}
+                        <a href={p.canonical_url} target="_blank" rel="noreferrer noopener">
+                          View post
+                        </a>
+                      </>
+                    ) : null}
+                  </td>
                   <td>{p.status === "PUBLICATION_UNCERTAIN" ? <Reconcile publication={p} /> : "—"}</td>
                 </tr>
               ))}
@@ -140,11 +150,76 @@ function JobTable({ jobs }: { jobs: Job[] }) {
               {j.attempt_count} / {j.max_attempts}
             </td>
             <td className="small">{j.last_error_code ? humanize(j.last_error_code) : "—"}</td>
-            <td>{j.status === "PENDING" ? <CancelJob job={j} /> : "—"}</td>
+            <td>
+              {["PENDING", "RETRY_WAIT"].includes(j.status) ? <PreviewJob job={j} /> : null}
+              {j.status === "PENDING" ? <CancelJob job={j} /> : null}
+              {!["PENDING", "RETRY_WAIT"].includes(j.status) ? "—" : null}
+            </td>
           </tr>
         ))}
       </tbody>
     </table>
+  );
+}
+
+/** Exactly what will be sent (account, text, media, visibility, timing, evidence). */
+function PreviewJob({ job }: { job: Job }) {
+  const [open, setOpen] = useState(false);
+  const preview = useQuery({
+    queryKey: ["preview", job.id],
+    queryFn: () => call(api.GET("/api/v1/publications/jobs/{job_id}/preview", { params: { path: { job_id: job.id } } })),
+    enabled: open,
+  });
+  const d = (preview.data?.details ?? {}) as Record<string, unknown>;
+  const segments = Array.isArray(d["segments"]) ? (d["segments"] as string[]) : [];
+  const notAttached = Array.isArray(d["media_not_attached"]) ? (d["media_not_attached"] as string[]) : [];
+  return (
+    <>
+      <button type="button" className="btn" onClick={() => setOpen(true)}>
+        Preview
+      </button>
+      <Dialog open={open} title="What will be sent" onClose={() => setOpen(false)}>
+        {preview.isLoading ? <Loading /> : preview.error ? <ErrorPanel error={preview.error} /> : null}
+        {preview.data ? (
+          <>
+            <dl className="small">
+              <dt>Account</dt>
+              <dd>
+                {PLATFORM_LABEL[preview.data.platform]} @{preview.data.account_handle}
+                {typeof d["instance"] === "string" ? ` on ${d["instance"]}` : ""}
+              </dd>
+              <dt>When</dt>
+              <dd>{formatDateTime(preview.data.due_at, job.schedule_timezone)}</dd>
+              <dt>Mode</dt>
+              <dd>
+                <StatusBadge info={EVIDENCE[preview.data.evidence_class]} />{" "}
+                {preview.data.simulated ? "Mock publisher: nothing will be posted." : "Real post through the platform's API."}
+              </dd>
+              {typeof d["visibility"] === "string" ? (
+                <>
+                  <dt>Visibility</dt>
+                  <dd>{humanize(d["visibility"])}</dd>
+                </>
+              ) : null}
+              <dt>Media</dt>
+              <dd>{notAttached.length ? `None attached (suggested but not uploaded: ${notAttached.join("; ")})` : "None"}</dd>
+            </dl>
+            <ol>
+              {segments.map((text, i) => (
+                <li key={i} className="preview-segment">
+                  <pre className="wrap">{text}</pre>
+                </li>
+              ))}
+            </ol>
+            {preview.data.blockers.length ? (
+              <div className="notice notice-warning" role="note">
+                <strong>Would be refused now:</strong> {preview.data.blockers.map(humanize).join(", ")}.
+              </div>
+            ) : null}
+          </>
+        ) : null}
+      </Dialog>
+    </>
   );
 }
 
@@ -186,8 +261,18 @@ function CancelJob({ job }: { job: Job }) {
 
 function Reconcile({ publication }: { publication: Schemas["PublicationRead"] }) {
   const { can } = useAuth();
+  const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [method, setMethod] = useState<Schemas["ReconcileMethod"]>("MANUAL_CONFIRM_PUBLISHED");
+  const lookup = useMutation({
+    mutationFn: () => call(api.POST("/api/v1/publications/{publication_id}/lookup", { params: { path: { publication_id: publication.id } } })),
+    onSuccess: async (result) => {
+      if (result.status === "FOUND") {
+        await queryClient.invalidateQueries({ queryKey: ["publications"] });
+        await queryClient.invalidateQueries({ queryKey: ["jobs"] });
+      }
+    },
+  });
   const [url, setUrl] = useState("");
   const [externalId, setExternalId] = useState("");
   const [note, setNote] = useState("");
@@ -219,7 +304,30 @@ function Reconcile({ publication }: { publication: Schemas["PublicationRead"] })
           <p>Check the platform account yourself, then record what you found. Until then this account publishes nothing else.</p>
           {publication.publish_mode === "MOCK" ? (
             <p className="small muted">This was a mock publication: there is no real platform post to look for.</p>
-          ) : null}
+          ) : (
+            <div className="card">
+              <p className="small">
+                OmniGrowth can search this account's recent posts for this exact text. It never posts again to find out.
+              </p>
+              <RoleButton role="EDITOR" type="button" disabled={lookup.isPending} onClick={() => lookup.mutate()}>
+                Look up on the platform
+              </RoleButton>
+              {lookup.data ? (
+                <p className="small" role="status">
+                  {lookup.data.status === "FOUND"
+                    ? "Found: the post exists, and the publication is now recorded as published."
+                    : lookup.data.status === "PARTIAL"
+                      ? `Only part of it was found (${lookup.data.detail}). Check the account and decide below.`
+                      : `Not found (${lookup.data.detail}). That is not proof it was not published; check the account yourself.`}
+                </p>
+              ) : null}
+              {lookup.error ? (
+                <div className="notice notice-danger" role="alert">
+                  {explainError(lookup.error)}
+                </div>
+              ) : null}
+            </div>
+          )}
           <fieldset className="field">
             <legend>What did you find?</legend>
             <label className="checkbox">

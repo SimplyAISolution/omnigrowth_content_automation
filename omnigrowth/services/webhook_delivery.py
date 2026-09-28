@@ -77,6 +77,7 @@ def links(event: IntegrationEvent) -> dict[str, str]:
     if event.event_type in (
         IntegrationEventType.PUBLICATION_FAILED.value,
         IntegrationEventType.PUBLICATION_UNCERTAIN.value,
+        IntegrationEventType.PUBLICATION_NOT_PUBLISHED_CONFIRMED.value,
     ):
         out["publishing"] = f"{base}/publications"
     if event.event_type == IntegrationEventType.CONTENT_APPROVAL_REQUESTED.value:

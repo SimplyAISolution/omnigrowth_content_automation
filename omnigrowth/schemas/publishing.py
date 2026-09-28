@@ -7,12 +7,14 @@ from datetime import datetime
 from enum import StrEnum
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator, model_validator
 
 from omnigrowth.core.enums import (
     ActorType,
     ApprovalActionType,
     ContentAssetStatus,
+    CredentialKind,
+    EvidenceClass,
     Platform,
     PlatformAccountType,
     PublicationJobStatus,
@@ -54,6 +56,59 @@ class PlatformAccountUpdate(_Request):
     display_name: str | None = Field(default=None, max_length=200)
     timezone: Timezone | None = None
     settings: dict[str, Any] | None = None
+    # A17: live posts from a sandbox account are SANDBOX evidence. Refused while live.
+    sandbox: bool | None = None
+
+
+class PlatformAccountLiveRequest(_Request):
+    """Turn live publishing on or off for one account (OWNER, audited, A6 gate #2).
+
+    Enabling requires ``confirmation`` to be exactly ``ENABLE LIVE PUBLISHING FOR <PLATFORM>``
+    (AGENTS.md §3), a VERIFIED connector, configured settings and a stored credential."""
+
+    enabled: bool
+    confirmation: str | None = Field(default=None, max_length=100)
+
+
+class CredentialCreate(_Request):
+    """Write-only: the secret is encrypted at rest and never returned (A17)."""
+
+    kind: CredentialKind
+    secret: SecretStr = Field(min_length=8, max_length=4096)
+    scopes: list[str] = Field(default_factory=list, max_length=20)
+    expires_at: datetime | None = None
+
+    @field_validator("secret")
+    @classmethod
+    def _one_line(cls, value: SecretStr) -> SecretStr:
+        raw = value.get_secret_value()
+        if raw != raw.strip() or any(ch.isspace() for ch in raw):
+            raise ValueError("the secret must be a single token without spaces or line breaks")
+        return value
+
+    @field_validator("scopes")
+    @classmethod
+    def _scopes(cls, value: list[str]) -> list[str]:
+        cleaned = sorted({s.strip() for s in value if s.strip()})
+        if any(len(s) > 64 or " " in s for s in cleaned):
+            raise ValueError("invalid scope")
+        return cleaned
+
+
+class CredentialRead(_Read):
+    """Metadata only. There is deliberately no field that could carry the secret."""
+
+    id: uuid.UUID
+    platform_account_id: uuid.UUID
+    kind: CredentialKind
+    scopes: list[str]
+    fingerprint: str | None
+    kek_id: str
+    expires_at: datetime | None
+    revoked_at: datetime | None
+    created_by: str | None
+    revoked_by: str | None
+    created_at: datetime
 
 
 class PlatformAccountRead(_Read):
@@ -65,9 +120,15 @@ class PlatformAccountRead(_Read):
     display_name: str | None
     timezone: str | None
     live_enabled: bool
+    sandbox: bool = False
     settings: dict[str, Any] = Field(default_factory=dict)
     effective_publisher: PublishMode | None = None
     has_open_uncertain: bool = False
+    # Phase 13: whether a VERIFIED live connector exists, a credential is stored, and what
+    # would stop a live post right now (empty = nothing; the dispatcher re-checks anyway).
+    live_connector_available: bool = False
+    has_credential: bool = False
+    live_blockers: list[str] = Field(default_factory=list)
     created_at: datetime
 
 
@@ -159,6 +220,7 @@ class PublicationRead(_Read):
     platform_account_id: uuid.UUID
     platform: Platform
     publish_mode: PublishMode
+    evidence_class: EvidenceClass
     external_post_id: str | None
     canonical_url: str | None
     status: PublicationStatus
@@ -166,6 +228,36 @@ class PublicationRead(_Read):
     published_at: datetime | None
     error: dict[str, Any] | None
     reconciled_at: datetime | None
+
+
+class PublicationPreviewRead(BaseModel):
+    """What the dispatcher would send for a job, before it is sent (no secrets)."""
+
+    publication_job_id: uuid.UUID
+    brand_id: uuid.UUID
+    platform: Platform
+    platform_account_id: uuid.UUID
+    account_handle: str
+    due_at: datetime
+    publish_mode: PublishMode
+    evidence_class: EvidenceClass
+    simulated: bool
+    content_version_id: uuid.UUID
+    details: dict[str, Any]
+    blockers: list[str]
+
+
+class PublicationLookupRead(BaseModel):
+    """Result of searching the platform for an uncertain post (never re-posts).
+
+    FOUND reconciles it (J12/P5); PARTIAL and NOT_FOUND change nothing: absence among the
+    posts searched is not proof, so a person still decides."""
+
+    status: str
+    searched: int
+    found_post_ids: list[str]
+    detail: str
+    publication: PublicationRead
 
 
 class ApprovalActionResultRead(BaseModel):

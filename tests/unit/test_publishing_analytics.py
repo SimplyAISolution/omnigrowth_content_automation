@@ -62,7 +62,7 @@ async def test_after_send_fault_leaves_a_post_behind_for_reconciliation() -> Non
         await publisher.publish(request)
     assert exc.value.uncertain and not exc.value.retryable
     assert exc.value.code.value == "PUBLICATION_UNCERTAIN"
-    assert await publisher.lookup(request) is not None  # it did get posted
+    assert (await publisher.lookup(request)).status == "FOUND"  # it did get posted
 
 
 @pytest.mark.parametrize(
@@ -79,7 +79,7 @@ async def test_proven_not_published_faults(kind: FailureKind, retryable: bool, c
     with pytest.raises(PublishError) as exc:
         await publisher.publish(request)
     assert exc.value.retryable is retryable and exc.value.code.value == code
-    assert await publisher.lookup(request) is None  # nothing was posted
+    assert (await publisher.lookup(request)).status == "NOT_FOUND"  # nothing was posted
 
 
 async def test_faults_can_be_scoped_to_versions() -> None:

@@ -38,7 +38,18 @@ function routes(publishMode: string) {
     "GET /api/v1/campaigns": { body: { items: [{ id: "c1", name: "Launch", brand_id: "b1" }], next_cursor: null } },
     // The API's snapshot-source provenance says "real" for MANUAL numbers...
     "GET /api/v1/analytics/campaigns/:id/report": { body: report({ real: true, simulated: false, sources: { MANUAL: 1 } }) },
-    "GET /api/v1/publications": { body: { items: [{ id: "p1", brand_id: "b1", publish_mode: publishMode, status: "PUBLISHED" }], next_cursor: null } },
+    "GET /api/v1/publications": { body: {
+        items: [
+          {
+            id: "p1",
+            brand_id: "b1",
+            publish_mode: publishMode,
+            evidence_class: publishMode === "MOCK" ? "SIMULATED" : publishMode === "SANDBOX" ? "SANDBOX" : "REAL",
+            status: "PUBLISHED",
+          },
+        ],
+        next_cursor: null,
+      } },
     "GET /api/v1/recommendations": {
       body: {
         items: [{ id: "r1", statement: "Do more threads.", rationale: null, status: "PROPOSED", evidence_snapshot_ids: ["s1"], evidence_query: { simulated_evidence: false } }],
@@ -62,5 +73,37 @@ describe("Analytics provenance (review MAJOR 4)", () => {
     renderPage(<AnalyticsPage />);
     expect(await screen.findByText("Real data")).toBeInTheDocument();
     expect(await screen.findByText("Based on real data")).toBeInTheDocument();
+  });
+
+  it("never calls sandbox-account numbers real (Phase 13)", async () => {
+    mockApi(routes("SANDBOX"));
+    renderPage(<AnalyticsPage />);
+    expect(await screen.findByText("Sandbox data.")).toBeInTheDocument();
+    expect(screen.queryByText("Real data")).not.toBeInTheDocument();
+  });
+
+  it("labels a suggestion built on sandbox numbers as sandbox, never real (review MAJOR 3)", async () => {
+    const r = routes("MANUAL");
+    mockApi({
+      ...r,
+      "GET /api/v1/recommendations": {
+        body: {
+          items: [
+            {
+              id: "r2",
+              statement: "Post threads at noon.",
+              rationale: null,
+              status: "PROPOSED",
+              evidence_snapshot_ids: ["s9"],
+              evidence_query: { simulated_evidence: false, sandbox_evidence: true, real_evidence: false },
+            },
+          ],
+          next_cursor: null,
+        },
+      },
+    });
+    renderPage(<AnalyticsPage />);
+    expect(await screen.findByText("Based on sandbox data")).toBeInTheDocument();
+    expect(screen.queryByText("Based on real data")).not.toBeInTheDocument();
   });
 });

@@ -51,7 +51,7 @@ it("adds a notification target and shows its secret exactly once", async () => {
   expect(post?.body).toEqual({
     target_url: "https://n8n.example.com/webhook/omnigrowth-events",
     brand_ids: ["b1"],
-    event_types: ["content.approval_requested", "publication.failed", "publication.uncertain"],
+    event_types: ["content.approval_requested", "publication.failed", "publication.uncertain", "publication.not_published_confirmed"],
   });
   await userEvent.click(within(dialog).getByRole("button", { name: "I have stored it" }));
   await waitFor(() => expect(screen.queryByDisplayValue("whsec_shown_once")).not.toBeInTheDocument());

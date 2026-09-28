@@ -2,7 +2,7 @@
 // on the event id (delivery is at-least-once), and prepare a message per event type.
 // Needs: NODE_FUNCTION_ALLOW_BUILTIN=crypto, and the subscription secret in the
 // OMNIGROWTH_WEBHOOK_SECRET environment variable (never paste it into the workflow).
-// Output: one item { httpStatus, route, message, event } — route 0..2 notify, 3 ignore.
+// Output: one item { httpStatus, route, message, event } — routes 0..2 and 4 notify, 3 ignore.
 const crypto = require("crypto");
 
 const TOLERANCE_S = 300;
@@ -57,7 +57,17 @@ const MODES = {
   LIVE: "REAL publication (live platform API)",
   MANUAL: "MANUAL publication (a person posts it)",
 };
-const mode = MODES[d.publish_mode] || (d.simulated === true ? MODES.MOCK : "publication mode unknown");
+// The evidence class (Phase 13) is the most precise label: a live post to a sandbox
+// account is a real API call but not a real audience.
+const EVIDENCE = {
+  SIMULATED: MODES.MOCK,
+  SANDBOX: "SANDBOX (live API call to a test account; not a real audience)",
+  REAL: d.publish_mode === "MANUAL" ? MODES.MANUAL : MODES.LIVE,
+};
+const mode =
+  EVIDENCE[d.evidence_class] ||
+  MODES[d.publish_mode] ||
+  (d.simulated === true ? MODES.MOCK : "publication mode unknown");
 const links = event.links || {};
 let route = 3;
 let message = `OmniGrowth ${event.type} (${event.id})`;
@@ -76,5 +86,11 @@ if (event.type === "content.approval_requested") {
   message =
     `Publication outcome UNKNOWN [${mode}] on ${d.platform}: reconcile it in OmniGrowth before ` +
     `this account publishes again. Open: ${links.publishing || ""}`;
+} else if (event.type === "publication.not_published_confirmed") {
+  route = 4;
+  message =
+    `Confirmed NOT published [${mode}] on ${d.platform}: a person decided it did not go out. ` +
+    `It will not be retried automatically; schedule it again in OmniGrowth if wanted. ` +
+    `Open: ${links.publishing || ""}`;
 }
 return [{ json: { httpStatus: 200, route, message, event } }];

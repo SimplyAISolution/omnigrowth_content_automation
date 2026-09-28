@@ -801,3 +801,15 @@ details summary {
 .login-card input {
   width: 100%;
 }
+
+/* Phase 13: publish preview segments keep the author's line breaks. */
+pre.wrap {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: inherit;
+  margin: 0;
+}
+.preview-segment + .preview-segment {
+  margin-top: 0.5rem;
+}
+

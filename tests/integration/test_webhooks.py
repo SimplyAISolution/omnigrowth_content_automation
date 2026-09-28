@@ -596,10 +596,11 @@ async def test_publication_failure_and_uncertainty_events_say_whether_they_were_
     )
     assert scheduled.status_code == 200, scheduled.text
     job_id = scheduled.json()["publication_job"]["id"]
-    # Drive the job to UNCERTAIN then FAILED at the database level to exercise the event
-    # triggers exactly as the publisher's state changes would (MOCK = simulated).
+    # Drive the job to FAILED then UNCERTAIN at the database level to exercise the event
+    # triggers exactly as the publisher's state changes would (MOCK = simulated). (UNCERTAIN
+    # -> FAILED is a person's "not published" decision since Phase 13: its own event.)
     async with get_sessionmaker()() as session:
-        for status in ("UNCERTAIN", "FAILED"):
+        for status in ("FAILED", "UNCERTAIN"):
             await session.execute(
                 text(
                     "UPDATE publication_jobs SET status = :s, publish_mode = 'MOCK' WHERE id = :id"

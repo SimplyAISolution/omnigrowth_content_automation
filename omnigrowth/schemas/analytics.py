@@ -14,6 +14,7 @@ from omnigrowth.core.enums import (
     CalendarItemKind,
     ContentAssetStatus,
     ContentFormat,
+    EvidenceClass,
     MetricNullReason,
     MetricSource,
     Platform,
@@ -108,11 +109,15 @@ CORRELATION_NOTE = (
 
 
 class DataProvenance(BaseModel):
-    """Where the numbers came from. MOCK/FIXTURE data is simulated and must never be read
-    as real platform performance."""
+    """Where the numbers came from. MOCK/FIXTURE data, and any number attached to a
+    SIMULATED publication, is simulated; numbers from a SANDBOX publication came from a test
+    account (A17). Neither may ever be read as real platform performance."""
 
     sources: dict[MetricSource, int]
+    # Publications behind the numbers, by evidence class (SIMULATED / SANDBOX / REAL).
+    evidence: dict[EvidenceClass, int] = Field(default_factory=dict)
     simulated: bool
+    sandbox: bool = False
     real: bool
     note: str | None = None
 

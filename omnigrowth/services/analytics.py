@@ -30,6 +30,7 @@ from omnigrowth.analytics.formula import (
 from omnigrowth.analytics.metrics import COUNT_METRICS, sum_counts
 from omnigrowth.core.enums import (
     ActorType,
+    EvidenceClass,
     JobKind,
     JobStatus,
     MetricSource,
@@ -48,11 +49,18 @@ from omnigrowth.models import (
     ContentVersion,
     Job,
     ModelRun,
+    PlatformAccount,
     PromptVersion,
     Publication,
 )
+from omnigrowth.publishing.base import MetricsResult, PlatformPublisher, PublishError
 from omnigrowth.publishing.config import AnalyticsPullConfig
 from omnigrowth.publishing.mock import MockPublisher
+from omnigrowth.publishing.registry import (
+    LiveFactory,
+    LiveUnavailableError,
+    live_publisher_for,
+)
 from omnigrowth.schemas.analytics import (
     CORRELATION_NOTE,
     SIMULATED_SOURCES,
@@ -105,10 +113,17 @@ async def request_pull(
 
 
 async def pull_campaign_metrics(
-    session: AsyncSession, campaign_id: uuid.UUID, *, now: datetime | None = None
+    session: AsyncSession,
+    campaign_id: uuid.UUID,
+    *,
+    now: datetime | None = None,
+    live_factory: LiveFactory = live_publisher_for,
 ) -> dict[str, Any]:
-    """One snapshot per PUBLISHED mock publication (worker side). Real platform metric
-    calls arrive with the Phase 13 adapters; until then only MOCK publications are pulled."""
+    """One snapshot per PUBLISHED publication (worker side). MOCK posts get synthetic MOCK
+    numbers; LIVE posts on a VERIFIED connector are read from the platform (source API,
+    fields the platform does not report stay NULL). Anything else is skipped with a reason.
+    Whether API numbers count as real evidence is decided by the publication's evidence
+    class (SANDBOX never does), not here."""
     await _require_campaign(session, campaign_id)
     captured_at = now or datetime.now(UTC)
     rows = (
@@ -123,25 +138,68 @@ async def pull_campaign_metrics(
             .order_by(Publication.published_at, Publication.id)
         )
     ).all()
-    publisher = MockPublisher()
-    created: list[str] = []
-    skipped: list[dict[str, str]] = []
-    for pub, body_hash in rows:
-        if pub.publish_mode is not PublishMode.MOCK or pub.external_post_id is None:
-            skipped.append({"publication_id": str(pub.id), "reason": "NOT_IMPLEMENTED"})
-            continue
-        metrics = await publisher.fetch_metrics(
-            pub.platform, pub.external_post_id, seed=f"{body_hash}:{pub.platform.value}"
+    # Plain values, and every live publisher built (credentials decrypted) while the
+    # read transaction is open; then no transaction stays open during the platform calls.
+    plan = [
+        (
+            pub.id,
+            pub.brand_id,
+            pub.platform,
+            pub.platform_account_id,
+            pub.publish_mode,
+            pub.external_post_id,
+            f"{body_hash}:{pub.platform.value}",
         )
+        for pub, body_hash in rows
+    ]
+    mock = MockPublisher()
+    live: dict[uuid.UUID, PlatformPublisher | str] = {}  # per account: publisher or refusal
+    for _pid, _brand, _platform, account_id, mode, _ext, _seed in plan:
+        if mode is PublishMode.LIVE and account_id not in live:
+            account = await session.get(PlatformAccount, account_id)
+            try:
+                if account is None:
+                    raise LiveUnavailableError("ACCOUNT_MISSING")
+                live[account_id] = await live_factory(session, account)
+            except LiveUnavailableError as exc:
+                live[account_id] = exc.reason
+    await session.rollback()
+    skipped: list[dict[str, str]] = []
+    measured: list[tuple[uuid.UUID, uuid.UUID, MetricSource, MetricsResult]] = []
+    for pub_id, brand_id, platform, account_id, mode, external_id, seed in plan:
+        if external_id is None:
+            skipped.append({"publication_id": str(pub_id), "reason": "NO_EXTERNAL_ID"})
+            continue
+        publisher: PlatformPublisher
+        source = MetricSource.MOCK
+        if mode is PublishMode.MOCK:
+            publisher = mock
+        elif mode is PublishMode.LIVE:
+            cached = live[account_id]
+            if isinstance(cached, str):
+                skipped.append({"publication_id": str(pub_id), "reason": cached})
+                continue
+            publisher, source = cached, MetricSource.API
+        else:
+            skipped.append({"publication_id": str(pub_id), "reason": "NOT_IMPLEMENTED"})
+            continue
+        try:
+            metrics = await publisher.fetch_metrics(platform, external_id, seed=seed)
+        except PublishError as exc:
+            skipped.append({"publication_id": str(pub_id), "reason": exc.code.value})
+            continue
+        measured.append((pub_id, brand_id, source, metrics))
+    created: list[str] = []
+    for pub_id, brand_id, source, metrics in measured:  # one short write transaction
         snapshot_id = uuid7()
         inserted = await session.execute(
             pg_insert(AnalyticsSnapshot)
             .values(
                 id=snapshot_id,
-                brand_id=pub.brand_id,
-                publication_id=pub.id,
+                brand_id=brand_id,
+                publication_id=pub_id,
                 captured_at=captured_at,
-                source=MetricSource.MOCK,
+                source=source,
                 raw_payload=metrics.raw,
                 impressions=metrics.values.get("impressions"),
                 views=metrics.values.get("views"),
@@ -500,21 +558,43 @@ async def _generation_effort(
     return effort
 
 
-def provenance(snapshots: Iterable[AnalyticsSnapshot]) -> DataProvenance:
+def provenance(
+    pairs: Iterable[tuple[AnalyticsSnapshot, Publication]],
+) -> DataProvenance:
+    """Real = a platform/human number (API/MANUAL) for a REAL publication (A17). Numbers of
+    SIMULATED publications or MOCK/FIXTURE sources are simulated; SANDBOX ones are neither."""
     counts: dict[MetricSource, int] = {}
-    for snapshot in snapshots:
+    evidence: dict[EvidenceClass, int] = {}
+    simulated = sandbox = real = False
+    for snapshot, publication in pairs:
         counts[snapshot.source] = counts.get(snapshot.source, 0) + 1
-    simulated = any(s in SIMULATED_SOURCES for s in counts)
-    real = any(s not in SIMULATED_SOURCES for s in counts)
+        cls = publication.evidence_class
+        evidence[cls] = evidence.get(cls, 0) + 1
+        if cls is EvidenceClass.SANDBOX:
+            sandbox = True
+        elif snapshot.source in SIMULATED_SOURCES or cls is EvidenceClass.SIMULATED:
+            simulated = True
+        else:
+            real = True
+    kinds = [k for k, on in (("simulated", simulated), ("sandbox", sandbox), ("real", real)) if on]
     note = None
-    if simulated and real:
+    if len(kinds) > 1:
         note = (
-            "Mixes simulated (MOCK/FIXTURE) and real (API/MANUAL) data; "
-            "filter with sources= before drawing conclusions."
+            f"Mixes {', '.join(kinds)} data; filter with sources= and look at each "
+            "publication's evidence class before drawing conclusions."
         )
     elif simulated:
-        note = "Simulated data (MOCK/FIXTURE): not real platform performance."
-    return DataProvenance(sources=counts, simulated=simulated, real=real, note=note)
+        note = "Simulated data (MOCK/FIXTURE or mock publication): not real platform performance."
+    elif sandbox:
+        note = "Sandbox data (test account): not real audience performance."
+    return DataProvenance(
+        sources=counts,
+        evidence=evidence,
+        simulated=simulated,
+        sandbox=sandbox,
+        real=real,
+        note=note,
+    )
 
 
 # ------------------------------------------------------------------ report (§16, §17)
@@ -529,6 +609,7 @@ def _publication_entry(
         "snapshot_id": str(snapshot.id) if snapshot else None,
         "captured_at": snapshot.captured_at.isoformat() if snapshot else None,
         "source": snapshot.source.value if snapshot else None,
+        "evidence_class": row.publication.evidence_class.value,
         # §16 content attributes
         "platform": row.asset.platform.value,
         "format": row.asset.format.value,
@@ -613,7 +694,9 @@ async def campaign_report(
             }
             for d in definitions.values()
         ],
-        provenance=provenance(r.snapshot for r in with_data if r.snapshot is not None),
+        provenance=provenance(
+            (r.snapshot, r.publication) for r in with_data if r.snapshot is not None
+        ),
         sufficiency={
             "min_sample": min_sample,
             "publications_with_data": len(with_data),
@@ -667,7 +750,7 @@ async def publication_metrics(
         raw=AnalyticsSnapshotRead.model_validate(row.snapshot) if row.snapshot else None,
         inputs=inputs,
         derived=derived,
-        provenance=provenance([row.snapshot] if row.snapshot else []),
+        provenance=provenance([(row.snapshot, publication)] if row.snapshot else []),
     )
 
 
@@ -719,11 +802,11 @@ async def attribute_comparisons(
     )
     groups: dict[str | None, list[tuple[float, AnalyticsSnapshot]]] = defaultdict(list)
     excluded: dict[str | None, int] = defaultdict(int)
-    with_data: list[AnalyticsSnapshot] = []
+    with_data: list[tuple[AnalyticsSnapshot, Publication]] = []
     for row in rows:
         if row.snapshot is None:
             continue
-        with_data.append(row.snapshot)
+        with_data.append((row.snapshot, row.publication))
         key = row.attribute(attribute)
         inputs = row.inputs()
         value = (

@@ -13,6 +13,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from omnigrowth.core.enums import (
     ActorType,
+    EvidenceClass,
     Platform,
     PublicationJobStatus,
     PublicationStatus,
@@ -124,6 +125,8 @@ class Publication(UUIDPkMixin, TimestampMixin, Base):
     )
     platform: Mapped[Platform] = mapped_column(pg_enum(Platform), nullable=False)
     publish_mode: Mapped[PublishMode] = mapped_column(pg_enum(PublishMode), nullable=False)
+    # A17: SIMULATED / SANDBOX / REAL, fixed at dispatch start (scheduler.evidence_class).
+    evidence_class: Mapped[EvidenceClass] = mapped_column(pg_enum(EvidenceClass), nullable=False)
     external_post_id: Mapped[str | None] = mapped_column(Text, nullable=True)
     canonical_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     # Written only by omnigrowth.core.state_machines (AGENTS.md §4).

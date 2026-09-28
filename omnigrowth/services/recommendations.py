@@ -125,6 +125,7 @@ async def generate(
     )
     by_label = {r["label"]: uuid.UUID(r["snapshot_id"]) for r in rows}
     by_source: dict[str, str | None] = {r["label"]: r.get("source") for r in rows}
+    by_evidence: dict[str, str | None] = {r["label"]: r.get("evidence_class") for r in rows}
     # Re-check that every id still resolves (arrays cannot carry FKs).
     existing = set(
         (
@@ -167,7 +168,20 @@ async def generate(
                         {by_source[lbl] for lbl in valid if by_source.get(lbl) is not None}
                     ),
                     "simulated_evidence": any(
-                        by_source.get(lbl) in {"MOCK", "FIXTURE"} for lbl in valid
+                        by_source.get(lbl) in {"MOCK", "FIXTURE"}
+                        or by_evidence.get(lbl) == "SIMULATED"
+                        for lbl in valid
+                    ),
+                    # A17: which publications the cited numbers describe. Only REAL ones
+                    # (API/MANUAL numbers on REAL posts) are real evidence; SANDBOX never is.
+                    "evidence_classes": sorted(
+                        {by_evidence[lbl] for lbl in valid if by_evidence.get(lbl) is not None}
+                    ),
+                    "sandbox_evidence": any(by_evidence.get(lbl) == "SANDBOX" for lbl in valid),
+                    "real_evidence": bool(valid)
+                    and all(
+                        by_evidence.get(lbl) == "REAL" and by_source.get(lbl) in {"API", "MANUAL"}
+                        for lbl in valid
                     ),
                 },
             },

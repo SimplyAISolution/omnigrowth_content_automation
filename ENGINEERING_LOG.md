@@ -905,3 +905,134 @@ LIMITATIONS: publication is simulated (MockPublisher only); platform limits UNVE
   workflows' own JavaScript stand in); earlier limitations stand.
 ```
 
+## 2026-09-27 — Phase 13: real connectors, Mastodon first — BLOCKED on human-only steps (agent part complete)
+
+Session start. Baseline: the human accepted the signed commit 8fdf486 (Phase 12). Human
+decisions:
+1. The agent selects the first platform.
+2. Inbound analytics from n8n: NO.
+3. A manual "not published" confirmation emits a distinct audited event and never retries.
+
+Platform choice: there were no platform accounts, no credentials and no KEK. I read the
+official docs (Mastodon, X pricing, LinkedIn Share on LinkedIn); no platform API was called.
+Mastodon was chosen: free, self-serve, `Idempotency-Key` posting, text reconciliation
+through `/source`, and testable. X is pay-per-use; LinkedIn needs an app product and has a
+member cap. Evidence is in PLATFORM_CAPABILITIES §4.1, §4.2 and §4.9, with URL and date.
+
+Built (A17):
+- `security/vault.py`: AES-256-GCM envelope encryption; the associated data binds the
+  account, kind and server.
+- `security/http.platform_request`: pinned, SSRF-guarded, and classifies sent vs not sent.
+- `publishing/mastodon.py`:
+  - text posts and threads, with an idempotency key per part;
+  - outcome classes; lookup that is bounded, excludes claimed posts, and reports
+    AMBIGUOUS / PARTIAL;
+  - metrics (favourites, boosts, replies; the rest NULL);
+  - preview.
+- `publishing/registry.py` and the dispatcher live guard:
+  - checks: hold, brand, ENV_TEST, live_enabled, approved version, HUMAN approval,
+    adapter / settings / credential, MODE_CHANGED;
+  - a per-send time budget with lease extension.
+- `services/connectors.py`: credentials (write-only, rotation, revocation that destroys the
+  material and switches live off), the live switch with the phrase (refused under
+  ENV=test), preview, lookup (J12/P5 by SYSTEM `platform-lookup`), and a J13 audit.
+- Evidence class on publications, used by experiments, analytics provenance, report rows,
+  recommendations, webhooks, the n8n workflow (route 4) and the UI.
+- Migration eb1070ccaa98.
+- UI: connection manager on Platforms; preview, lookup and evidence badges on Publishing.
+- Docs: docs/connectors/mastodon.md.
+
+Mistake (reported): while the new migration's first upgrade failed, a chained command
+(`;`) went on to run `alembic downgrade -1`. That rolled the dev DB back to b10c4e7d9a52
+and dropped the Phase 12 webhook tables. Their rows were test artifacts: integration tests
+share this DB, and the running containers predate Phase 12. I upgraded back to head and
+verified the round trip step by step. From now on, alembic steps are chained only with `&&`.
+
+Debug loop (root causes, each fixed at the first attempt):
+1. The upgrade failed because the naming convention double-prefixed the CHECK names. Fixed
+   with `op.f()`.
+2. Writer fixtures (A8) missed because the Mastodon account settings change the writer
+   prompt. Fixed by generating content before creating accounts in the tests.
+3. Twelve Phase 9 tests built Publication rows without the new NOT NULL `evidence_class`.
+   The helper now defaults it like the backfill.
+4. The Phase 12 webhook test forced UNCERTAIN -> FAILED, which is J13 now. Its order was
+   changed to FAILED -> UNCERTAIN.
+5. The catalog test expected everything UNVERIFIED. Updated: Mastodon only.
+
+Reviewer (read-only subagent): 0 BLOCKER, 4 MAJOR, 11 MINOR. All MAJOR fixed with tests:
+- M1: a live account could be repointed to another host, and the bearer token would follow
+  it. Settings are now frozen while live (409). Changing the server revokes the tokens, and
+  the vault associated data binds the token to its server.
+- M2: a retry after a mode or sandbox change reused the first attempt's evidence class.
+  New guard MODE_CHANGED.
+- M3: recommendations could present sandbox numbers as real. `evidence_query` now carries
+  evidence_classes, sandbox_evidence and real_evidence, and the UI shows "Based on sandbox
+  data".
+- M4: the metrics pull made HTTP calls inside a transaction. Now it reads, commits, makes
+  the calls, then writes in one short transaction.
+
+MINOR fixed:
+1. Lookup false positives: claimed ids are excluded, and identical text is AMBIGUOUS.
+2. Only documented 4xx codes count as proven failures; others are uncertain.
+3. Thread lease: a per-send budget, lease extension, and a timeout that makes the send
+   UNCERTAIN.
+5. The token is dropped from the react-query cache.
+6. The fingerprint label says what it is.
+7. A17 narrowed: P8 is unreachable (no service yet).
+8. The downgrade's loss of subscriptions is documented.
+9. The guard order is documented as built.
+10. The Mastodon hearsay tags are resolved.
+11. Missing tests added: 401 through the dispatcher, a mode change between attempts,
+    settings frozen while live, and lookup ambiguity / claimed posts.
+
+MINOR documented, not changed:
+- 4: scopes are checked as declared.
+- 11: no integration test for a read timeout after send (covered by unit tests).
+- 11: no P8 test (unreachable).
+
+Flaky (pre-existing, Phase 9):
+`test_two_treatments_beating_control_need_a_pairwise_difference` draws a random seed. It
+failed once in the third full integration run, passed 7 times alone or with its file, and
+the full rerun passed. Logged in FOLLOW_UPS: pin the seed.
+
+```
+PHASE 13 — Real connectors (Mastodon) — BLOCKED (human-only steps outstanding; agent part complete)
+COMPLETED: Mastodon capabilities VERIFIED from official docs (URL + date); MastodonLivePublisher
+  behind the full A6 guard; encrypted write-only credentials; live switch with the exact phrase;
+  uncertain -> lookup reconciliation without re-posting; SIMULATED/SANDBOX/REAL evidence in API,
+  UI, audit, webhooks, analytics and experiments; decision 2 kept (no inbound analytics);
+  decision 3 event; preview; docs/connectors/mastodon.md.
+TESTS (all run this session, after the review fixes):
+  uv run poe check -> All checks passed! / Success: no issues found in 165 source files /
+    Contracts: 4 kept, 0 broken. / 794 passed, 152 deselected / tsc clean /
+    Vitest Test Files 10 passed (10), Tests 34 passed (34)
+  uv run poe test-int -> 146 passed, 800 deselected in 166.96s (previous full run: 1 failed =
+    the pre-existing flaky Phase 9 test above; 145 passed)
+  uv run poe ui-e2e (Edge, throwaway fixture API, ENV=test, MOCK) -> 8 passed (33.6s), incl. an
+    owner storing a token write-only and the live switch refused in a test environment
+  tests/integration/test_live_connectors.py (local fake Mastodon over real HTTP) -> 9 passed:
+    credentials (owner-only, encrypted, rotation, revocation, audit), every live guard before
+    any send (ENV_TEST with a real adapter, not live-enabled, no credential, not human-approved,
+    brand mismatch), thread published once with SANDBOX evidence and API metrics, ambiguous
+    outcome held and FOUND by lookup without re-posting, confirmed-not-published event without
+    retry, connection refused + rate limit recovery with the same idempotency keys, settings
+    frozen while live, mode change refused, 401 not retried
+  uv run alembic heads -> eb1070ccaa98 (head); downgrade -1 / upgrade head OK; alembic check ->
+    No new upgrade operations detected.
+  n8n event workflow: offline schema validation (n8n-mcp validate_workflow) -> valid, 0 errors,
+    0 warnings. Not run on a real n8n instance.
+  Live inference: NOT RUN (not required: no inference, routing or token-budget change).
+  Real Mastodon: NOT CONTACTED (no credentials; live publishing needs the human's phrase).
+FILES CHANGED: see the Phase 13 commit (vault, http, publishing/{base,mastodon,registry,scheduler,
+  mock}, services/{connectors,publishing,analytics,experiments,recommendations,webhook_delivery,
+  integrations}, routes, schemas, models, migration eb1070ccaa98, frontend pages, n8n code +
+  workflows, tests, docs).
+KNOWN ISSUES: FOLLOW_UPS §6. Publication stays simulated until the human's first live post;
+  platform limits other than Mastodon's remain UNVERIFIED; text only; P8 unreachable; one
+  flaky Phase 9 test (pre-existing).
+DECISIONS NEEDED: Mastodon server + account for the first live post, and whether it is a sandbox
+  (test) account; then the human stores the token and types ENABLE LIVE PUBLISHING FOR MASTODON.
+NEXT PHASE: finish 13 with the human's first live post (the agent presents the exact account,
+  content, media, visibility and timing first), then Phase 14 acceptance review.
+```
+

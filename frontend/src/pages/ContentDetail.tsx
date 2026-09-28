@@ -7,7 +7,7 @@ import { Dialog, ErrorPanel, Field, KeyValue, Loading, PageHeader, RoleButton, S
 import { formatDateTime, localInputToIso, toLocalInput, explainError } from "../lib/format";
 import { useAction } from "../lib/hooks";
 import { useAccounts, useCampaignNames, usePlatformCatalog, usePublishMode } from "../lib/queries";
-import { ASSET_STATUS, FORMAT_LABEL, JOB_STATUS, PLATFORM_LABEL, humanize, publicationInfo } from "../lib/status";
+import { ASSET_STATUS, EVIDENCE, FORMAT_LABEL, JOB_STATUS, PLATFORM_LABEL, humanize, publicationInfo } from "../lib/status";
 
 type Asset = Schemas["ContentAssetRead"];
 type Action = Schemas["ApprovalActionType"];
@@ -461,7 +461,7 @@ function PublishingRecord({ asset }: { asset: Asset }) {
   return (
     <section aria-labelledby="pub-h" className="card">
       <h2 id="pub-h">Publishing</h2>
-      {myPubs.some((p) => p.publish_mode === "MOCK") ? <SimulatedNotice /> : null}
+      {myPubs.some((p) => p.evidence_class === "SIMULATED") ? <SimulatedNotice /> : null}
       <table className="table">
         <caption className="sr-only">Publication jobs and outcomes for this content</caption>
         <thead>
@@ -488,12 +488,24 @@ function PublishingRecord({ asset }: { asset: Asset }) {
           ))}
           {myPubs.map((p) => (
             <tr key={p.id}>
-              <td>Publication {p.publish_mode === "MOCK" ? "(mock)" : ""}</td>
+              <td>
+                Publication <StatusBadge info={EVIDENCE[p.evidence_class]} />
+              </td>
               <td>{formatDateTime(p.published_at ?? p.scheduled_at)}</td>
               <td>
                 <StatusBadge info={publicationInfo(p)} />
               </td>
-              <td className="small">{p.external_post_id ? `Mock post id ${p.external_post_id}` : "—"}</td>
+              <td className="small">
+                {p.canonical_url && p.evidence_class !== "SIMULATED" ? (
+                  <a href={p.canonical_url} target="_blank" rel="noreferrer noopener">
+                    View post
+                  </a>
+                ) : p.external_post_id ? (
+                  `${p.evidence_class === "SIMULATED" ? "Mock post id" : "Post id"} ${p.external_post_id}`
+                ) : (
+                  "—"
+                )}
+              </td>
             </tr>
           ))}
         </tbody>

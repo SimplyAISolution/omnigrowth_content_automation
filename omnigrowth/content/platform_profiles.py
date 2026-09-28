@@ -12,6 +12,7 @@ from __future__ import annotations
 from collections.abc import Iterable, Mapping
 from datetime import UTC, datetime, timedelta
 from typing import Any, Literal
+from urllib.parse import urlsplit
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
 
@@ -79,10 +80,29 @@ class RedditSettings(BaseModel):
 class MastodonSettings(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
+    # https://<instance>, no path/query (the live connector calls <base>/api/v1/...).
     instance_base_url: str | None = Field(default=None, max_length=300)
-    # Per-instance post length (UNVERIFIED default 500 lives in config/qa.yaml).
+    # Per-instance post length (instance config; default 500 in config/qa.yaml).
     max_characters: int | None = Field(default=None, ge=100, le=100_000)
+    # Every URL counts as this many characters (instance config, VERIFIED field, default 23).
+    characters_reserved_per_url: int = Field(default=23, ge=1, le=500)
+    # Who sees live posts: public / unlisted / private (followers only). Never "direct".
+    visibility: Literal["public", "unlisted", "private"] = "public"
+    language: str | None = Field(default=None, pattern=r"^[a-z]{2}$")
     instance_rules: str | None = Field(default=None, max_length=4000)
+
+    @field_validator("instance_base_url")
+    @classmethod
+    def _base_url(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        parts = urlsplit(value)
+        if parts.scheme not in ("https", "http") or not parts.hostname:
+            raise ValueError("instance_base_url must be an absolute URL")
+        if parts.path.strip("/") or parts.query or parts.fragment or parts.username:
+            raise ValueError("instance_base_url must be only scheme://host[:port]")
+        # http is only reachable for hosts in OMNIGROWTH_PLATFORM_HOST_ALLOWLIST (sandbox).
+        return f"{parts.scheme}://{parts.netloc.lower()}"
 
 
 _SCHEMAS: dict[Platform, type[BaseModel]] = {

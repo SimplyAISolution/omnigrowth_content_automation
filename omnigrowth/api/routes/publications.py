@@ -15,9 +15,12 @@ from omnigrowth.schemas.common import Page
 from omnigrowth.schemas.publishing import (
     CancelRequest,
     PublicationJobRead,
+    PublicationLookupRead,
+    PublicationPreviewRead,
     PublicationRead,
     PublicationReconcileRequest,
 )
+from omnigrowth.services import connectors
 from omnigrowth.services import publishing as publishing_service
 
 router = APIRouter(prefix="/publications", tags=["publications"])
@@ -41,6 +44,15 @@ async def get_job(
     job_id: uuid.UUID, _principal: ViewerDep, session: SessionDep
 ) -> PublicationJobRead:
     return await publishing_service.get_job(session, job_id)
+
+
+@router.get("/jobs/{job_id}/preview", response_model=PublicationPreviewRead)
+async def preview_job(
+    job_id: uuid.UUID, _principal: ViewerDep, session: SessionDep
+) -> PublicationPreviewRead:
+    """Exactly what would be sent (account, text, media, visibility, timing, evidence class)
+    and what would block it. Read-only; decrypts nothing."""
+    return await connectors.preview_job(session, job_id)
 
 
 @router.post("/jobs/{job_id}/cancel", response_model=PublicationJobRead)
@@ -86,3 +98,12 @@ async def reconcile(
 
     inputs = {"publication_id": publication_id, **body.model_dump()}
     return await idempotent(request, principal, inputs, run)
+
+
+@router.post("/{publication_id}/lookup", response_model=PublicationLookupRead)
+async def lookup(
+    publication_id: uuid.UUID, principal: EditorDep, session: SessionDep
+) -> PublicationLookupRead:
+    """Search the platform for an uncertain LIVE post by its exact text (never re-posts).
+    FOUND reconciles it; PARTIAL / NOT_FOUND leave the decision to a person."""
+    return await connectors.lookup_publication(session, principal.actor, publication_id)

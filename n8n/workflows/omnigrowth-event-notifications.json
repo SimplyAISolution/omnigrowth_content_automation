@@ -37,7 +37,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// OmniGrowth → n8n: verify the signature, reject stale or replayed deliveries, deduplicate\n// on the event id (delivery is at-least-once), and prepare a message per event type.\n// Needs: NODE_FUNCTION_ALLOW_BUILTIN=crypto, and the subscription secret in the\n// OMNIGROWTH_WEBHOOK_SECRET environment variable (never paste it into the workflow).\n// Output: one item { httpStatus, route, message, event } — route 0..2 notify, 3 ignore.\nconst crypto = require(\"crypto\");\n\nconst TOLERANCE_S = 300;\nconst KEEP_IDS_S = 7 * 24 * 3600;\n\nconst secret = $env.OMNIGROWTH_WEBHOOK_SECRET || \"\";\nconst input = $input.first();\nconst headers = Object.fromEntries(\n  Object.entries(input.json.headers || {}).map(([k, v]) => [k.toLowerCase(), String(v)]),\n);\nconst raw = input.binary && input.binary.data ? Buffer.from(input.binary.data.data, \"base64\") : Buffer.from(\"\");\n\nfunction reject(reason) {\n  return [{ json: { httpStatus: 401, route: 3, message: `rejected: ${reason}`, event: null } }];\n}\n\nif (!secret) return reject(\"OMNIGROWTH_WEBHOOK_SECRET is not set\");\nconst timestamp = headers[\"x-omnigrowth-timestamp\"] || \"\";\nconst deliveryId = headers[\"x-omnigrowth-delivery-id\"] || \"\";\nconst signatures = (headers[\"x-omnigrowth-signature\"] || \"\").split(\",\").map((s) => s.trim()).filter(Boolean);\nif (!/^\\d+$/.test(timestamp) || Math.abs(Date.now() / 1000 - Number(timestamp)) > TOLERANCE_S) {\n  return reject(\"stale or missing timestamp\");\n}\nif (!deliveryId) return reject(\"missing delivery id\");\n// Signed: \"<timestamp>.<delivery id>.<raw body>\". During a secret rotation OmniGrowth sends one\n// v1= per active secret; any match is enough.\nconst expected = Buffer.from(\n  \"v1=\" + crypto.createHmac(\"sha256\", secret).update(`${timestamp}.${deliveryId}.`).update(raw).digest(\"hex\"),\n);\nconst valid = signatures.some((s) => {\n  const b = Buffer.from(s);\n  return b.length === expected.length && crypto.timingSafeEqual(expected, b);\n});\nif (!valid) return reject(\"bad signature\");\n\nconst event = JSON.parse(raw.toString(\"utf8\"));\nif (headers[\"x-omnigrowth-event-id\"] !== event.id) return reject(\"event id mismatch\");\n\n// At-least-once delivery: acknowledge duplicates (200) but do not notify twice.\nconst store = $getWorkflowStaticData(\"global\");\nstore.seen = store.seen || {};\nconst now = Math.floor(Date.now() / 1000);\nfor (const [id, at] of Object.entries(store.seen)) if (now - at > KEEP_IDS_S) delete store.seen[id];\nif (store.seen[event.id]) {\n  return [{ json: { httpStatus: 200, route: 3, message: \"duplicate event, already handled\", event } }];\n}\nstore.seen[event.id] = now;\n\nconst d = event.data || {};\nconst MODES = {\n  MOCK: \"SIMULATED (mock publisher: no real post, no real audience)\",\n  LIVE: \"REAL publication (live platform API)\",\n  MANUAL: \"MANUAL publication (a person posts it)\",\n};\nconst mode = MODES[d.publish_mode] || (d.simulated === true ? MODES.MOCK : \"publication mode unknown\");\nconst links = event.links || {};\nlet route = 3;\nlet message = `OmniGrowth ${event.type} (${event.id})`;\nif (event.type === \"content.approval_requested\") {\n  route = 0;\n  message =\n    `Content needs human approval: ${d.platform} ${d.format}. ` +\n    `Review and decide in OmniGrowth: ${links.content || links.approvals || \"\"}`;\n} else if (event.type === \"publication.failed\") {\n  route = 1;\n  message =\n    `Publication failed [${mode}] on ${d.platform} after ${d.attempt_count} attempt(s)` +\n    `${d.last_error_code ? ` (${d.last_error_code})` : \"\"}. Open: ${links.publishing || \"\"}`;\n} else if (event.type === \"publication.uncertain\") {\n  route = 2;\n  message =\n    `Publication outcome UNKNOWN [${mode}] on ${d.platform}: reconcile it in OmniGrowth before ` +\n    `this account publishes again. Open: ${links.publishing || \"\"}`;\n}\nreturn [{ json: { httpStatus: 200, route, message, event } }];\n"
+        "jsCode": "// OmniGrowth → n8n: verify the signature, reject stale or replayed deliveries, deduplicate\n// on the event id (delivery is at-least-once), and prepare a message per event type.\n// Needs: NODE_FUNCTION_ALLOW_BUILTIN=crypto, and the subscription secret in the\n// OMNIGROWTH_WEBHOOK_SECRET environment variable (never paste it into the workflow).\n// Output: one item { httpStatus, route, message, event } — routes 0..2 and 4 notify, 3 ignore.\nconst crypto = require(\"crypto\");\n\nconst TOLERANCE_S = 300;\nconst KEEP_IDS_S = 7 * 24 * 3600;\n\nconst secret = $env.OMNIGROWTH_WEBHOOK_SECRET || \"\";\nconst input = $input.first();\nconst headers = Object.fromEntries(\n  Object.entries(input.json.headers || {}).map(([k, v]) => [k.toLowerCase(), String(v)]),\n);\nconst raw = input.binary && input.binary.data ? Buffer.from(input.binary.data.data, \"base64\") : Buffer.from(\"\");\n\nfunction reject(reason) {\n  return [{ json: { httpStatus: 401, route: 3, message: `rejected: ${reason}`, event: null } }];\n}\n\nif (!secret) return reject(\"OMNIGROWTH_WEBHOOK_SECRET is not set\");\nconst timestamp = headers[\"x-omnigrowth-timestamp\"] || \"\";\nconst deliveryId = headers[\"x-omnigrowth-delivery-id\"] || \"\";\nconst signatures = (headers[\"x-omnigrowth-signature\"] || \"\").split(\",\").map((s) => s.trim()).filter(Boolean);\nif (!/^\\d+$/.test(timestamp) || Math.abs(Date.now() / 1000 - Number(timestamp)) > TOLERANCE_S) {\n  return reject(\"stale or missing timestamp\");\n}\nif (!deliveryId) return reject(\"missing delivery id\");\n// Signed: \"<timestamp>.<delivery id>.<raw body>\". During a secret rotation OmniGrowth sends one\n// v1= per active secret; any match is enough.\nconst expected = Buffer.from(\n  \"v1=\" + crypto.createHmac(\"sha256\", secret).update(`${timestamp}.${deliveryId}.`).update(raw).digest(\"hex\"),\n);\nconst valid = signatures.some((s) => {\n  const b = Buffer.from(s);\n  return b.length === expected.length && crypto.timingSafeEqual(expected, b);\n});\nif (!valid) return reject(\"bad signature\");\n\nconst event = JSON.parse(raw.toString(\"utf8\"));\nif (headers[\"x-omnigrowth-event-id\"] !== event.id) return reject(\"event id mismatch\");\n\n// At-least-once delivery: acknowledge duplicates (200) but do not notify twice.\nconst store = $getWorkflowStaticData(\"global\");\nstore.seen = store.seen || {};\nconst now = Math.floor(Date.now() / 1000);\nfor (const [id, at] of Object.entries(store.seen)) if (now - at > KEEP_IDS_S) delete store.seen[id];\nif (store.seen[event.id]) {\n  return [{ json: { httpStatus: 200, route: 3, message: \"duplicate event, already handled\", event } }];\n}\nstore.seen[event.id] = now;\n\nconst d = event.data || {};\nconst MODES = {\n  MOCK: \"SIMULATED (mock publisher: no real post, no real audience)\",\n  LIVE: \"REAL publication (live platform API)\",\n  MANUAL: \"MANUAL publication (a person posts it)\",\n};\n// The evidence class (Phase 13) is the most precise label: a live post to a sandbox\n// account is a real API call but not a real audience.\nconst EVIDENCE = {\n  SIMULATED: MODES.MOCK,\n  SANDBOX: \"SANDBOX (live API call to a test account; not a real audience)\",\n  REAL: d.publish_mode === \"MANUAL\" ? MODES.MANUAL : MODES.LIVE,\n};\nconst mode =\n  EVIDENCE[d.evidence_class] ||\n  MODES[d.publish_mode] ||\n  (d.simulated === true ? MODES.MOCK : \"publication mode unknown\");\nconst links = event.links || {};\nlet route = 3;\nlet message = `OmniGrowth ${event.type} (${event.id})`;\nif (event.type === \"content.approval_requested\") {\n  route = 0;\n  message =\n    `Content needs human approval: ${d.platform} ${d.format}. ` +\n    `Review and decide in OmniGrowth: ${links.content || links.approvals || \"\"}`;\n} else if (event.type === \"publication.failed\") {\n  route = 1;\n  message =\n    `Publication failed [${mode}] on ${d.platform} after ${d.attempt_count} attempt(s)` +\n    `${d.last_error_code ? ` (${d.last_error_code})` : \"\"}. Open: ${links.publishing || \"\"}`;\n} else if (event.type === \"publication.uncertain\") {\n  route = 2;\n  message =\n    `Publication outcome UNKNOWN [${mode}] on ${d.platform}: reconcile it in OmniGrowth before ` +\n    `this account publishes again. Open: ${links.publishing || \"\"}`;\n} else if (event.type === \"publication.not_published_confirmed\") {\n  route = 4;\n  message =\n    `Confirmed NOT published [${mode}] on ${d.platform}: a person decided it did not go out. ` +\n    `It will not be retried automatically; schedule it again in OmniGrowth if wanted. ` +\n    `Open: ${links.publishing || \"\"}`;\n}\nreturn [{ json: { httpStatus: 200, route, message, event } }];\n"
       },
       "id": "a1f0c3e2-0000-4000-8000-000000000003",
       "name": "Verify signature and deduplicate",
@@ -68,7 +68,7 @@
     {
       "parameters": {
         "mode": "expression",
-        "numberOutputs": 4,
+        "numberOutputs": 5,
         "output": "={{ $json.route }}"
       },
       "id": "a1f0c3e2-0000-4000-8000-000000000005",
@@ -127,6 +127,18 @@
         180
       ],
       "notes": "Nothing to do. Message: {{ $json.message }}"
+    },
+    {
+      "parameters": {},
+      "id": "a1f0c3e2-0000-4000-8000-000000000014",
+      "name": "Tell the team it was not published (replace me)",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        980,
+        300
+      ],
+      "notes": "Confirmed not published. Message: {{ $json.message }}"
     }
   ],
   "connections": {
@@ -189,6 +201,13 @@
         [
           {
             "node": "Ignore (duplicate, invalid or test)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Tell the team it was not published (replace me)",
             "type": "main",
             "index": 0
           }

@@ -543,6 +543,7 @@ Indexes: `offers_brand_active_idx (brand_id) WHERE archived_at IS NULL` — offe
 | external_account_id | text | Y | — | Platform-side ID once verified |
 | timezone | text | Y | — | IANA; audience-local posting time hint. NULL = brand/campaign timezone |
 | live_enabled | boolean | N | `false` | A6 gate #2. Changing it is audited |
+| sandbox | boolean | N | `false` | A17 (migration eb1070ccaa98): LIVE posts from this account are SANDBOX evidence. Refused to change while `live_enabled`. Audited |
 | settings | jsonb | N | `'{}'` | Validated per-platform config (e.g. Reddit per-subreddit rules, Mastodon per-instance limits); schema-checked app-side per `platform` (PLATFORM_CAPABILITIES §4). Never holds secrets (those go in `platform_credentials`) |
 | created_at / updated_at | timestamptz | N | now() | |
 | archived_at | timestamptz | Y | — | |
@@ -1363,3 +1364,13 @@ Remaining unlisted identifiers (column-level check values, not enums): `idempote
 - **OQ-13 Timezone scope.** RESOLVED: `campaigns.timezone` (NULL = brand timezone); `platform_accounts.timezone` as posting hint. Original text: Timezone stored on `brands` (+ per-job `schedule_timezone`). Is a per-campaign timezone override required?
 - **OQ-14 Audit partitioning / retention horizon.** Keep forever vs. partition + archive to cold storage after N months.
 - **OQ-15 Content lineage depth cap.** `lineage_depth ≤ 5` is a proposed default; §9's example tree has depth 1–2.
+
+## Phase 13 additions (migration eb1070ccaa98, A17)
+- `publications.evidence_class` (`evidence_class` enum `SIMULATED | SANDBOX | REAL`, NOT NULL). Set at dispatch start: MOCK → SIMULATED, LIVE → SANDBOX when the account is a sandbox, else REAL. Backfill: MOCK → SIMULATED, otherwise REAL. Only REAL publications are real evidence.
+- `platform_accounts.sandbox` (above).
+- `platform_credentials.fingerprint`, `created_by`, `revoked_by`. On revocation or rotation, `ciphertext` and `wrapped_dek` are emptied (material destroyed; the row stays as metadata).
+- Triggers:
+  - `og_emit_publication_event` now emits `publication.not_published_confirmed` for job UNCERTAIN → FAILED (J13) instead of `publication.failed`. Publication events carry `evidence_class`.
+  - New trigger `publications_emit_not_published` (MANUAL_PENDING → FAILED, P8).
+  - The event-type CHECKs include the new type.
+

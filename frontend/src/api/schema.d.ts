@@ -1138,6 +1138,70 @@ export interface paths {
         patch: operations["update_account_api_v1_platform_accounts__account_id__patch"];
         trace?: never;
     };
+    "/api/v1/platform-accounts/{account_id}/credentials": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Credentials
+         * @description Metadata only (kind, scopes, fingerprint, dates); secrets are never returned.
+         */
+        get: operations["list_credentials_api_v1_platform_accounts__account_id__credentials_get"];
+        put?: never;
+        /**
+         * Store Credential
+         * @description Store (or rotate) the account's credential, encrypted at rest. Write-only.
+         */
+        post: operations["store_credential_api_v1_platform_accounts__account_id__credentials_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/platform-accounts/{account_id}/credentials/{credential_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Revoke Credential
+         * @description Revoke at once; a live account is switched off as well (audited).
+         */
+        delete: operations["revoke_credential_api_v1_platform_accounts__account_id__credentials__credential_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/platform-accounts/{account_id}/live": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Set Live
+         * @description A6 gate #2. Enabling needs the exact phrase ``ENABLE LIVE PUBLISHING FOR <PLATFORM>``.
+         */
+        post: operations["set_live_api_v1_platform_accounts__account_id__live_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/platforms": {
         parameters: {
             query?: never;
@@ -1223,6 +1287,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/publications/jobs/{job_id}/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Preview Job
+         * @description Exactly what would be sent (account, text, media, visibility, timing, evidence class)
+         *     and what would block it. Read-only; decrypts nothing.
+         */
+        get: operations["preview_job_api_v1_publications_jobs__job_id__preview_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/publications/{publication_id}": {
         parameters: {
             query?: never;
@@ -1234,6 +1319,27 @@ export interface paths {
         get: operations["get_publication_api_v1_publications__publication_id__get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/publications/{publication_id}/lookup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Lookup
+         * @description Search the platform for an uncertain LIVE post by its exact text (never re-posts).
+         *     FOUND reconciles it; PARTIAL / NOT_FOUND leave the decision to a person.
+         */
+        post: operations["lookup_api_v1_publications__publication_id__lookup_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2666,15 +2772,82 @@ export interface components {
             word_count: number;
         };
         /**
+         * CredentialCreate
+         * @description Write-only: the secret is encrypted at rest and never returned (A17).
+         */
+        CredentialCreate: {
+            /** Expires At */
+            expires_at?: string | null;
+            kind: components["schemas"]["CredentialKind"];
+            /** Scopes */
+            scopes?: string[];
+            /**
+             * Secret
+             * Format: password
+             */
+            secret: string;
+        };
+        /**
+         * CredentialKind
+         * @enum {string}
+         */
+        CredentialKind: "OAUTH2" | "API_KEY" | "APP_PASSWORD";
+        /**
+         * CredentialRead
+         * @description Metadata only. There is deliberately no field that could carry the secret.
+         */
+        CredentialRead: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Created By */
+            created_by: string | null;
+            /** Expires At */
+            expires_at: string | null;
+            /** Fingerprint */
+            fingerprint: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Kek Id */
+            kek_id: string;
+            kind: components["schemas"]["CredentialKind"];
+            /**
+             * Platform Account Id
+             * Format: uuid
+             */
+            platform_account_id: string;
+            /** Revoked At */
+            revoked_at: string | null;
+            /** Revoked By */
+            revoked_by: string | null;
+            /** Scopes */
+            scopes: string[];
+        };
+        /**
          * DataProvenance
-         * @description Where the numbers came from. MOCK/FIXTURE data is simulated and must never be read
-         *     as real platform performance.
+         * @description Where the numbers came from. MOCK/FIXTURE data, and any number attached to a
+         *     SIMULATED publication, is simulated; numbers from a SANDBOX publication came from a test
+         *     account (A17). Neither may ever be read as real platform performance.
          */
         DataProvenance: {
+            /** Evidence */
+            evidence?: {
+                [key: string]: number;
+            };
             /** Note */
             note?: string | null;
             /** Real */
             real: boolean;
+            /**
+             * Sandbox
+             * @default false
+             */
+            sandbox: boolean;
             /** Simulated */
             simulated: boolean;
             /** Sources */
@@ -2779,6 +2952,16 @@ export interface components {
          * @enum {string}
          */
         ErrorCode: "MODEL_TIMEOUT" | "MODEL_UNAVAILABLE" | "PROVIDER_RATE_LIMIT" | "LLM_OUTPUT_INVALID" | "BUDGET_EXCEEDED" | "PRIVACY_VIOLATION" | "PLATFORM_AUTH_FAILURE" | "PLATFORM_RATE_LIMIT" | "PLATFORM_TIMEOUT" | "PUBLICATION_UNCERTAIN" | "LIVE_PUBLISH_BLOCKED" | "VALIDATION_FAILURE" | "INVALID_STATE_TRANSITION" | "SSRF_BLOCKED" | "INGESTION_FAILURE" | "RESEARCH_FAILURE" | "DATABASE_FAILURE" | "QUEUE_FAILURE" | "NOT_FOUND" | "CONFLICT" | "UNAUTHORIZED" | "FORBIDDEN" | "RATE_LIMITED" | "CONFIGURATION_ERROR" | "INTERNAL_ERROR";
+        /**
+         * EvidenceClass
+         * @description What a publication's numbers can prove (A17), fixed when the dispatch starts.
+         *
+         *     SIMULATED = mock publisher, no audience. SANDBOX = a real API call to an account the
+         *     owner marked as a sandbox (test instance / test account), not a real audience. REAL = a
+         *     real account and audience. Only REAL publications feed real analyses and experiments.
+         * @enum {string}
+         */
+        EvidenceClass: "SIMULATED" | "SANDBOX" | "REAL";
         /** ExperimentCreate */
         ExperimentCreate: {
             /**
@@ -3006,7 +3189,7 @@ export interface components {
          * @description Outbound events (stored as text + CHECK; values are part of the webhook contract).
          * @enum {string}
          */
-        IntegrationEventType: "content.approval_requested" | "publication.failed" | "publication.uncertain" | "integration.ping";
+        IntegrationEventType: "content.approval_requested" | "publication.failed" | "publication.uncertain" | "publication.not_published_confirmed" | "integration.ping";
         /**
          * IntegrationOperation
          * @description What an inbound integration endpoint may do; nothing else is reachable through it.
@@ -3244,6 +3427,13 @@ export interface components {
             /** Next Cursor */
             next_cursor?: string | null;
         };
+        /** Page[CredentialRead] */
+        Page_CredentialRead_: {
+            /** Items */
+            items: components["schemas"]["CredentialRead"][];
+            /** Next Cursor */
+            next_cursor?: string | null;
+        };
         /** Page[DerivedMetricDefinitionRead] */
         Page_DerivedMetricDefinitionRead_: {
             /** Items */
@@ -3430,6 +3620,19 @@ export interface components {
             /** Timezone */
             timezone?: string | null;
         };
+        /**
+         * PlatformAccountLiveRequest
+         * @description Turn live publishing on or off for one account (OWNER, audited, A6 gate #2).
+         *
+         *     Enabling requires ``confirmation`` to be exactly ``ENABLE LIVE PUBLISHING FOR <PLATFORM>``
+         *     (AGENTS.md §3), a VERIFIED connector, configured settings and a stored credential.
+         */
+        PlatformAccountLiveRequest: {
+            /** Confirmation */
+            confirmation?: string | null;
+            /** Enabled */
+            enabled: boolean;
+        };
         /** PlatformAccountRead */
         PlatformAccountRead: {
             account_type: components["schemas"]["PlatformAccountType"];
@@ -3449,6 +3652,11 @@ export interface components {
             /** Handle */
             handle: string;
             /**
+             * Has Credential
+             * @default false
+             */
+            has_credential: boolean;
+            /**
              * Has Open Uncertain
              * @default false
              */
@@ -3458,9 +3666,21 @@ export interface components {
              * Format: uuid
              */
             id: string;
+            /** Live Blockers */
+            live_blockers?: string[];
+            /**
+             * Live Connector Available
+             * @default false
+             */
+            live_connector_available: boolean;
             /** Live Enabled */
             live_enabled: boolean;
             platform: components["schemas"]["Platform"];
+            /**
+             * Sandbox
+             * @default false
+             */
+            sandbox: boolean;
             /** Settings */
             settings?: {
                 [key: string]: unknown;
@@ -3482,6 +3702,8 @@ export interface components {
             display_name?: string | null;
             /** Handle */
             handle?: string | null;
+            /** Sandbox */
+            sandbox?: boolean | null;
             /** Settings */
             settings?: {
                 [key: string]: unknown;
@@ -3588,6 +3810,24 @@ export interface components {
          * @enum {string}
          */
         PublicationJobStatus: "PENDING" | "CLAIMED" | "SUCCEEDED" | "RETRY_WAIT" | "FAILED" | "UNCERTAIN" | "CANCELLED";
+        /**
+         * PublicationLookupRead
+         * @description Result of searching the platform for an uncertain post (never re-posts).
+         *
+         *     FOUND reconciles it (J12/P5); PARTIAL and NOT_FOUND change nothing: absence among the
+         *     posts searched is not proof, so a person still decides.
+         */
+        PublicationLookupRead: {
+            /** Detail */
+            detail: string;
+            /** Found Post Ids */
+            found_post_ids: string[];
+            publication: components["schemas"]["PublicationRead"];
+            /** Searched */
+            searched: number;
+            /** Status */
+            status: string;
+        };
         /** PublicationMetricsRead */
         PublicationMetricsRead: {
             /** Derived */
@@ -3605,6 +3845,50 @@ export interface components {
              */
             publication_id: string;
             raw: components["schemas"]["AnalyticsSnapshotRead"] | null;
+        };
+        /**
+         * PublicationPreviewRead
+         * @description What the dispatcher would send for a job, before it is sent (no secrets).
+         */
+        PublicationPreviewRead: {
+            /** Account Handle */
+            account_handle: string;
+            /** Blockers */
+            blockers: string[];
+            /**
+             * Brand Id
+             * Format: uuid
+             */
+            brand_id: string;
+            /**
+             * Content Version Id
+             * Format: uuid
+             */
+            content_version_id: string;
+            /** Details */
+            details: {
+                [key: string]: unknown;
+            };
+            /**
+             * Due At
+             * Format: date-time
+             */
+            due_at: string;
+            evidence_class: components["schemas"]["EvidenceClass"];
+            platform: components["schemas"]["Platform"];
+            /**
+             * Platform Account Id
+             * Format: uuid
+             */
+            platform_account_id: string;
+            /**
+             * Publication Job Id
+             * Format: uuid
+             */
+            publication_job_id: string;
+            publish_mode: components["schemas"]["PublishMode"];
+            /** Simulated */
+            simulated: boolean;
         };
         /** PublicationRead */
         PublicationRead: {
@@ -3629,6 +3913,7 @@ export interface components {
             error: {
                 [key: string]: unknown;
             } | null;
+            evidence_class: components["schemas"]["EvidenceClass"];
             /** External Post Id */
             external_post_id: string | null;
             /**
@@ -7051,6 +7336,147 @@ export interface operations {
             };
         };
     };
+    list_credentials_api_v1_platform_accounts__account_id__credentials_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                account_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_CredentialRead_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    store_credential_api_v1_platform_accounts__account_id__credentials_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                account_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CredentialCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CredentialRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    revoke_credential_api_v1_platform_accounts__account_id__credentials__credential_id__delete: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                account_id: string;
+                credential_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CredentialRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_live_api_v1_platform_accounts__account_id__live_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                account_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlatformAccountLiveRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlatformAccountRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_platforms_api_v1_platforms_get: {
         parameters: {
             query?: never;
@@ -7220,6 +7646,39 @@ export interface operations {
             };
         };
     };
+    preview_job_api_v1_publications_jobs__job_id__preview_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicationPreviewRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_publication_api_v1_publications__publication_id__get: {
         parameters: {
             query?: never;
@@ -7240,6 +7699,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PublicationRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    lookup_api_v1_publications__publication_id__lookup_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                publication_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicationLookupRead"];
                 };
             };
             /** @description Validation Error */

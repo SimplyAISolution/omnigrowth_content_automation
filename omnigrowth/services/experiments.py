@@ -40,6 +40,7 @@ from omnigrowth.core.enums import (
     ActorType,
     CampaignStatus,
     ContentAssetStatus,
+    EvidenceClass,
     ExperimentStatus,
     ExperimentVariable,
     JobKind,
@@ -681,15 +682,16 @@ class UnitValue:
     snapshot_id: uuid.UUID | None
     source: MetricSource | None
     # OK | NOT_PUBLISHED | ACCOUNT_MISMATCH | NOT_YET_AT_AGE | NO_SNAPSHOT_AT_AGE |
-    # METRIC_NULL | MOCK_PUBLICATION (real analysis only)
+    # METRIC_NULL | SANDBOX_PUBLICATION | MOCK_PUBLICATION (real analysis only)
     status: str
 
 
 def is_real_evidence(publication: Publication, snapshot: AnalyticsSnapshot) -> bool:
     """REAL = numbers from the platform (API) or read off it by a human (MANUAL) for a post
-    that actually went out (publish mode LIVE or MANUAL export). A MOCK publication never
-    reached an audience, so any number attached to it is simulated, whatever its source."""
-    return snapshot.source in REAL_SOURCES and publication.publish_mode is not PublishMode.MOCK
+    that reached a real audience: evidence class REAL (A17). A MOCK publication (SIMULATED)
+    never reached an audience and a SANDBOX one reached a test account, so numbers attached
+    to either are never real evidence, whatever their source."""
+    return snapshot.source in REAL_SOURCES and publication.evidence_class is EvidenceClass.REAL
 
 
 def _closest(
@@ -783,6 +785,10 @@ async def _unit_values(
         if pub.platform_account_id != unit.platform_account_id:
             values.append(excluded(unit, "ACCOUNT_MISMATCH"))
             continue
+        if pub.evidence_class is EvidenceClass.SANDBOX:
+            # Neither real (test audience) nor simulated (a real API call happened).
+            values.append(excluded(unit, "SANDBOX_PUBLICATION"))
+            continue
         if real and pub.publish_mode is PublishMode.MOCK:
             values.append(excluded(unit, "MOCK_PUBLICATION"))
             continue
@@ -839,7 +845,7 @@ async def _unit_values_for_publications(
                     Publication.published_at.is_not(None),
                     Publication.published_at >= since,
                     Publication.published_at < until,
-                    Publication.publish_mode != PublishMode.MOCK,
+                    Publication.evidence_class == EvidenceClass.REAL,
                 )
             )
         ).scalars()

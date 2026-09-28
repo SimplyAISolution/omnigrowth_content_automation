@@ -3288,9 +3288,177 @@
         "title": "ContentVersionRead",
         "type": "object"
       },
-      "DataProvenance": {
-        "description": "Where the numbers came from. MOCK/FIXTURE data is simulated and must never be read\nas real platform performance.",
+      "CredentialCreate": {
+        "additionalProperties": false,
+        "description": "Write-only: the secret is encrypted at rest and never returned (A17).",
         "properties": {
+          "expires_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires At"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/CredentialKind"
+          },
+          "scopes": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 20,
+            "title": "Scopes",
+            "type": "array"
+          },
+          "secret": {
+            "format": "password",
+            "maxLength": 4096,
+            "minLength": 8,
+            "title": "Secret",
+            "type": "string",
+            "writeOnly": true
+          }
+        },
+        "required": [
+          "kind",
+          "secret"
+        ],
+        "title": "CredentialCreate",
+        "type": "object"
+      },
+      "CredentialKind": {
+        "enum": [
+          "OAUTH2",
+          "API_KEY",
+          "APP_PASSWORD"
+        ],
+        "title": "CredentialKind",
+        "type": "string"
+      },
+      "CredentialRead": {
+        "description": "Metadata only. There is deliberately no field that could carry the secret.",
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "created_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created By"
+          },
+          "expires_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires At"
+          },
+          "fingerprint": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fingerprint"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kek_id": {
+            "title": "Kek Id",
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/CredentialKind"
+          },
+          "platform_account_id": {
+            "format": "uuid",
+            "title": "Platform Account Id",
+            "type": "string"
+          },
+          "revoked_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revoked At"
+          },
+          "revoked_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revoked By"
+          },
+          "scopes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Scopes",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "platform_account_id",
+          "kind",
+          "scopes",
+          "fingerprint",
+          "kek_id",
+          "expires_at",
+          "revoked_at",
+          "created_by",
+          "revoked_by",
+          "created_at"
+        ],
+        "title": "CredentialRead",
+        "type": "object"
+      },
+      "DataProvenance": {
+        "description": "Where the numbers came from. MOCK/FIXTURE data, and any number attached to a\nSIMULATED publication, is simulated; numbers from a SANDBOX publication came from a test\naccount (A17). Neither may ever be read as real platform performance.",
+        "properties": {
+          "evidence": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "propertyNames": {
+              "$ref": "#/components/schemas/EvidenceClass"
+            },
+            "title": "Evidence",
+            "type": "object"
+          },
           "note": {
             "anyOf": [
               {
@@ -3304,6 +3472,11 @@
           },
           "real": {
             "title": "Real",
+            "type": "boolean"
+          },
+          "sandbox": {
+            "default": false,
+            "title": "Sandbox",
             "type": "boolean"
           },
           "simulated": {
@@ -3637,6 +3810,16 @@
           "INTERNAL_ERROR"
         ],
         "title": "ErrorCode",
+        "type": "string"
+      },
+      "EvidenceClass": {
+        "description": "What a publication's numbers can prove (A17), fixed when the dispatch starts.\n\nSIMULATED = mock publisher, no audience. SANDBOX = a real API call to an account the\nowner marked as a sandbox (test instance / test account), not a real audience. REAL = a\nreal account and audience. Only REAL publications feed real analyses and experiments.",
+        "enum": [
+          "SIMULATED",
+          "SANDBOX",
+          "REAL"
+        ],
+        "title": "EvidenceClass",
         "type": "string"
       },
       "ExperimentCreate": {
@@ -4163,6 +4346,7 @@
           "content.approval_requested",
           "publication.failed",
           "publication.uncertain",
+          "publication.not_published_confirmed",
           "integration.ping"
         ],
         "title": "IntegrationEventType",
@@ -4993,6 +5177,33 @@
         "title": "Page[ContentVersionRead]",
         "type": "object"
       },
+      "Page_CredentialRead_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CredentialRead"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "Page[CredentialRead]",
+        "type": "object"
+      },
       "Page_DerivedMetricDefinitionRead_": {
         "properties": {
           "items": {
@@ -5639,6 +5850,33 @@
         "title": "PlatformAccountCreate",
         "type": "object"
       },
+      "PlatformAccountLiveRequest": {
+        "additionalProperties": false,
+        "description": "Turn live publishing on or off for one account (OWNER, audited, A6 gate #2).\n\nEnabling requires ``confirmation`` to be exactly ``ENABLE LIVE PUBLISHING FOR <PLATFORM>``\n(AGENTS.md §3), a VERIFIED connector, configured settings and a stored credential.",
+        "properties": {
+          "confirmation": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirmation"
+          },
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "enabled"
+        ],
+        "title": "PlatformAccountLiveRequest",
+        "type": "object"
+      },
       "PlatformAccountRead": {
         "properties": {
           "account_type": {
@@ -5679,6 +5917,11 @@
             "title": "Handle",
             "type": "string"
           },
+          "has_credential": {
+            "default": false,
+            "title": "Has Credential",
+            "type": "boolean"
+          },
           "has_open_uncertain": {
             "default": false,
             "title": "Has Open Uncertain",
@@ -5689,12 +5932,29 @@
             "title": "Id",
             "type": "string"
           },
+          "live_blockers": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Live Blockers",
+            "type": "array"
+          },
+          "live_connector_available": {
+            "default": false,
+            "title": "Live Connector Available",
+            "type": "boolean"
+          },
           "live_enabled": {
             "title": "Live Enabled",
             "type": "boolean"
           },
           "platform": {
             "$ref": "#/components/schemas/Platform"
+          },
+          "sandbox": {
+            "default": false,
+            "title": "Sandbox",
+            "type": "boolean"
           },
           "settings": {
             "additionalProperties": true,
@@ -5767,6 +6027,17 @@
               }
             ],
             "title": "Handle"
+          },
+          "sandbox": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sandbox"
           },
           "settings": {
             "anyOf": [
@@ -6055,6 +6326,42 @@
         "title": "PublicationJobStatus",
         "type": "string"
       },
+      "PublicationLookupRead": {
+        "description": "Result of searching the platform for an uncertain post (never re-posts).\n\nFOUND reconciles it (J12/P5); PARTIAL and NOT_FOUND change nothing: absence among the\nposts searched is not proof, so a person still decides.",
+        "properties": {
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          },
+          "found_post_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Found Post Ids",
+            "type": "array"
+          },
+          "publication": {
+            "$ref": "#/components/schemas/PublicationRead"
+          },
+          "searched": {
+            "title": "Searched",
+            "type": "integer"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "searched",
+          "found_post_ids",
+          "detail",
+          "publication"
+        ],
+        "title": "PublicationLookupRead",
+        "type": "object"
+      },
       "PublicationMetricsRead": {
         "properties": {
           "derived": {
@@ -6120,6 +6427,81 @@
         "title": "PublicationMetricsRead",
         "type": "object"
       },
+      "PublicationPreviewRead": {
+        "description": "What the dispatcher would send for a job, before it is sent (no secrets).",
+        "properties": {
+          "account_handle": {
+            "title": "Account Handle",
+            "type": "string"
+          },
+          "blockers": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Blockers",
+            "type": "array"
+          },
+          "brand_id": {
+            "format": "uuid",
+            "title": "Brand Id",
+            "type": "string"
+          },
+          "content_version_id": {
+            "format": "uuid",
+            "title": "Content Version Id",
+            "type": "string"
+          },
+          "details": {
+            "additionalProperties": true,
+            "title": "Details",
+            "type": "object"
+          },
+          "due_at": {
+            "format": "date-time",
+            "title": "Due At",
+            "type": "string"
+          },
+          "evidence_class": {
+            "$ref": "#/components/schemas/EvidenceClass"
+          },
+          "platform": {
+            "$ref": "#/components/schemas/Platform"
+          },
+          "platform_account_id": {
+            "format": "uuid",
+            "title": "Platform Account Id",
+            "type": "string"
+          },
+          "publication_job_id": {
+            "format": "uuid",
+            "title": "Publication Job Id",
+            "type": "string"
+          },
+          "publish_mode": {
+            "$ref": "#/components/schemas/PublishMode"
+          },
+          "simulated": {
+            "title": "Simulated",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "publication_job_id",
+          "brand_id",
+          "platform",
+          "platform_account_id",
+          "account_handle",
+          "due_at",
+          "publish_mode",
+          "evidence_class",
+          "simulated",
+          "content_version_id",
+          "details",
+          "blockers"
+        ],
+        "title": "PublicationPreviewRead",
+        "type": "object"
+      },
       "PublicationRead": {
         "properties": {
           "brand_id": {
@@ -6159,6 +6541,9 @@
               }
             ],
             "title": "Error"
+          },
+          "evidence_class": {
+            "$ref": "#/components/schemas/EvidenceClass"
           },
           "external_post_id": {
             "anyOf": [
@@ -6234,6 +6619,7 @@
           "platform_account_id",
           "platform",
           "publish_mode",
+          "evidence_class",
           "external_post_id",
           "canonical_url",
           "status",
@@ -13788,6 +14174,274 @@
         ]
       }
     },
+    "/api/v1/platform-accounts/{account_id}/credentials": {
+      "get": {
+        "description": "Metadata only (kind, scopes, fingerprint, dates); secrets are never returned.",
+        "operationId": "list_credentials_api_v1_platform_accounts__account_id__credentials_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Account Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_CredentialRead_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Credentials",
+        "tags": [
+          "platform-accounts"
+        ]
+      },
+      "post": {
+        "description": "Store (or rotate) the account's credential, encrypted at rest. Write-only.",
+        "operationId": "store_credential_api_v1_platform_accounts__account_id__credentials_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Account Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CredentialCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CredentialRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Store Credential",
+        "tags": [
+          "platform-accounts"
+        ]
+      }
+    },
+    "/api/v1/platform-accounts/{account_id}/credentials/{credential_id}": {
+      "delete": {
+        "description": "Revoke at once; a live account is switched off as well (audited).",
+        "operationId": "revoke_credential_api_v1_platform_accounts__account_id__credentials__credential_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Account Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "credential_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Credential Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CredentialRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Revoke Credential",
+        "tags": [
+          "platform-accounts"
+        ]
+      }
+    },
+    "/api/v1/platform-accounts/{account_id}/live": {
+      "post": {
+        "description": "A6 gate #2. Enabling needs the exact phrase ``ENABLE LIVE PUBLISHING FOR <PLATFORM>``.",
+        "operationId": "set_live_api_v1_platform_accounts__account_id__live_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Account Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlatformAccountLiveRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlatformAccountRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Set Live",
+        "tags": [
+          "platform-accounts"
+        ]
+      }
+    },
     "/api/v1/platforms": {
       "get": {
         "operationId": "list_platforms_api_v1_platforms_get",
@@ -14135,6 +14789,66 @@
         ]
       }
     },
+    "/api/v1/publications/jobs/{job_id}/preview": {
+      "get": {
+        "description": "Exactly what would be sent (account, text, media, visibility, timing, evidence class)\nand what would block it. Read-only; decrypts nothing.",
+        "operationId": "preview_job_api_v1_publications_jobs__job_id__preview_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "job_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Job Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicationPreviewRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Preview Job",
+        "tags": [
+          "publications"
+        ]
+      }
+    },
     "/api/v1/publications/{publication_id}": {
       "get": {
         "operationId": "get_publication_api_v1_publications__publication_id__get",
@@ -14189,6 +14903,66 @@
           }
         },
         "summary": "Get Publication",
+        "tags": [
+          "publications"
+        ]
+      }
+    },
+    "/api/v1/publications/{publication_id}/lookup": {
+      "post": {
+        "description": "Search the platform for an uncertain LIVE post by its exact text (never re-posts).\nFOUND reconciles it; PARTIAL / NOT_FOUND leave the decision to a person.",
+        "operationId": "lookup_api_v1_publications__publication_id__lookup_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "publication_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Publication Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicationLookupRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Lookup",
         "tags": [
           "publications"
         ]

@@ -124,9 +124,25 @@ export function humanize(code: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-/** A publication's state, labelled "simulated" only when the mock publisher made it. */
-export function publicationInfo(p: { status: PublicationStatus; publish_mode: Schemas["PublishMode"] }): StatusInfo {
-  if (p.status === "PUBLISHED" && p.publish_mode !== "MOCK")
-    return { label: "Published", tone: "success", help: `Recorded as published (${humanize(p.publish_mode)} mode).` };
+/**
+ * What a publication's numbers can prove (A17), fixed when it was sent: SIMULATED (mock
+ * publisher, no audience), SANDBOX (a real API call to a test account, not a real audience)
+ * or REAL. Only REAL publications count as real evidence anywhere in the UI.
+ */
+export const EVIDENCE: Record<Schemas["EvidenceClass"], StatusInfo> = {
+  SIMULATED: { label: "Simulated", tone: "simulated", help: "Mock publisher: nothing was posted and no real audience saw it." },
+  SANDBOX: {
+    label: "Sandbox",
+    tone: "warning",
+    help: "Posted through the platform's API to an account marked as a sandbox (test) account: not a real audience.",
+  },
+  REAL: { label: "Real", tone: "success", help: "Posted to a real account and audience." },
+};
+
+/** A publication's state; "simulated" / "sandbox" follow its evidence class. */
+export function publicationInfo(p: { status: PublicationStatus; evidence_class: Schemas["EvidenceClass"] }): StatusInfo {
+  if (p.status === "PUBLISHED" && p.evidence_class === "REAL") return { label: "Published", tone: "success", help: EVIDENCE.REAL.help };
+  if (p.status === "PUBLISHED" && p.evidence_class === "SANDBOX")
+    return { label: "Published (sandbox)", tone: "warning", help: EVIDENCE.SANDBOX.help };
   return PUBLICATION_STATUS[p.status];
 }
